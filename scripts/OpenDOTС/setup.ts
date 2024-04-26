@@ -1,4 +1,4 @@
-import hre, { ethers } from 'hardhat';
+import { ethers } from 'hardhat';
 import { DotcManager } from 'typechain';
 
 // MUMBAI
@@ -21,10 +21,30 @@ import { DotcManager } from 'typechain';
 // const dotc_address = '0x22b3346AF45169986efbc1Aa4c360501586DF954';
 // const escrow_address = '0x599cf65c92423432b56847274005c10dADBfe0AC';
 
-// Base mainnet
-const dotcManager_address = '0x632F2fe528D59ae71eCd38d7F1fDf8D5b5B1CF25';
-const dotc_address = '0xB8ADaD01342D656D8f70Fe1fa55cc3FBb6965f7d';
-const escrow_address = '0x20A4253Fa2b23074C8e3C60529c4fD3174390516';
+// // Base mainnet
+// const dotcManager_address = '0x632F2fe528D59ae71eCd38d7F1fDf8D5b5B1CF25';
+// const dotc_address = '0xB8ADaD01342D656D8f70Fe1fa55cc3FBb6965f7d';
+// const escrow_address = '0x20A4253Fa2b23074C8e3C60529c4fD3174390516';
+
+// // Arbitrum/OP mainnet (Swarm)
+// const dotcManager_address = '0xEBAca49E966f0e7B93198b0Dab1e307366adE65f';
+// const dotc_address = '0x4347f00991AC8372bbCf2E5BA34A0Ea415989aB0';
+// const escrow_address = '0x1606FA059b8C4Ed1b4297e3530922e2A3C145eA7';
+
+// // Arbitrum/OP mainnet (SwarmX)
+// const dotcManager_address = '0x2fcAb60dc6Ad65be5F2Aae6a1B2E2ecB93017888';
+// const dotc_address = '0x820758b04721Bd0B69a091fE8ef657D936bf35c5';
+// const escrow_address = '0x632F2fe528D59ae71eCd38d7F1fDf8D5b5B1CF25';
+
+// // Mainnet Sepolia
+// const dotcManager_address = '0xf6014B638F9DFF3BD90d7bbDD87e7C061e6c35d5';
+// const dotc_address = '0x8Ced68405bEa7f37E6F0Ae825F052A466BA198af';
+// const escrow_address = '0x450507c2BeBAe848939D8ab5F81DcA0937436ba1';
+
+// Arbitrum Sepolia
+const dotcManager_address = '0x1eD467ae51faC45Db475597ccA46643505310c7b';
+const dotc_address = '0x51D628cD031DdC3305f730b3eb0765Ff12a26186';
+const escrow_address = '0xC618800af6d1b08771407Fb0d072E28f8D9E0700';
 
 async function main() {
   const dotcManager: DotcManager = await ethers.getContractAt('DotcManager', dotcManager_address);
