@@ -267,7 +267,8 @@ contract Dotc is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721Hol
     ) public checkOffer(offerId) notExpired(offerId) nonReentrant {
         DotcOffer memory offer = allOffers[offerId];
 
-        require(offer.specialAddress == msg.sender, "Dotc: You are not a designated buyer");
+        if (offer.specialAddress != address(0))
+            require(offer.specialAddress == msg.sender, "Dotc: You are not a designated buyer");
 
         uint256 amountToWithdraw = offer.depositAsset.amount;
         uint256 realAmount = amountToWithdraw;

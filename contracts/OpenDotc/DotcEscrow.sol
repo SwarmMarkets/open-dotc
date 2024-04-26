@@ -8,7 +8,7 @@ import { IDotcManager } from "./interfaces/IDotcManager.sol";
 import { IDotcEscrow } from "./interfaces/IDotcEscrow.sol";
 
 /**
- * @title Escrow Contract for DOTC (Decentralized Over-The-Counter) Trading (as part of the "SwarmX.eth Protocol")
+ * @title Escrow Contract for Dotc (Decentralized Over-The-Counter) Trading (as part of the "SwarmX.eth Protocol")
  * @notice It allows for depositing, withdrawing, and managing of assets in the course of trading.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
  * Please read the Disclaimer featured on the SwarmX.eth website ("Terms") carefully before accessing,

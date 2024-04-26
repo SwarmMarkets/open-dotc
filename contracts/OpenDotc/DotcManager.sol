@@ -8,7 +8,7 @@ import { IDotcEscrow } from "./interfaces/IDotcEscrow.sol";
 import { IDotc } from "./interfaces/IDotc.sol";
 
 /**
- * @title DotcManager contract for DOTC management (as part of the "SwarmX.eth Protocol")
+ * @title DotcManager contract for Dotc management (as part of the "SwarmX.eth Protocol")
  * @notice This contract serves as the central point for managing various aspects of the DOTC system
  * such as fees, escrow addresses, and asset standardization.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
