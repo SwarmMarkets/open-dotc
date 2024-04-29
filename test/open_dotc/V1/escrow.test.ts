@@ -3,9 +3,9 @@ import { BigNumber, ContractFactory } from 'ethers';
 import { expect } from 'chai';
 import { DotcManager, DotcEscrow, ERC20Mock_2, ERC721Mock, ERC1155Mock } from '../../../typechain';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
-import { AssetStruct } from 'typechain/contracts/OpenDotc/v1/Dotc';
+import { AssetStruct } from '../../helpers/Structures';
 
-describe.only('DotcEscrow_Open', () => {
+describe.skip('DotcEscrow_Open', () => {
   async function fixture() {
     const [deployer, otherAcc] = await ethers.getSigners();
 

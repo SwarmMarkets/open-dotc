@@ -3,7 +3,7 @@ import { BigNumber, ContractFactory } from 'ethers';
 import { expect } from 'chai';
 import { DotcManager, DotcEscrow, Dotc, ERC20Mock_3, ERC721Mock, ERC1155Mock } from '../../../typechain';
 import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
-import { AssetStruct, DotcOfferStruct } from 'typechain/contracts/OpenDotc/v1/Dotc';
+import { AssetStruct, DotcOfferV1Struct as DotcOfferStruct } from '../../helpers/Structures';
 
 describe.skip('Dotc_Open', () => {
   const addressZero = ethers.constants.AddressZero;

@@ -3,7 +3,7 @@ import { BigNumber, ContractFactory } from 'ethers';
 import { expect } from 'chai';
 import { DotcManager, ERC20Mock_2, ERC721Mock, ERC1155Mock } from '../../../typechain';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
-import { AssetStruct } from 'typechain/contracts/OpenDotc/v1/Dotc';
+import { AssetStruct } from '../../helpers/Structures';
 
 describe.skip('DotcManager_Open', () => {
   async function fixture() {
