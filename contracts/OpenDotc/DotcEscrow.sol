@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: GPL-3.0-only
-pragma solidity ^0.8.19;
+pragma solidity 0.8.24;
 
 import { ERC1155HolderUpgradeable, ERC1155ReceiverUpgradeable, ERC721HolderUpgradeable, IERC20Upgradeable, IERC721Upgradeable, IERC1155Upgradeable, SafeERC20Upgradeable } from "./exports/Exports.sol";
 
