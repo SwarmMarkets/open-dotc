@@ -19,5 +19,5 @@ module.exports = {
   providerOptions: {
     mnemonic,
   },
-  skipFiles: ['mocks', 'test', 'OpenDotc/Dotc.sol', 'OpenDotc/structures/DotcStructures.sol'],
+  skipFiles: ['mocks', 'test', 'OpenDotc/v1'],
 };
