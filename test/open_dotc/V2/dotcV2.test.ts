@@ -1,10 +1,11 @@
 import { ethers, upgrades } from 'hardhat';
 import { BigNumber, ContractFactory } from 'ethers';
 import { expect } from 'chai';
-import { DotcManagerV2, DotcEscrowV2, DotcV2, ERC20Mock_3, ERC721Mock, ERC1155Mock } from '../../../typechain';
+import { DotcManagerV2 as DotcManager, DotcEscrowV2 as DotcEscrow, DotcV2 as Dotc, ERC20Mock_3, ERC721Mock, ERC1155Mock } from '../../../typechain';
 import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
-import { AssetStruct, DotcOfferStruct, OfferStructStruct } from 'typechain/contracts/OpenDotc/v2/DotcV2';
+import { AssetStruct, DotcOfferV2Struct as DotcOfferStruct, OfferStruct as OfferStructStruct } from '../../helpers/Structures';
 
+//TODO: mock escrow with false statements
 describe('DotcV2_Open', () => {
   const addressZero = ethers.constants.AddressZero;
   const terms = 'terms';
@@ -14,15 +15,15 @@ describe('DotcV2_Open', () => {
     const [deployer, acc1, acc2, acc3] = await ethers.getSigners();
 
     const DotcManager: ContractFactory = await ethers.getContractFactory('DotcManagerV2');
-    const dotcManager = (await upgrades.deployProxy(DotcManager, [deployer.address])) as DotcManagerV2;
+    const dotcManager = (await upgrades.deployProxy(DotcManager, [deployer.address])) as DotcManager;
     await dotcManager.deployed();
 
     const Dotc = await ethers.getContractFactory('DotcV2');
-    const dotc = (await upgrades.deployProxy(Dotc, [dotcManager.address])) as DotcV2;
+    const dotc = (await upgrades.deployProxy(Dotc, [dotcManager.address])) as Dotc;
     await dotc.deployed();
 
     const DotcEscrow: ContractFactory = await ethers.getContractFactory('DotcEscrowV2');
-    const escrow = (await upgrades.deployProxy(DotcEscrow, [dotcManager.address])) as DotcEscrowV2;
+    const escrow = (await upgrades.deployProxy(DotcEscrow, [dotcManager.address])) as DotcEscrow;
     await escrow.deployed();
 
     const ERC20: ContractFactory = await ethers.getContractFactory('ERC20Mock_3');
@@ -68,9 +69,9 @@ describe('DotcV2_Open', () => {
     it('Should be initialized', async () => {
       const { dotc, dotcManager, escrow } = await loadFixture(fixture);
 
-      await expect(dotc.initialize(dotcManager.address)).to.be.revertedWith('Initializable: contract is already initialized');
-      await expect(dotcManager.initialize(dotc.address)).to.be.revertedWith('Initializable: contract is already initialized');
-      await expect(escrow.initialize(dotc.address)).to.be.revertedWith('Initializable: contract is already initialized');
+      await expect(dotcManager.initialize(escrow.address)).to.be.revertedWithCustomError(dotcManager, 'InvalidInitialization');
+      await expect(escrow.initialize(dotcManager.address)).to.be.revertedWithCustomError(escrow, 'InvalidInitialization');
+      await expect(dotc.initialize(dotcManager.address)).to.be.revertedWithCustomError(dotc, 'InvalidInitialization');
     });
 
     it('Should support interface', async () => {
@@ -1260,7 +1261,7 @@ describe('DotcV2_Open', () => {
       await expect(dotc.connect(deployer).takeOffer(offerId, WithdrawalAssetERC20.amount)).to.be.revertedWith(
         'ERC20: insufficient allowance',
       );
-      await expect(dotc.connect(acc2).takeOffer(offerId, 0)).to.be.revertedWith('DotcManager: amount less or eq zero');
+      await expect(dotc.connect(acc2).takeOffer(offerId, 0)).to.be.revertedWithCustomError(dotcManager, 'ZeroAmountPassed');
 
       const take_offer = await dotc.connect(acc2).takeOffer(offerId, WithdrawalAssetERC20.amount);
 
