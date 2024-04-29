@@ -7,6 +7,21 @@ import { IDotcManager } from "./interfaces/IDotcManager.sol";
 import { IDotcEscrow } from "./interfaces/IDotcEscrow.sol";
 import { IDotc } from "./interfaces/IDotc.sol";
 
+error ZeroAmountPassed();
+error ZeroAddressPassed();
+
+error UnsupportedAssetType(AssetType unsupportedType);
+error AddressHaveNoERC20(address account, address erc20Token, uint256 currentAmount, uint256 requiredAmount);
+error AddressHaveNoERC721(address account, address erc721Token, uint256 tokenId);
+error AddressHaveNoERC1155(
+    address account,
+    address erc1155Token,
+    uint256 tokenId,
+    uint256 currentAmount,
+    uint256 requiredAmount
+);
+error IncorrectAssetTypeForAddress(address token, AssetType incorrectType);
+
 /**
  * @title DotcManager contract for Dotc management (as part of the "SwarmX.eth Protocol")
  * @notice This contract serves as the central point for managing various aspects of the DOTC system
@@ -26,7 +41,6 @@ import { IDotc } from "./interfaces/IDotc.sol";
  * @dev Manages configurations and settings for the DOTC trading platform, including fee settings and escrow management.
  * @author Swarm
  */
-
 contract DotcManager is OwnableUpgradeable, IDotcManager {
     /**
      * @dev Emitted when the escrow address is updated.
@@ -89,7 +103,9 @@ contract DotcManager is OwnableUpgradeable, IDotcManager {
      * @param _address The address to check.
      */
     modifier zeroAddressCheck(address _address) {
-        require(_address != address(0), "DotcManager: zero address error");
+        if (_address == address(0)) {
+            revert ZeroAddressPassed();
+        }
         _;
     }
     /**
@@ -97,7 +113,9 @@ contract DotcManager is OwnableUpgradeable, IDotcManager {
      * @param amount The amount to check.
      */
     modifier zeroAmountCheck(uint256 amount) {
-        require(amount > 0, "DotcManager: amount less or eq zero");
+        if (amount <= 0) {
+            revert ZeroAmountPassed();
+        }
         _;
     }
 
@@ -332,31 +350,29 @@ contract DotcManager is OwnableUpgradeable, IDotcManager {
         address account,
         uint256 amount
     ) private view returns (AssetType assetType) {
-        assetType = asset.assetType;
+        if (asset.assetType == AssetType.ERC20) {
+            uint256 balance = IERC20Upgradeable(asset.assetAddress).balanceOf(account);
+            if (balance < amount) {
+                revert AddressHaveNoERC20(account, asset.assetAddress, balance, amount);
+            }
+        } else if (asset.assetType == AssetType.ERC721) {
+            if (!IERC165Upgradeable(asset.assetAddress).supportsInterface(type(IERC721Upgradeable).interfaceId)) {
+                revert IncorrectAssetTypeForAddress(asset.assetAddress, asset.assetType);
+            }
+            if (IERC721Upgradeable(asset.assetAddress).ownerOf(asset.tokenId) != account) {
+                revert AddressHaveNoERC721(account, asset.assetAddress, asset.tokenId);
+            }
+        } else if (asset.assetType == AssetType.ERC1155) {
+            uint256 balance = IERC1155Upgradeable(asset.assetAddress).balanceOf(account, asset.tokenId);
 
-        if (assetType == AssetType.ERC20) {
-            require(
-                IERC20Upgradeable(asset.assetAddress).balanceOf(account) >= amount,
-                "DotcManager: You have not enough assets (ERC20)"
-            );
-        } else if (assetType == AssetType.ERC721) {
-            require(
-                IERC165Upgradeable(asset.assetAddress).supportsInterface(type(IERC721Upgradeable).interfaceId),
-                "DotcManager: incorrect asset type"
-            );
-            require(
-                IERC721Upgradeable(asset.assetAddress).ownerOf(asset.tokenId) == account,
-                "DotcManager: You are not an owner of asset (ERC721)"
-            );
-        } else if (assetType == AssetType.ERC1155) {
-            require(
-                IERC165Upgradeable(asset.assetAddress).supportsInterface(type(IERC1155Upgradeable).interfaceId),
-                "DotcManager: incorrect asset type"
-            );
-            require(
-                IERC1155Upgradeable(asset.assetAddress).balanceOf(account, asset.tokenId) >= asset.amount,
-                "DotcManager: You have not enough assets (ERC1155)"
-            );
+            if (!IERC165Upgradeable(asset.assetAddress).supportsInterface(type(IERC1155Upgradeable).interfaceId)) {
+                revert IncorrectAssetTypeForAddress(asset.assetAddress, asset.assetType);
+            }
+            if (balance < asset.amount) {
+                revert AddressHaveNoERC1155(account, asset.assetAddress, asset.tokenId, balance, asset.amount);
+            }
+        } else {
+            revert UnsupportedAssetType(assetType);
         }
     }
 }
