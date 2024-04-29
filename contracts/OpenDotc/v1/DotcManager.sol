@@ -1,5 +1,6 @@
 //SPDX-License-Identifier: GPL-3.0-only
-pragma solidity 0.8.24;
+pragma solidity ^0.8.19;
+
 import { OwnableUpgradeable, IERC20MetadataUpgradeable, IERC20Upgradeable, IERC721Upgradeable, IERC1155Upgradeable, IERC165Upgradeable } from "./exports/Exports.sol";
 
 import { Asset, AssetType } from "./structures/DotcStructures.sol";

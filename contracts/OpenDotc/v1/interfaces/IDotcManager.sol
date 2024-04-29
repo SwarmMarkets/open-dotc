@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: GPL-3.0-only
-pragma solidity 0.8.24;
+pragma solidity ^0.8.19;
 
 import { Asset, AssetType } from "../structures/DotcStructures.sol";
 import { IDotcEscrow } from "./IDotcEscrow.sol";

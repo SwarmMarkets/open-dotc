@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: GPL-3.0-only
-pragma solidity 0.8.24;
+pragma solidity 0.8.25;
 
-import { ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20Upgradeable, IERC721Upgradeable, IERC1155Upgradeable, SafeERC20Upgradeable } from "./exports/Exports.sol";
+import { ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20, IERC721, IERC1155, SafeERC20 } from "./exports/Exports.sol";
 
 import { IDotcManager } from "./interfaces/IDotcManager.sol";
 import { Asset, AssetType, EscrowCallType, ValidityType, OfferStruct, DotcOffer } from "./structures/DotcStructuresV2.sol";
@@ -100,7 +100,7 @@ error ManagerOnlyFunctionError();
  */
 contract DotcV2 is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
     ///@dev Used for Safe transfer tokens
-    using SafeERC20Upgradeable for IERC20Upgradeable;
+    using SafeERC20 for IERC20;
 
     /**
      * @notice Emitted when a new trading offer is created.
@@ -688,11 +688,11 @@ contract DotcV2 is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721H
      */
     function assetTransfer(Asset memory asset, address from, address to, uint256 amount) private {
         if (asset.assetType == AssetType.ERC20) {
-            IERC20Upgradeable(asset.assetAddress).safeTransferFrom(from, to, amount);
+            IERC20(asset.assetAddress).safeTransferFrom(from, to, amount);
         } else if (asset.assetType == AssetType.ERC721) {
-            IERC721Upgradeable(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId);
+            IERC721(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId);
         } else if (asset.assetType == AssetType.ERC1155) {
-            IERC1155Upgradeable(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId, asset.amount, "");
+            IERC1155(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId, asset.amount, "");
         }
     }
 }

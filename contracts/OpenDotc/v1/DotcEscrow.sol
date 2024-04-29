@@ -1,36 +1,11 @@
 //SPDX-License-Identifier: GPL-3.0-only
-pragma solidity 0.8.24;
+pragma solidity ^0.8.19;
 
-import { ERC1155HolderUpgradeable, ERC1155ReceiverUpgradeable, ERC721HolderUpgradeable, IERC20Upgradeable, IERC721Upgradeable, IERC1155Upgradeable, SafeERC20Upgradeable } from "./exports/Exports.sol";
+import { ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20Upgradeable, IERC721Upgradeable, IERC1155Upgradeable, SafeERC20Upgradeable } from "./exports/Exports.sol";
 
 import { Asset, AssetType } from "./structures/DotcStructures.sol";
 import { IDotcManager } from "./interfaces/IDotcManager.sol";
 import { IDotcEscrow } from "./interfaces/IDotcEscrow.sol";
-
-/// @title Errors related to asset management in the Dotc Escrow contract
-/// @notice Provides error messages for various failure conditions related to asset handling
-
-/// @notice Indicates no asset amount was specified where a non-zero value is required
-error AssetAmountEqZero();
-
-/// @notice Indicates no amount was specified for withdrawal where a non-zero value is required
-error AmountToWithdrawEqZero();
-
-/// @notice Indicates no amount was specified for cancelling where a non-zero value is required
-error AmountToCancelEqZero();
-
-/// @notice Indicates no fee amount was specified where a non-zero value is required
-error FeesAmountEqZero();
-
-/// @notice Indicates that the operation was attempted by an unauthorized entity, not the manager
-error OnlyManager();
-
-/// @notice Indicates that the operation was attempted by an unauthorized entity, not the Dotc contract
-error OnlyDotc();
-
-/// @notice Indicates the asset type provided is not supported by this contract
-/// @param unsupportedType The unsupported asset type provided
-error UnsupportedAssetType(AssetType unsupportedType);
 
 /**
  * @title Escrow Contract for Dotc (Decentralized Over-The-Counter) Trading (as part of the "SwarmX.eth Protocol")
@@ -50,7 +25,7 @@ error UnsupportedAssetType(AssetType unsupportedType);
  * @dev This contract handles the escrow of assets for DOTC trades, supporting ERC20, ERC721, and ERC1155 assets.
  * @author Swarm
  */
-contract DotcEscrowV2 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDotcEscrow {
+contract DotcEscrow is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDotcEscrow {
     ///@dev Used for Safe transfer tokens
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
@@ -108,9 +83,7 @@ contract DotcEscrowV2 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDot
      * @dev Modifier that restricts function access to the address of the DOTC contract set in the manager.
      */
     modifier onlyDotc() {
-        if (msg.sender != address(manager.dotc())) {
-            revert OnlyDotc();
-        }
+        require(msg.sender == address(manager.dotc()), "Escrow: Dotc calls only");
         _;
     }
 
@@ -161,16 +134,12 @@ contract DotcEscrowV2 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDot
         address taker
     ) external onlyDotc returns (bool) {
         Asset memory asset = assetDeposits[offerId];
-        if (asset.amount <= 0) {
-            revert AssetAmountEqZero();
-        }
+        require(asset.amount > 0, "Escrow: assets amount = 0");
 
         if (asset.assetType == AssetType.ERC20)
             amountToWithdraw = manager.unstandardizeNumber(amountToWithdraw, asset.assetAddress);
 
-        if (amountToWithdraw <= 0) {
-            revert AmountToWithdrawEqZero();
-        }
+        require(amountToWithdraw > 0, "Escrow: amount to withdraw = 0");
 
         assetDeposits[offerId].amount -= amountToWithdraw;
 
@@ -197,9 +166,7 @@ contract DotcEscrowV2 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDot
 
         amountToCancel = asset.amount;
 
-        if (amountToCancel <= 0) {
-            revert AmountToCancelEqZero();
-        }
+        require(amountToCancel > 0, "Escrow: amount to cancel = 0");
 
         delete assetDeposits[offerId];
 
@@ -222,9 +189,7 @@ contract DotcEscrowV2 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDot
 
         uint256 amount = manager.unstandardizeNumber(amountToWithdraw, asset.assetAddress);
 
-        if (amount <= 0) {
-            revert FeesAmountEqZero();
-        }
+        require(amount > 0, "Escrow: fees amount = 0");
 
         address to = manager.feeReceiver();
 
@@ -245,9 +210,7 @@ contract DotcEscrowV2 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDot
      */
 
     function changeManager(IDotcManager _manager) external returns (bool status) {
-        if (msg.sender != address(manager)) {
-            revert OnlyManager();
-        }
+        require(msg.sender == address(manager), "Escrow: Manager calls only");
 
         manager = _manager;
 
@@ -281,8 +244,6 @@ contract DotcEscrowV2 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDot
             IERC721Upgradeable(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId);
         } else if (asset.assetType == AssetType.ERC1155) {
             IERC1155Upgradeable(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId, asset.amount, "");
-        } else {
-            revert UnsupportedAssetType(asset.assetType);
         }
     }
 }

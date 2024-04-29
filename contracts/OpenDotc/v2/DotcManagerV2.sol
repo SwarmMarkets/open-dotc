@@ -1,8 +1,8 @@
 //SPDX-License-Identifier: GPL-3.0-only
-pragma solidity 0.8.24;
-import { OwnableUpgradeable, IERC20MetadataUpgradeable, IERC20Upgradeable, IERC721Upgradeable, IERC1155Upgradeable, IERC165Upgradeable } from "./exports/Exports.sol";
+pragma solidity 0.8.25;
+import { OwnableUpgradeable, IERC20Metadata, IERC20, IERC721, IERC1155, IERC165 } from "./exports/Exports.sol";
 
-import { Asset, AssetType } from "./structures/DotcStructures.sol";
+import { Asset, AssetType } from "./structures/DotcStructuresV2.sol";
 import { IDotcManager } from "./interfaces/IDotcManager.sol";
 import { IDotcEscrow } from "./interfaces/IDotcEscrow.sol";
 import { IDotc } from "./interfaces/IDotc.sol";
@@ -160,7 +160,7 @@ contract DotcManagerV2 is OwnableUpgradeable, IDotcManager {
      * @dev Sets up the contract with default values and fee receiver.
      */
     function initialize(address _newFeeReceiver) public initializer {
-        __Ownable_init();
+        __Ownable_init(msg.sender);
         feeReceiver = _newFeeReceiver;
         feeAmount = 25 * (10 ** 23);
     }
@@ -304,7 +304,7 @@ contract DotcManagerV2 is OwnableUpgradeable, IDotcManager {
         uint256 amount,
         address token
     ) public view zeroAddressCheck(token) zeroAmountCheck(amount) returns (uint256) {
-        uint8 decimals = IERC20MetadataUpgradeable(token).decimals();
+        uint8 decimals = IERC20Metadata(token).decimals();
         return _standardize(amount, decimals);
     }
 
@@ -331,7 +331,7 @@ contract DotcManagerV2 is OwnableUpgradeable, IDotcManager {
         uint256 amount,
         address token
     ) public view zeroAddressCheck(token) zeroAmountCheck(amount) returns (uint256) {
-        uint8 decimals = IERC20MetadataUpgradeable(token).decimals();
+        uint8 decimals = IERC20Metadata(token).decimals();
         return _unstandardize(amount, decimals);
     }
 
@@ -381,21 +381,21 @@ contract DotcManagerV2 is OwnableUpgradeable, IDotcManager {
         uint256 amount
     ) private view returns (AssetType assetType) {
         if (asset.assetType == AssetType.ERC20) {
-            uint256 balance = IERC20Upgradeable(asset.assetAddress).balanceOf(account);
+            uint256 balance = IERC20(asset.assetAddress).balanceOf(account);
             if (balance < amount) {
                 revert AddressHaveNoERC20(account, asset.assetAddress, balance, amount);
             }
         } else if (asset.assetType == AssetType.ERC721) {
-            if (!IERC165Upgradeable(asset.assetAddress).supportsInterface(type(IERC721Upgradeable).interfaceId)) {
+            if (!IERC165(asset.assetAddress).supportsInterface(type(IERC721).interfaceId)) {
                 revert IncorrectAssetTypeForAddress(asset.assetAddress, asset.assetType);
             }
-            if (IERC721Upgradeable(asset.assetAddress).ownerOf(asset.tokenId) != account) {
+            if (IERC721(asset.assetAddress).ownerOf(asset.tokenId) != account) {
                 revert AddressHaveNoERC721(account, asset.assetAddress, asset.tokenId);
             }
         } else if (asset.assetType == AssetType.ERC1155) {
-            uint256 balance = IERC1155Upgradeable(asset.assetAddress).balanceOf(account, asset.tokenId);
+            uint256 balance = IERC1155(asset.assetAddress).balanceOf(account, asset.tokenId);
 
-            if (!IERC165Upgradeable(asset.assetAddress).supportsInterface(type(IERC1155Upgradeable).interfaceId)) {
+            if (!IERC165(asset.assetAddress).supportsInterface(type(IERC1155).interfaceId)) {
                 revert IncorrectAssetTypeForAddress(asset.assetAddress, asset.assetType);
             }
             if (balance < asset.amount) {

@@ -1,8 +1,8 @@
 //SPDX-License-Identifier: GPL-3.0-only
-pragma solidity 0.8.24;
+pragma solidity 0.8.25;
 
 import { IDotcManager } from "./IDotcManager.sol";
-import { Asset } from "../structures/DotcStructures.sol";
+import { Asset } from "../structures/DotcStructuresV2.sol";
 
 /**
  * @title Interface for Dotc Escrow contract (as part of the "SwarmX.eth Protocol")

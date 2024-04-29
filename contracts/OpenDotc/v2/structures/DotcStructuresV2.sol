@@ -1,8 +1,6 @@
 // solhint-disable
 //SPDX-License-Identifier: GPL-3.0-only
-pragma solidity 0.8.24;
-
-import { Asset, AssetType } from "./DotcStructures.sol";
+pragma solidity 0.8.25;
 
 /**
  * @title Structures for DOTC management (as part of the "SwarmX.eth Protocol")
@@ -20,6 +18,40 @@ import { Asset, AssetType } from "./DotcStructures.sol";
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
  * @author Swarm
  */
+
+/**
+ * @title Asset Types Enum
+ * @notice Defines the different types of assets that can be used in the system.
+ * @dev Enum representing various asset types supported in DOTC trades.
+ * @author Swarm
+ * - NoType: Represents a state with no specific asset type.
+ * - ERC20: Represents an ERC20 token asset.
+ * - ERC721: Represents an ERC721 token (NFT) asset.
+ * - ERC1155: Represents an ERC1155 token (multi-token standard) asset.
+ */
+enum AssetType {
+    NoType,
+    ERC20,
+    ERC721,
+    ERC1155
+}
+
+/**
+ * @title Asset Structure
+ * @notice Represents an asset in the DOTC trading system.
+ * @dev Defines the structure for an asset including type, address, amount, and token ID for NFTs.
+ * @param assetType The type of the asset (ERC20, ERC721, ERC1155).
+ * @param assetAddress The contract address of the asset.
+ * @param amount The amount of the asset (relevant for ERC20 and ERC1155).
+ * @param tokenId The token ID (relevant for ERC721 and ERC1155).
+ * @author Swarm
+ */
+struct Asset {
+    AssetType assetType;
+    address assetAddress;
+    uint256 amount;
+    uint256 tokenId;
+}
 
 /**
  * @title Escrow Call Type Enum
