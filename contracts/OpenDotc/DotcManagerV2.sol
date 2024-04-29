@@ -7,12 +7,38 @@ import { IDotcManager } from "./interfaces/IDotcManager.sol";
 import { IDotcEscrow } from "./interfaces/IDotcEscrow.sol";
 import { IDotc } from "./interfaces/IDotc.sol";
 
+/// @title Errors related to asset transfers and validations in DotcManager
+/// @notice Provides error messages for asset-related operations
+
+/// @notice Indicates an operation with zero amount which is not allowed
 error ZeroAmountPassed();
+
+/// @notice Indicates usage of a zero address where an actual address is required
 error ZeroAddressPassed();
 
+/// @notice Indicates that the asset type provided is not supported
+/// @param unsupportedType The unsupported asset type
 error UnsupportedAssetType(AssetType unsupportedType);
+
+/// @notice Indicates the account does not have enough ERC20 tokens required
+/// @param account The account in question
+/// @param erc20Token The ERC20 token address
+/// @param currentAmount The current amount the account holds
+/// @param requiredAmount The required amount that was not met
 error AddressHaveNoERC20(address account, address erc20Token, uint256 currentAmount, uint256 requiredAmount);
+
+/// @notice Indicates the account does not own the specified ERC721 token
+/// @param account The account in question
+/// @param erc721Token The ERC721 token address
+/// @param tokenId The token ID that the account does not own
 error AddressHaveNoERC721(address account, address erc721Token, uint256 tokenId);
+
+/// @notice Indicates the account does not have enough of the specified ERC1155 token
+/// @param account The account in question
+/// @param erc1155Token The ERC1155 token address
+/// @param tokenId The token ID in question
+/// @param currentAmount The current amount the account holds
+/// @param requiredAmount The required amount that was not met
 error AddressHaveNoERC1155(
     address account,
     address erc1155Token,
@@ -20,6 +46,10 @@ error AddressHaveNoERC1155(
     uint256 currentAmount,
     uint256 requiredAmount
 );
+
+/// @notice Indicates that the token address does not match the expected asset type
+/// @param token The token address
+/// @param incorrectType The incorrect asset type provided
 error IncorrectAssetTypeForAddress(address token, AssetType incorrectType);
 
 /**
@@ -41,7 +71,7 @@ error IncorrectAssetTypeForAddress(address token, AssetType incorrectType);
  * @dev Manages configurations and settings for the DOTC trading platform, including fee settings and escrow management.
  * @author Swarm
  */
-contract DotcManager is OwnableUpgradeable, IDotcManager {
+contract DotcManagerV2 is OwnableUpgradeable, IDotcManager {
     /**
      * @dev Emitted when the escrow address is updated.
      * @param by Address of the user who performed the update.

@@ -6,6 +6,9 @@ import { ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721HolderUpgra
 import { IDotcManager } from "./interfaces/IDotcManager.sol";
 import { Asset, AssetType, EscrowCallType, ValidityType, OfferStruct, DotcOffer } from "./structures/DotcStructuresV2.sol";
 
+/// @title Errors related to the Dotc contract
+/// @notice Provides error messages for various failure conditions related to Offers and Assets handling
+
 /// @notice Thrown when an asset type is not defined.
 error AssetTypeUndefinedError();
 

@@ -7,12 +7,29 @@ import { Asset, AssetType } from "./structures/DotcStructures.sol";
 import { IDotcManager } from "./interfaces/IDotcManager.sol";
 import { IDotcEscrow } from "./interfaces/IDotcEscrow.sol";
 
+/// @title Errors related to asset management in the Dotc Escrow contract
+/// @notice Provides error messages for various failure conditions related to asset handling
+
+/// @notice Indicates no asset amount was specified where a non-zero value is required
 error AssetAmountEqZero();
+
+/// @notice Indicates no amount was specified for withdrawal where a non-zero value is required
 error AmountToWithdrawEqZero();
+
+/// @notice Indicates no amount was specified for cancelling where a non-zero value is required
 error AmountToCancelEqZero();
+
+/// @notice Indicates no fee amount was specified where a non-zero value is required
 error FeesAmountEqZero();
+
+/// @notice Indicates that the operation was attempted by an unauthorized entity, not the manager
 error OnlyManager();
+
+/// @notice Indicates that the operation was attempted by an unauthorized entity, not the Dotc contract
 error OnlyDotc();
+
+/// @notice Indicates the asset type provided is not supported by this contract
+/// @param unsupportedType The unsupported asset type provided
 error UnsupportedAssetType(AssetType unsupportedType);
 
 /**
@@ -33,7 +50,7 @@ error UnsupportedAssetType(AssetType unsupportedType);
  * @dev This contract handles the escrow of assets for DOTC trades, supporting ERC20, ERC721, and ERC1155 assets.
  * @author Swarm
  */
-contract DotcEscrow is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDotcEscrow {
+contract DotcEscrowV2 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDotcEscrow {
     ///@dev Used for Safe transfer tokens
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
