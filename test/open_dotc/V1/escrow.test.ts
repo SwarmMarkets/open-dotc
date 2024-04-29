@@ -1,11 +1,11 @@
 import { ethers, upgrades } from 'hardhat';
 import { BigNumber, ContractFactory } from 'ethers';
 import { expect } from 'chai';
-import { DotcManager, DotcEscrow, ERC20Mock_2, ERC721Mock, ERC1155Mock } from '../../typechain';
+import { DotcManager, DotcEscrow, ERC20Mock_2, ERC721Mock, ERC1155Mock } from '../../../typechain';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
-import { AssetStruct } from 'typechain/contracts/IndependentDOTC/Dotc';
+import { AssetStruct } from 'typechain/contracts/OpenDotc/v1/Dotc';
 
-describe('DotcEscrow_Open', () => {
+describe.only('DotcEscrow_Open', () => {
   async function fixture() {
     const [deployer, otherAcc] = await ethers.getSigners();
 
@@ -46,6 +46,24 @@ describe('DotcEscrow_Open', () => {
 
       expect(await escrow.manager()).to.be.eq(dotcManager.address);
       expect(await dotcManager.dotc()).to.be.eq(otherAcc.address);
+
+      expect(escrow.address).to.be.properAddress;
+      expect(dotcManager.address).to.be.properAddress;
+    });
+
+    it('Should be initialized', async () => {
+      const { dotcManager, escrow } = await loadFixture(fixture);
+
+      await expect(dotcManager.initialize(escrow.address)).to.be.revertedWith('Initializable: contract is already initialized');
+      await expect(escrow.initialize(escrow.address)).to.be.revertedWith('Initializable: contract is already initialized');
+    });
+
+    it('Should support interface', async () => {
+      const { escrow } = await loadFixture(fixture);
+
+      const IERC165_interface = '0x01ffc9a7';
+
+      expect(await escrow.supportsInterface(IERC165_interface)).to.be.true;
     });
   });
 

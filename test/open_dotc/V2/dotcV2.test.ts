@@ -1,11 +1,11 @@
 import { ethers, upgrades } from 'hardhat';
 import { BigNumber, ContractFactory } from 'ethers';
 import { expect } from 'chai';
-import { DotcManager, DotcEscrow, DotcV2 as Dotc, ERC20Mock_3, ERC721Mock, ERC1155Mock } from '../../typechain';
+import { DotcManagerV2, DotcEscrowV2, DotcV2, ERC20Mock_3, ERC721Mock, ERC1155Mock } from '../../../typechain';
 import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
-import { AssetStruct, DotcOfferStruct, OfferStructStruct } from 'typechain/contracts/OpenDotc/DotcV2';
+import { AssetStruct, DotcOfferStruct, OfferStructStruct } from 'typechain/contracts/OpenDotc/v2/DotcV2';
 
-describe('Dotc_Open', () => {
+describe('DotcV2_Open', () => {
   const addressZero = ethers.constants.AddressZero;
   const terms = 'terms';
   const commsLink = 'commsLink';
@@ -13,16 +13,16 @@ describe('Dotc_Open', () => {
   async function fixture() {
     const [deployer, acc1, acc2, acc3] = await ethers.getSigners();
 
-    const DotcManager: ContractFactory = await ethers.getContractFactory('DotcManager');
-    const dotcManager = (await upgrades.deployProxy(DotcManager, [deployer.address])) as DotcManager;
+    const DotcManager: ContractFactory = await ethers.getContractFactory('DotcManagerV2');
+    const dotcManager = (await upgrades.deployProxy(DotcManager, [deployer.address])) as DotcManagerV2;
     await dotcManager.deployed();
 
     const Dotc = await ethers.getContractFactory('DotcV2');
-    const dotc = (await upgrades.deployProxy(Dotc, [dotcManager.address])) as Dotc;
+    const dotc = (await upgrades.deployProxy(Dotc, [dotcManager.address])) as DotcV2;
     await dotc.deployed();
 
-    const DotcEscrow: ContractFactory = await ethers.getContractFactory('DotcEscrow');
-    const escrow = (await upgrades.deployProxy(DotcEscrow, [dotcManager.address])) as DotcEscrow;
+    const DotcEscrow: ContractFactory = await ethers.getContractFactory('DotcEscrowV2');
+    const escrow = (await upgrades.deployProxy(DotcEscrow, [dotcManager.address])) as DotcEscrowV2;
     await escrow.deployed();
 
     const ERC20: ContractFactory = await ethers.getContractFactory('ERC20Mock_3');
@@ -55,6 +55,34 @@ describe('Dotc_Open', () => {
       erc1155,
     };
   }
+
+  describe('Deployment', () => {
+    it('Should be proper addresses', async () => {
+      const { dotc, dotcManager, escrow } = await loadFixture(fixture);
+
+      expect(dotc.address).to.be.properAddress;
+      expect(dotcManager.address).to.be.properAddress;
+      expect(escrow.address).to.be.properAddress;
+    });
+
+    it('Should be initialized', async () => {
+      const { dotc, dotcManager, escrow } = await loadFixture(fixture);
+
+      await expect(dotc.initialize(dotcManager.address)).to.be.revertedWith('Initializable: contract is already initialized');
+      await expect(dotcManager.initialize(dotc.address)).to.be.revertedWith('Initializable: contract is already initialized');
+      await expect(escrow.initialize(dotc.address)).to.be.revertedWith('Initializable: contract is already initialized');
+    });
+
+    it('Should support interface', async () => {
+      const { dotc, escrow } = await loadFixture(fixture);
+
+      const IERC165_interface = '0x01ffc9a7';
+
+      expect(await dotc.supportsInterface(IERC165_interface)).to.be.true;
+
+      expect(await escrow.supportsInterface(IERC165_interface)).to.be.true;
+    });
+  });
 
   describe('Manager configuration', () => {
     it('Should be deployed correctly', async () => {

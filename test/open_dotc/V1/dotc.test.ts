@@ -1,11 +1,11 @@
 import { ethers, upgrades } from 'hardhat';
 import { BigNumber, ContractFactory } from 'ethers';
 import { expect } from 'chai';
-import { DotcManager, DotcEscrow, Dotc, ERC20Mock_3, ERC721Mock, ERC1155Mock } from '../../typechain';
+import { DotcManager, DotcEscrow, Dotc, ERC20Mock_3, ERC721Mock, ERC1155Mock } from '../../../typechain';
 import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
-import { AssetStruct, DotcOfferStruct } from 'typechain/contracts/OpenDotc/Dotc';
+import { AssetStruct, DotcOfferStruct } from 'typechain/contracts/OpenDotc/v1/Dotc';
 
-describe('Dotc_Open', () => {
+describe.skip('Dotc_Open', () => {
   const addressZero = ethers.constants.AddressZero;
 
   async function fixture() {

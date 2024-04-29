@@ -1,17 +1,17 @@
 import { ethers, upgrades } from 'hardhat';
 import { BigNumber, ContractFactory } from 'ethers';
 import { expect } from 'chai';
-import { DotcManager, ERC20Mock_2, ERC721Mock, ERC1155Mock } from '../../typechain';
+import { DotcManagerV2, ERC20Mock_2, ERC721Mock, ERC1155Mock } from '../../../typechain';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
-import { AssetStruct } from 'typechain/contracts/IndependentDOTC/Dotc';
+import { AssetStruct } from 'typechain/contracts/OpenDotc/v2/DotcV2';
 
-describe('DotcManager_Open', () => {
+describe('DotcManagerV2_Open', () => {
   async function fixture() {
     const [deployer, acc1] = await ethers.getSigners();
 
-    const DotcManager: ContractFactory = await ethers.getContractFactory('DotcManager');
+    const DotcManager: ContractFactory = await ethers.getContractFactory('DotcManagerV2');
 
-    const dotcManager = (await upgrades.deployProxy(DotcManager, [deployer.address])) as DotcManager;
+    const dotcManager = (await upgrades.deployProxy(DotcManager, [deployer.address])) as DotcManagerV2;
     await dotcManager.deployed();
 
     const ERC20: ContractFactory = await ethers.getContractFactory('ERC20Mock_2');
@@ -41,6 +41,24 @@ describe('DotcManager_Open', () => {
       expect(await dotcManager.feeReceiver()).to.be.eq(deployer.address);
       expect(await dotcManager.owner()).to.be.eq(deployer.address);
       expect(await dotcManager.feeAmount()).to.be.eq(BigNumber.from('2500000000000000000000000'));
+    });
+  });
+
+  describe('Deployment', () => {
+    it('Should be deployed correctly', async () => {
+      const { dotcManager, deployer } = await loadFixture(fixture);
+
+      expect(await dotcManager.feeReceiver()).to.be.eq(deployer.address);
+      expect(await dotcManager.owner()).to.be.eq(deployer.address);
+      expect(await dotcManager.feeAmount()).to.be.eq(BigNumber.from('2500000000000000000000000'));
+
+      expect(dotcManager.address).to.be.properAddress;
+    });
+
+    it('Should be initialized', async () => {
+      const { dotcManager } = await loadFixture(fixture);
+
+      await expect(dotcManager.initialize(dotcManager.address)).to.be.revertedWith('Initializable: contract is already initialized');
     });
   });
 
