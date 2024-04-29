@@ -2,6 +2,10 @@
 //SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
+/// @notice Indicates the asset type provided is not supported by this contract
+/// @param unsupportedType The unsupported asset type provided
+error UnsupportedAssetType(AssetType unsupportedType);
+
 /**
  * @title Structures for DOTC management (as part of the "SwarmX.eth Protocol")
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////

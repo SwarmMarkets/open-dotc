@@ -3,7 +3,7 @@ pragma solidity 0.8.25;
 
 import { ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20, IERC721, IERC1155, SafeERC20 } from "./exports/Exports.sol";
 
-import { Asset, AssetType } from "./structures/DotcStructuresV2.sol";
+import { Asset, AssetType, UnsupportedAssetType } from "./structures/DotcStructuresV2.sol";
 import { IDotcManager } from "./interfaces/IDotcManager.sol";
 import { IDotcEscrow } from "./interfaces/IDotcEscrow.sol";
 
@@ -27,10 +27,6 @@ error OnlyManager();
 
 /// @notice Indicates that the operation was attempted by an unauthorized entity, not the Dotc contract
 error OnlyDotc();
-
-/// @notice Indicates the asset type provided is not supported by this contract
-/// @param unsupportedType The unsupported asset type provided
-error UnsupportedAssetType(AssetType unsupportedType);
 
 /**
  * @title Escrow Contract for Dotc (Decentralized Over-The-Counter) Trading (as part of the "SwarmX.eth Protocol")
@@ -281,8 +277,6 @@ contract DotcEscrowV2 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDot
             IERC721(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId);
         } else if (asset.assetType == AssetType.ERC1155) {
             IERC1155(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId, asset.amount, "");
-        } else {
-            revert UnsupportedAssetType(asset.assetType);
         }
     }
 }

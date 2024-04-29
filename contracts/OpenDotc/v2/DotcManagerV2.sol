@@ -2,7 +2,7 @@
 pragma solidity 0.8.25;
 import { OwnableUpgradeable, IERC20Metadata, IERC20, IERC721, IERC1155, IERC165 } from "./exports/Exports.sol";
 
-import { Asset, AssetType } from "./structures/DotcStructuresV2.sol";
+import { Asset, AssetType, UnsupportedAssetType } from "./structures/DotcStructuresV2.sol";
 import { IDotcManager } from "./interfaces/IDotcManager.sol";
 import { IDotcEscrow } from "./interfaces/IDotcEscrow.sol";
 import { IDotc } from "./interfaces/IDotc.sol";
@@ -15,10 +15,6 @@ error ZeroAmountPassed();
 
 /// @notice Indicates usage of a zero address where an actual address is required
 error ZeroAddressPassed();
-
-/// @notice Indicates that the asset type provided is not supported
-/// @param unsupportedType The unsupported asset type
-error UnsupportedAssetType(AssetType unsupportedType);
 
 /// @notice Indicates the account does not have enough ERC20 tokens required
 /// @param account The account in question
@@ -380,23 +376,25 @@ contract DotcManagerV2 is OwnableUpgradeable, IDotcManager {
         address account,
         uint256 amount
     ) private view returns (AssetType assetType) {
-        if (asset.assetType == AssetType.ERC20) {
+        assetType = asset.assetType;
+
+        if (assetType == AssetType.ERC20) {
             uint256 balance = IERC20(asset.assetAddress).balanceOf(account);
             if (balance < amount) {
                 revert AddressHaveNoERC20(account, asset.assetAddress, balance, amount);
             }
-        } else if (asset.assetType == AssetType.ERC721) {
+        } else if (assetType == AssetType.ERC721) {
             if (!IERC165(asset.assetAddress).supportsInterface(type(IERC721).interfaceId)) {
-                revert IncorrectAssetTypeForAddress(asset.assetAddress, asset.assetType);
+                revert IncorrectAssetTypeForAddress(asset.assetAddress, assetType);
             }
             if (IERC721(asset.assetAddress).ownerOf(asset.tokenId) != account) {
                 revert AddressHaveNoERC721(account, asset.assetAddress, asset.tokenId);
             }
-        } else if (asset.assetType == AssetType.ERC1155) {
+        } else if (assetType == AssetType.ERC1155) {
             uint256 balance = IERC1155(asset.assetAddress).balanceOf(account, asset.tokenId);
 
             if (!IERC165(asset.assetAddress).supportsInterface(type(IERC1155).interfaceId)) {
-                revert IncorrectAssetTypeForAddress(asset.assetAddress, asset.assetType);
+                revert IncorrectAssetTypeForAddress(asset.assetAddress, assetType);
             }
             if (balance < asset.amount) {
                 revert AddressHaveNoERC1155(account, asset.assetAddress, asset.tokenId, balance, asset.amount);
