@@ -58,7 +58,9 @@ This document provides detailed steps for setting up, testing, documenting, depl
   Deploy the smart contracts to the desired network with:
 
   ```bash
-  $ yarn deploy:network
+  $ yarn deployV1
+  or
+  $ yarn deployV2
   ```
 
   Supported networks include: mainnet, sepolia, polygon, mumbai, base, arbitrum, optimism.
@@ -70,7 +72,9 @@ This document provides detailed steps for setting up, testing, documenting, depl
   After deployment, verify the smart contracts on Etherscan or the appropriate blockchain explorer based on the network. Use:
 
   ```bash
-  $ yarn verify:network
+  $ yarn verifyV1
+  or
+  $ yarn verifyV2
   ```
 
   Supported networks for verification are: mainnet, sepolia, polygon, mumbai, base, arbitrum, optimism.
