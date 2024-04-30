@@ -1,5 +1,5 @@
 import { ethers, upgrades } from 'hardhat';
-import { DotcManager, Dotc, DotcEscrow } from '../../typechain';
+import { DotcManagerV2 as DotcManager, DotcV2 as Dotc, DotcEscrowV2 as DotcEscrow } from '../../typechain';
 import { ContractFactory } from 'ethers';
 
 const DEPLOY_DOTC_MANAGER = true;
@@ -12,7 +12,7 @@ async function main() {
   const [deployer] = await ethers.getSigners();
 
   if (DEPLOY_DOTC_MANAGER) {
-    const DotcManager: ContractFactory = await ethers.getContractFactory('DotcManager');
+    const DotcManager: ContractFactory = await ethers.getContractFactory('DotcManagerV2');
 
     const dotcManager = (await upgrades.deployProxy(DotcManager, [deployer.address])) as DotcManager;
     await dotcManager.deployed();
@@ -40,7 +40,7 @@ async function main() {
       throw Error('Dotc manager address not set');
     }
 
-    const DotcEscrow = await ethers.getContractFactory('DotcEscrow');
+    const DotcEscrow = await ethers.getContractFactory('DotcEscrowV2');
     const dotcEscrow = (await upgrades.deployProxy(DotcEscrow, [dotcManager_address])) as DotcEscrow;
     await dotcEscrow.deployed();
 
