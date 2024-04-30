@@ -277,6 +277,8 @@ contract DotcEscrowV2 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDot
             IERC721(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId);
         } else if (asset.assetType == AssetType.ERC1155) {
             IERC1155(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId, asset.amount, "");
+        } else {
+            revert UnsupportedAssetType(asset.assetType);
         }
     }
 }
