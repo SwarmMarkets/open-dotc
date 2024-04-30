@@ -1,7 +1,7 @@
 import { ethers, upgrades } from 'hardhat';
 import { BigNumber, ContractFactory } from 'ethers';
 import { expect } from 'chai';
-import { DotcManagerV2 as DotcManager, ERC20Mock_2, ERC721Mock, ERC1155Mock } from '../../../typechain';
+import { DotcManagerV2 as DotcManager, ERC20Mock_2, ERC721Mock, ERC1155Mock, EscrowFalseMock, DotcFalseMock, DotcTrueMock } from '../../../typechain';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { AssetStruct } from '../../helpers/Structures';
 
@@ -10,9 +10,19 @@ describe('DotcManagerV2_Open', () => {
     const [deployer, acc1] = await ethers.getSigners();
 
     const DotcManager: ContractFactory = await ethers.getContractFactory('DotcManagerV2');
+    const EscrowFalseMock: ContractFactory = await ethers.getContractFactory('EscrowFalseMock');
+    const DotcFalseMock: ContractFactory = await ethers.getContractFactory('DotcFalseMock');
+    const DotcTrueMock: ContractFactory = await ethers.getContractFactory('DotcTrueMock');
 
     const dotcManager = (await upgrades.deployProxy(DotcManager, [deployer.address])) as DotcManager;
     await dotcManager.deployed();
+
+    const escrow = (await EscrowFalseMock.deploy()) as EscrowFalseMock;
+    await escrow.deployed();
+    const dotcFalse = (await DotcFalseMock.deploy()) as DotcFalseMock;
+    await dotcFalse.deployed();
+    const dotcTrue = (await DotcTrueMock.deploy()) as DotcTrueMock;
+    await dotcTrue.deployed();
 
     const ERC20: ContractFactory = await ethers.getContractFactory('ERC20Mock_2');
     const erc20: ERC20Mock_2 = (await ERC20.deploy()) as ERC20Mock_2;
@@ -28,21 +38,14 @@ describe('DotcManagerV2_Open', () => {
       deployer,
       acc1,
       dotcManager,
+      escrow,
+      dotcFalse,
+      dotcTrue,
       erc20,
       erc721,
       erc1155,
     };
   }
-
-  describe('Deployment', () => {
-    it('Should be deployed correctly', async () => {
-      const { dotcManager, deployer } = await loadFixture(fixture);
-
-      expect(await dotcManager.feeReceiver()).to.be.eq(deployer.address);
-      expect(await dotcManager.owner()).to.be.eq(deployer.address);
-      expect(await dotcManager.feeAmount()).to.be.eq(BigNumber.from('2500000000000000000000000'));
-    });
-  });
 
   describe('Deployment', () => {
     it('Should be deployed correctly', async () => {
@@ -342,6 +345,18 @@ describe('DotcManagerV2_Open', () => {
       await expect(acc1Call.changeFeeReceiver(acc1.address)).to.be.revertedWithCustomError(dotcManager, errorMsg);
       await expect(acc1Call.changeFeeAmount(1)).to.be.revertedWithCustomError(dotcManager, errorMsg);
       await expect(acc1Call.changeManagerInContracts(acc1.address)).to.be.revertedWithCustomError(dotcManager, errorMsg);
+    });
+
+    it('If escrow/dotc returns false', async () => {
+      const { dotcManager, escrow, dotcFalse, dotcTrue } = await loadFixture(fixture);
+
+      await dotcManager.changeDotcAddress(dotcFalse.address);
+      await expect(dotcManager.changeManagerInContracts(dotcManager.address)).to.be.revertedWithCustomError(dotcManager, 'ChangeDotcManagerError');
+
+      await dotcManager.changeDotcAddress(dotcTrue.address);
+
+      await dotcManager.changeEscrowAddress(escrow.address);
+      await expect(dotcManager.changeManagerInContracts(dotcManager.address)).to.be.revertedWithCustomError(dotcManager, 'ChangeEscrowManagerError');
     });
 
     it('Zero address check', async () => {

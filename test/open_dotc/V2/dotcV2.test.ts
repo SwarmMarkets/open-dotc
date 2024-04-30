@@ -1,11 +1,11 @@
 import { ethers, upgrades } from 'hardhat';
 import { BigNumber, ContractFactory } from 'ethers';
 import { expect } from 'chai';
-import { DotcManagerV2 as DotcManager, DotcEscrowV2 as DotcEscrow, DotcV2 as Dotc, ERC20Mock_3, ERC721Mock, ERC1155Mock } from '../../../typechain';
+import { DotcManagerV2 as DotcManager, DotcEscrowV2 as DotcEscrow, DotcV2 as Dotc, EscrowFalseMock, ERC20Mock_3, ERC721Mock, ERC1155Mock } from '../../../typechain';
 import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
-import { AssetStruct, DotcOfferV2Struct as DotcOfferStruct, OfferStruct as OfferStructStruct } from '../../helpers/Structures';
+import { AssetStruct, DotcOfferV2Struct as DotcOfferStruct, EscrowCallType, OfferStruct as OfferStructStruct } from '../../helpers/Structures';
+import { AssetStructOutput, DotcOfferStructOutput, OfferStructStructOutput } from 'typechain/contracts/OpenDotc/v2/DotcV2';
 
-//TODO: mock escrow with false statements
 describe('DotcV2_Open', () => {
   const addressZero = ethers.constants.AddressZero;
   const terms = 'terms';
@@ -42,6 +42,10 @@ describe('DotcV2_Open', () => {
     await dotcManager.changeDotcAddress(dotc.address);
     await dotcManager.changeEscrowAddress(escrow.address);
 
+    const EscrowFalseMock: ContractFactory = await ethers.getContractFactory('EscrowFalseMock');
+    const escrowFalse = (await EscrowFalseMock.deploy()) as EscrowFalseMock;
+    await escrowFalse.deployed();
+
     return {
       deployer,
       acc1,
@@ -54,6 +58,7 @@ describe('DotcV2_Open', () => {
       erc20_2,
       erc721,
       erc1155,
+      escrowFalse
     };
   }
 
@@ -109,7 +114,7 @@ describe('DotcV2_Open', () => {
 
   describe('Make offer', () => {
     it('Should make full offer (erc20 => erc20)', async () => {
-      const { dotc, escrow, erc20_1, erc20_2, erc721, acc1, acc2 } = await loadFixture(fixture);
+      const { dotc, escrow, dotcManager, erc20_1, erc20_2, erc721, acc1, acc2, escrowFalse } = await loadFixture(fixture);
 
       let now = await time.latest();
       let offerId = 0;
@@ -168,14 +173,25 @@ describe('DotcV2_Open', () => {
       const AwaitingOffer: DotcOfferStruct = {
         maker: acc1.address,
         isFullyTaken: false,
-        depositAsset: DepositAssetERC20_standardized,
-        withdrawalAsset: WithdrawalAssetERC20_standardized,
-        availableAmount: DepositAssetERC20_standardized.amount,
         unitPrice: BigNumber.from(WithdrawalAssetERC20_standardized.amount)
           .mul(BigNumber.from(10).pow(decimals_1))
           .div(BigNumber.from(DepositAssetERC20_standardized.amount)),
+        depositAsset: DepositAssetERC20_standardized,
+        withdrawalAsset: WithdrawalAssetERC20_standardized,
+        availableAmount: DepositAssetERC20_standardized.amount,
         offer: Offer,
       };
+
+      await dotcManager.changeEscrowAddress(escrowFalse.address);
+
+      await expect(dotc
+        .connect(acc1)
+        .makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer)).to.be.revertedWithCustomError(
+          dotc,
+          'EscrowCallFailedError',
+        ).withArgs(EscrowCallType.Deposit);
+
+      await dotcManager.changeEscrowAddress(escrow.address);
 
       const make_offer = await dotc
         .connect(acc1)
@@ -191,11 +207,11 @@ describe('DotcV2_Open', () => {
 
       expect(await dotc.offersFromAddress(acc1.address, offerId)).to.eq(0);
 
-      expect((await dotc.allOffers(0)).offer.isFullType).to.eq(AwaitingOffer.offer.isFullType);
-      expect((await dotc.allOffers(0)).maker).to.eq(AwaitingOffer.maker);
-      expect((await dotc.allOffers(0)).isFullyTaken).to.eq(AwaitingOffer.isFullyTaken);
-      expect((await dotc.allOffers(0)).availableAmount).to.eq(AwaitingOffer.availableAmount);
-      expect((await dotc.allOffers(0)).unitPrice).to.eq(AwaitingOffer.unitPrice);
+      expect((await dotc.getOffer(0)).offer.isFullType).to.eq(AwaitingOffer.offer.isFullType);
+      expect((await dotc.getOffer(0)).maker).to.eq(AwaitingOffer.maker);
+      expect((await dotc.getOffer(0)).isFullyTaken).to.eq(AwaitingOffer.isFullyTaken);
+      expect((await dotc.getOffer(0)).availableAmount).to.eq(AwaitingOffer.availableAmount);
+      expect((await dotc.getOffer(0)).unitPrice).to.eq(AwaitingOffer.unitPrice);
       expect((await dotc.allOffers(0)).offer.specialAddresses).to.deep.eq(AwaitingOffer.offer.specialAddresses);
       expect((await dotc.allOffers(0)).offer.expiryTimestamp).to.eq(AwaitingOffer.offer.expiryTimestamp);
       expect((await dotc.allOffers(0)).offer.timelockPeriod).to.eq(AwaitingOffer.offer.timelockPeriod);
@@ -206,6 +222,9 @@ describe('DotcV2_Open', () => {
       expect((await escrow.assetDeposits(offerId)).assetAddress).to.be.eq(DepositAssetERC20.assetAddress);
       expect((await escrow.assetDeposits(offerId)).assetType).to.be.eq(DepositAssetERC20.assetType);
       expect((await escrow.assetDeposits(offerId)).tokenId).to.be.eq(DepositAssetERC20.tokenId);
+
+      expect(await dotc.getOffersFromAddress(acc1.address)).to.deep.eq([0]);
+      expect(await dotc.getOfferOwner(0)).to.eq(acc1.address);
 
       offerId++;
 
@@ -1178,7 +1197,7 @@ describe('DotcV2_Open', () => {
 
   describe('Take Offer', () => {
     it('Should take full offer (erc20 => erc20)', async () => {
-      const { dotc, escrow, dotcManager, erc20_1, erc20_2, acc1, acc2, acc3, deployer } = await loadFixture(fixture);
+      const { dotc, escrow, dotcManager, escrowFalse, erc20_1, erc20_2, acc1, acc2, acc3, deployer } = await loadFixture(fixture);
 
       let now = await time.latest();
       let offerId = 0;
@@ -1262,6 +1281,15 @@ describe('DotcV2_Open', () => {
         'ERC20: insufficient allowance',
       );
       await expect(dotc.connect(acc2).takeOffer(offerId, 0)).to.be.revertedWithCustomError(dotcManager, 'ZeroAmountPassed');
+
+      await dotcManager.changeEscrowAddress(escrowFalse.address);
+
+      await expect(dotc.connect(acc2).takeOffer(offerId, WithdrawalAssetERC20.amount)).to.be.revertedWithCustomError(
+        dotc,
+        'EscrowCallFailedError',
+      ).withArgs(EscrowCallType.Withdraw);
+
+      await dotcManager.changeEscrowAddress(escrow.address);
 
       const take_offer = await dotc.connect(acc2).takeOffer(offerId, WithdrawalAssetERC20.amount);
 
@@ -1548,7 +1576,7 @@ describe('DotcV2_Open', () => {
     });
 
     it('Should take full offer (erc20 => erc721)', async () => {
-      const { dotc, escrow, dotcManager, erc20_1, erc721, acc1, acc2, deployer } = await loadFixture(fixture);
+      const { dotc, escrow, dotcManager, escrowFalse, erc20_1, erc721, acc1, acc2, deployer } = await loadFixture(fixture);
 
       let now = await time.latest();
       let offerId = 0;
@@ -1626,6 +1654,15 @@ describe('DotcV2_Open', () => {
       const deployerBalance_2 = await erc20_1.balanceOf(deployer.address);
 
       await dotc.connect(acc1).makeOffer(DepositAssetERC20, WithdrawalAssetERC721, AwaitingOffer.offer);
+
+      await dotcManager.changeEscrowAddress(escrowFalse.address);
+
+      await expect(dotc.connect(acc2).takeOffer(offerId, 0)).to.be.revertedWithCustomError(
+        dotc,
+        'EscrowCallFailedError',
+      ).withArgs(EscrowCallType.WithdrawFees);
+
+      await dotcManager.changeEscrowAddress(escrow.address);
 
       const take_offer = await dotc.connect(acc2).takeOffer(offerId, 0);
 
@@ -1962,7 +1999,7 @@ describe('DotcV2_Open', () => {
     });
 
     it('Should take full offer (erc721 => erc721)', async () => {
-      const { dotc, escrow, erc721, acc1, acc2, deployer } = await loadFixture(fixture);
+      const { dotc, escrow, dotcManager, escrowFalse, erc721, acc1, acc2, deployer } = await loadFixture(fixture);
 
       let now = await time.latest();
       let offerId = 0;
@@ -2612,7 +2649,7 @@ describe('DotcV2_Open', () => {
 
   describe('Cancel Offer', () => {
     it('Should cancel full offer (erc20 => erc20)', async () => {
-      const { dotc, escrow, erc20_1, erc20_2, acc1, acc2 } = await loadFixture(fixture);
+      const { dotc, escrow, dotcManager, escrowFalse, erc20_1, erc20_2, acc1, acc2 } = await loadFixture(fixture);
 
       let now = await time.latest();
       let offerId = 0;
@@ -2689,6 +2726,15 @@ describe('DotcV2_Open', () => {
         dotc,
         'OnlyMakerAllowedError',
       );
+
+      await dotcManager.changeEscrowAddress(escrowFalse.address);
+
+      await expect(dotc.connect(acc1).cancelOffer(offerId)).to.be.revertedWithCustomError(
+        dotc,
+        'EscrowCallFailedError',
+      ).withArgs(EscrowCallType.Cancel);
+
+      await dotcManager.changeEscrowAddress(escrow.address);
 
       const cancel_offer = await dotc.connect(acc1).cancelOffer(offerId);
 
