@@ -460,7 +460,9 @@ contract DotcV2 is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721H
 
                 amountToWithdraw -= feesAmount;
 
-                manager.escrow().withdrawFees(offerId, feesAmount);
+                if (!manager.escrow().withdrawFees(offerId, feesAmount)) {
+                    revert EscrowCallFailedError(EscrowCallType.WithdrawFees);
+                }
             }
 
             // Sending Withdrawal Asset from Taker to Maker

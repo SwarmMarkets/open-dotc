@@ -69,6 +69,7 @@ struct Asset {
 enum EscrowCallType {
     Deposit,
     Withdraw,
+    WithdrawFees,
     Cancel
 }
 
