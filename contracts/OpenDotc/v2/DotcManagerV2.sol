@@ -48,6 +48,12 @@ error AddressHaveNoERC1155(
 /// @param incorrectType The incorrect asset type provided
 error IncorrectAssetTypeForAddress(address token, AssetType incorrectType);
 
+/// @notice Indicates when an unauthorized attempt is made to change the escrow manager
+error ChangeEscrowManagerError();
+
+/// @notice Indicates when an unauthorized attempt is made to change the DOTC manager
+error ChangeDotcManagerError();
+
 /**
  * @title DotcManager contract for Dotc management (as part of the "SwarmX.eth Protocol")
  * @notice This contract serves as the central point for managing various aspects of the DOTC system
@@ -231,8 +237,12 @@ contract DotcManagerV2 is OwnableUpgradeable, IDotcManager {
     function changeManagerInContracts(
         IDotcManager _manager
     ) external onlyOwner zeroAddressCheck(address(_manager)) returns (bool status) {
-        dotc.changeManager(_manager);
-        escrow.changeManager(_manager);
+        if (!dotc.changeManager(_manager)) {
+            revert ChangeDotcManagerError();
+        }
+        if (!escrow.changeManager(_manager)) {
+            revert ChangeEscrowManagerError();
+        }
 
         emit ManagerAddressSet(msg.sender, _manager);
 
