@@ -33,6 +33,8 @@ This contract manages the escrow mechanism essential for secure trading:
 
 ---
 
+## [Functional requirements here](docs/FunctionalRequirements)
+
 ## [Technical requirements here](docs/TechnicalRequirements/OpenDotc/v2)
 
 ---
