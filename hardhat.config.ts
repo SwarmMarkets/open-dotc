@@ -114,9 +114,8 @@ const config: HardhatUserConfig = {
     ],
   },
   docgen: {
-    // path: './docs',
-    // clear: true,
-    // runOnCompile: true,
+    outputDir: './docs/TechnicalRequirements',
+    exclude: ['mocks', 'OpenDotc/v1'],
     pages: 'files',
   },
   paths: {
