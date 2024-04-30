@@ -1,5 +1,54 @@
 # Solidity API
 
+## UnsupportedAssetType
+
+```solidity
+error UnsupportedAssetType(enum AssetType unsupportedType)
+```
+
+Indicates the asset type provided is not supported by this contract
+
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| unsupportedType | enum AssetType | The unsupported asset type provided |
+
+## AssetType
+
+Defines the different types of assets that can be used in the system.
+
+_Enum representing various asset types supported in DOTC trades._
+
+```solidity
+enum AssetType {
+  NoType,
+  ERC20,
+  ERC721,
+  ERC1155
+}
+```
+
+## Asset
+
+Represents an asset in the DOTC trading system.
+
+_Defines the structure for an asset including type, address, amount, and token ID for NFTs._
+
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+
+```solidity
+struct Asset {
+  enum AssetType assetType;
+  address assetAddress;
+  uint256 amount;
+  uint256 tokenId;
+}
+```
+
 ## EscrowCallType
 
 Defines the different types of calls that can be made to the escrow in the DOTC system.
@@ -13,6 +62,7 @@ _Enum representing various escrow call types such as deposit, withdraw, and canc
 enum EscrowCallType {
   Deposit,
   Withdraw,
+  WithdrawFees,
   Cancel
 }
 ```
