@@ -20,7 +20,7 @@ const config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
-        version: '0.8.24',
+        version: '0.8.25',
         settings: {
           optimizer: {
             enabled: true,
@@ -30,15 +30,6 @@ const config: HardhatUserConfig = {
       },
       {
         version: '0.8.19',
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
-      {
-        version: '0.7.5',
         settings: {
           optimizer: {
             enabled: true,
@@ -123,9 +114,8 @@ const config: HardhatUserConfig = {
     ],
   },
   docgen: {
-    // path: './docs',
-    // clear: true,
-    // runOnCompile: true,
+    outputDir: './docs/TechnicalRequirements',
+    exclude: ['mocks', 'OpenDotc/v1'],
     pages: 'files',
   },
   paths: {

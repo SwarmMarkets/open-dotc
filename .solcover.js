@@ -19,5 +19,5 @@ module.exports = {
   providerOptions: {
     mnemonic,
   },
-  skipFiles: ['mocks', 'test', 'mockFeeds', 'permissioning/PermissionManagerV3.sol'],
+  skipFiles: ['mocks', 'test', 'OpenDotc/v1'],
 };
