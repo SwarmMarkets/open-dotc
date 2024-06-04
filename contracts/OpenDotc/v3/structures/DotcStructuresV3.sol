@@ -2,6 +2,8 @@
 //SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
+import { IDotcCompatibleAuthorization } from "../interfaces/IDotcCompatibleAuthorization.sol";
+
 /// @notice Indicates the asset type provided is not supported by this contract
 /// @param unsupportedType The unsupported asset type provided
 error UnsupportedAssetType(AssetType unsupportedType);
@@ -109,6 +111,7 @@ enum TimeConstraintType {
  * @dev Structure encapsulating details of an offer, including its type, special conditions, and timing constraints.
  * @param isFullType Boolean indicating if the offer is for the full amount of the deposit asset.
  * @param specialAddresses Array of addresses with exclusive rights to take the offer.
+ * @param authorizationAddresses TODO
  * @param expiryTimestamp Unix timestamp marking the offer's expiration.
  * @param timelockPeriod Duration in seconds for which the offer is locked from being taken.
  * @param terms String URL pointing to the terms associated with the offer.
@@ -118,6 +121,7 @@ enum TimeConstraintType {
 struct OfferStruct {
     bool isFullType;
     address[] specialAddresses;
+    IDotcCompatibleAuthorization[] authorizationAddresses;
     uint256 expiryTimestamp;
     uint256 timelockPeriod;
     string terms;
