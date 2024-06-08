@@ -2,7 +2,7 @@
 pragma solidity 0.8.25;
 import { OwnableUpgradeable, IERC20Metadata, IERC20, IERC721, IERC1155, IERC165 } from "./exports/Exports.sol";
 
-import { Asset, AssetType, UnsupportedAssetType } from "./structures/DotcStructuresV2.sol";
+import { Asset, AssetType, UnsupportedAssetType } from "./structures/DotcStructuresV3.sol";
 import { IDotcManager } from "./interfaces/IDotcManager.sol";
 import { IDotcEscrow } from "./interfaces/IDotcEscrow.sol";
 import { IDotc } from "./interfaces/IDotc.sol";

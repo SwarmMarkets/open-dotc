@@ -3,7 +3,7 @@ pragma solidity 0.8.25;
 
 import { ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20, IERC721, IERC1155, SafeERC20 } from "./exports/Exports.sol";
 
-import { Asset, AssetType, UnsupportedAssetType } from "./structures/DotcStructuresV2.sol";
+import { Asset, AssetType, UnsupportedAssetType } from "./structures/DotcStructuresV3.sol";
 import { IDotcManager } from "./interfaces/IDotcManager.sol";
 import { IDotcEscrow } from "./interfaces/IDotcEscrow.sol";
 

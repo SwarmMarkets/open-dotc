@@ -4,7 +4,7 @@ pragma solidity 0.8.25;
 import { ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20, IERC721, IERC1155, SafeERC20 } from "./exports/Exports.sol";
 
 import { IDotcManager } from "./interfaces/IDotcManager.sol";
-import { Asset, AssetType, EscrowCallType, ValidityType, OfferStruct, DotcOffer, UnsupportedAssetType } from "./structures/DotcStructuresV2.sol";
+import { Asset, AssetType, EscrowCallType, ValidityType, OfferStruct, DotcOffer, UnsupportedAssetType } from "./structures/DotcStructuresV3.sol";
 
 /// @title Errors related to the Dotc contract
 /// @notice Provides error messages for various failure conditions related to Offers and Assets handling
