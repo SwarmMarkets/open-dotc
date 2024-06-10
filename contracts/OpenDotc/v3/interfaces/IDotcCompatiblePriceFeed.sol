@@ -21,4 +21,6 @@ import { AggregatorInterface } from "@chainlink/contracts/src/v0.8/shared/interf
  * @dev Specifies the interface for the Dotc-compatible price feeds contracts.
  * @author Swarm
  */
-interface IDotcCompatiblePriceFeed is AggregatorInterface {}
+interface IDotcCompatiblePriceFeed is AggregatorInterface {
+
+}

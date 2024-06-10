@@ -58,7 +58,9 @@ describe.skip('DotcManager_Open', () => {
     it('Should be initialized', async () => {
       const { dotcManager } = await loadFixture(fixture);
 
-      await expect(dotcManager.initialize(dotcManager.address)).to.be.revertedWith('Initializable: contract is already initialized');
+      await expect(dotcManager.initialize(dotcManager.address)).to.be.revertedWith(
+        'Initializable: contract is already initialized',
+      );
     });
   });
 

@@ -49,9 +49,9 @@ const config: HardhatUserConfig = {
         accountsBalance: '10000000000000000000000000',
       },
       forking: {
-        url: getNetworkConfig('mainnet', AccountTypes.SwarmMnemonic).url!,
-        enabled: false,
-        //blockNumber: 16383055,
+        url: getNetworkConfig('polygon', AccountTypes.SwarmMnemonic).url!,
+        enabled: true,
+        blockNumber: 57833958,
       },
     },
     mainnet: getNetworkConfig('mainnet', AccountTypes.SwarmXMnemonic),

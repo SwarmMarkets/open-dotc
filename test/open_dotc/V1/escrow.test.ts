@@ -54,8 +54,12 @@ describe.skip('DotcEscrow_Open', () => {
     it('Should be initialized', async () => {
       const { dotcManager, escrow } = await loadFixture(fixture);
 
-      await expect(dotcManager.initialize(escrow.address)).to.be.revertedWith('Initializable: contract is already initialized');
-      await expect(escrow.initialize(escrow.address)).to.be.revertedWith('Initializable: contract is already initialized');
+      await expect(dotcManager.initialize(escrow.address)).to.be.revertedWith(
+        'Initializable: contract is already initialized',
+      );
+      await expect(escrow.initialize(escrow.address)).to.be.revertedWith(
+        'Initializable: contract is already initialized',
+      );
     });
 
     it('Should support interface', async () => {

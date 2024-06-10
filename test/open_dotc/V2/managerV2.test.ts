@@ -1,7 +1,15 @@
 import { ethers, upgrades } from 'hardhat';
 import { BigNumber, ContractFactory } from 'ethers';
 import { expect } from 'chai';
-import { DotcManagerV2 as DotcManager, ERC20Mock_2, ERC721Mock, ERC1155Mock, EscrowFalseMock, DotcFalseMock, DotcTrueMock } from '../../../typechain';
+import {
+  DotcManagerV2 as DotcManager,
+  ERC20Mock_2,
+  ERC721Mock,
+  ERC1155Mock,
+  EscrowFalseMock,
+  DotcFalseMock,
+  DotcTrueMock,
+} from '../../../typechain';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { AssetStruct } from '../../helpers/Structures';
 
@@ -61,7 +69,10 @@ describe('DotcManagerV2_Open', () => {
     it('Should be initialized', async () => {
       const { dotcManager } = await loadFixture(fixture);
 
-      await expect(dotcManager.initialize(dotcManager.address)).to.be.revertedWithCustomError(dotcManager, 'InvalidInitialization');
+      await expect(dotcManager.initialize(dotcManager.address)).to.be.revertedWithCustomError(
+        dotcManager,
+        'InvalidInitialization',
+      );
     });
   });
 
@@ -199,30 +210,37 @@ describe('DotcManagerV2_Open', () => {
       const ERC20balance = await erc20.balanceOf(deployer.address);
       const ERC1155balance = await erc1155.balanceOf(deployer.address, AssetERC1155.tokenId);
 
-      await expect(dotcManager.checkAssetOwner(AssetERC20, deployer.address, AssetERC20.amount)).to.be.revertedWithCustomError(dotcManager,
-        'AddressHaveNoERC20',
-      ).withArgs(deployer.address, AssetERC20.assetAddress, ERC20balance, AssetERC20.amount);
+      await expect(dotcManager.checkAssetOwner(AssetERC20, deployer.address, AssetERC20.amount))
+        .to.be.revertedWithCustomError(dotcManager, 'AddressHaveNoERC20')
+        .withArgs(deployer.address, AssetERC20.assetAddress, ERC20balance, AssetERC20.amount);
 
-      await expect(dotcManager.checkAssetOwner(NonExistentAssetERC721, deployer.address, NonExistentAssetERC721.amount)).to.be.revertedWith(
-        'ERC721: owner query for nonexistent token',
-      );
-      await expect(dotcManager.checkAssetOwner(FakeERC721, deployer.address, FakeERC721.amount)).to.be.revertedWithCustomError(dotcManager,
-        'IncorrectAssetTypeForAddress',
-      ).withArgs(FakeERC721.assetAddress, FakeERC721.assetType);
-      await expect(dotcManager.checkAssetOwner(AssetERC721, acc1.address, AssetERC721.amount)).to.be.revertedWithCustomError(dotcManager,
-        'AddressHaveNoERC721',
-      ).withArgs(acc1.address, AssetERC721.assetAddress, AssetERC721.tokenId);
+      await expect(
+        dotcManager.checkAssetOwner(NonExistentAssetERC721, deployer.address, NonExistentAssetERC721.amount),
+      ).to.be.revertedWith('ERC721: owner query for nonexistent token');
+      await expect(dotcManager.checkAssetOwner(FakeERC721, deployer.address, FakeERC721.amount))
+        .to.be.revertedWithCustomError(dotcManager, 'IncorrectAssetTypeForAddress')
+        .withArgs(FakeERC721.assetAddress, FakeERC721.assetType);
+      await expect(dotcManager.checkAssetOwner(AssetERC721, acc1.address, AssetERC721.amount))
+        .to.be.revertedWithCustomError(dotcManager, 'AddressHaveNoERC721')
+        .withArgs(acc1.address, AssetERC721.assetAddress, AssetERC721.tokenId);
 
-      await expect(dotcManager.checkAssetOwner(AssetERC1155, deployer.address, AssetERC1155.amount)).to.be.revertedWithCustomError(dotcManager,
-        'AddressHaveNoERC1155',
-      ).withArgs(deployer.address, AssetERC1155.assetAddress, AssetERC1155.tokenId, ERC1155balance, AssetERC1155.amount);
+      await expect(dotcManager.checkAssetOwner(AssetERC1155, deployer.address, AssetERC1155.amount))
+        .to.be.revertedWithCustomError(dotcManager, 'AddressHaveNoERC1155')
+        .withArgs(
+          deployer.address,
+          AssetERC1155.assetAddress,
+          AssetERC1155.tokenId,
+          ERC1155balance,
+          AssetERC1155.amount,
+        );
 
-      await expect(dotcManager.checkAssetOwner(Asset0, deployer.address, Asset0.amount)).to.be.revertedWithCustomError(dotcManager,
-        'UnsupportedAssetType',
-      ).withArgs(Asset0.assetType);
+      await expect(dotcManager.checkAssetOwner(Asset0, deployer.address, Asset0.amount))
+        .to.be.revertedWithCustomError(dotcManager, 'UnsupportedAssetType')
+        .withArgs(Asset0.assetType);
 
       await expect(dotcManager.checkAssetOwner(FakeERC20, deployer.address, FakeERC20.amount)).to.be.reverted;
-      await expect(dotcManager.checkAssetOwner(IncorrectTypeERC1155, deployer.address, IncorrectTypeERC1155.amount)).to.be.reverted;
+      await expect(dotcManager.checkAssetOwner(IncorrectTypeERC1155, deployer.address, IncorrectTypeERC1155.amount)).to
+        .be.reverted;
     });
 
     it('Should standardize asset', async () => {
@@ -344,19 +362,28 @@ describe('DotcManagerV2_Open', () => {
       await expect(acc1Call.changeDotcAddress(acc1.address)).to.be.revertedWithCustomError(dotcManager, errorMsg);
       await expect(acc1Call.changeFeeReceiver(acc1.address)).to.be.revertedWithCustomError(dotcManager, errorMsg);
       await expect(acc1Call.changeFeeAmount(1)).to.be.revertedWithCustomError(dotcManager, errorMsg);
-      await expect(acc1Call.changeManagerInContracts(acc1.address)).to.be.revertedWithCustomError(dotcManager, errorMsg);
+      await expect(acc1Call.changeManagerInContracts(acc1.address)).to.be.revertedWithCustomError(
+        dotcManager,
+        errorMsg,
+      );
     });
 
     it('If escrow/dotc returns false', async () => {
       const { dotcManager, escrow, dotcFalse, dotcTrue } = await loadFixture(fixture);
 
       await dotcManager.changeDotcAddress(dotcFalse.address);
-      await expect(dotcManager.changeManagerInContracts(dotcManager.address)).to.be.revertedWithCustomError(dotcManager, 'ChangeDotcManagerError');
+      await expect(dotcManager.changeManagerInContracts(dotcManager.address)).to.be.revertedWithCustomError(
+        dotcManager,
+        'ChangeDotcManagerError',
+      );
 
       await dotcManager.changeDotcAddress(dotcTrue.address);
 
       await dotcManager.changeEscrowAddress(escrow.address);
-      await expect(dotcManager.changeManagerInContracts(dotcManager.address)).to.be.revertedWithCustomError(dotcManager, 'ChangeEscrowManagerError');
+      await expect(dotcManager.changeManagerInContracts(dotcManager.address)).to.be.revertedWithCustomError(
+        dotcManager,
+        'ChangeEscrowManagerError',
+      );
     });
 
     it('Zero address check', async () => {
@@ -376,10 +403,21 @@ describe('DotcManagerV2_Open', () => {
       await expect(dotcManager.changeEscrowAddress(zeroAddress)).to.be.revertedWithCustomError(dotcManager, errorMsg);
       await expect(dotcManager.changeDotcAddress(zeroAddress)).to.be.revertedWithCustomError(dotcManager, errorMsg);
       await expect(dotcManager.changeFeeReceiver(zeroAddress)).to.be.revertedWithCustomError(dotcManager, errorMsg);
-      await expect(dotcManager.changeManagerInContracts(zeroAddress)).to.be.revertedWithCustomError(dotcManager, errorMsg);
-      await expect(dotcManager.checkAssetOwner(AssetERC20, zeroAddress, AssetERC20.amount)).to.be.revertedWithCustomError(dotcManager, errorMsg);
-      await expect(dotcManager['standardizeNumber(uint256,address)'](10, zeroAddress)).to.be.revertedWithCustomError(dotcManager, errorMsg);
-      await expect(dotcManager['unstandardizeNumber(uint256,address)'](10, zeroAddress)).to.be.revertedWithCustomError(dotcManager, errorMsg);
+      await expect(dotcManager.changeManagerInContracts(zeroAddress)).to.be.revertedWithCustomError(
+        dotcManager,
+        errorMsg,
+      );
+      await expect(
+        dotcManager.checkAssetOwner(AssetERC20, zeroAddress, AssetERC20.amount),
+      ).to.be.revertedWithCustomError(dotcManager, errorMsg);
+      await expect(dotcManager['standardizeNumber(uint256,address)'](10, zeroAddress)).to.be.revertedWithCustomError(
+        dotcManager,
+        errorMsg,
+      );
+      await expect(dotcManager['unstandardizeNumber(uint256,address)'](10, zeroAddress)).to.be.revertedWithCustomError(
+        dotcManager,
+        errorMsg,
+      );
       await expect(
         dotcManager['standardizeAsset((uint8,address,uint256,uint256),address)'](AssetERC20, zeroAddress),
       ).to.be.revertedWithCustomError(dotcManager, errorMsg);
@@ -391,17 +429,50 @@ describe('DotcManagerV2_Open', () => {
       const errorMsg = 'ZeroAmountPassed';
 
       await expect(dotcManager.changeFeeAmount(0)).to.be.revertedWithCustomError(dotcManager, errorMsg);
-      await expect(dotcManager['standardizeNumber(uint256,address)'](0, acc1.address)).to.be.revertedWithCustomError(dotcManager, errorMsg);
-      await expect(dotcManager['standardizeNumber(uint256,address)'](0, acc1.address)).to.be.revertedWithCustomError(dotcManager, errorMsg);
-      await expect(dotcManager['standardizeNumber(uint256,uint8)'](0, 1)).to.be.revertedWithCustomError(dotcManager, errorMsg);
-      await expect(dotcManager['standardizeNumber(uint256,uint8)'](0, 1)).to.be.revertedWithCustomError(dotcManager, errorMsg);
-      await expect(dotcManager['standardizeNumber(uint256,uint8)'](1, 0)).to.be.revertedWithCustomError(dotcManager, errorMsg);
-      await expect(dotcManager['unstandardizeNumber(uint256,uint8)'](1, 0)).to.be.revertedWithCustomError(dotcManager, errorMsg);
-      await expect(dotcManager['unstandardizeNumber(uint256,uint8)'](0, 1)).to.be.revertedWithCustomError(dotcManager, errorMsg);
-      await expect(dotcManager['unstandardizeNumber(uint256,uint8)'](0, 1)).to.be.revertedWithCustomError(dotcManager, errorMsg);
-      await expect(dotcManager['unstandardizeNumber(uint256,uint8)'](1, 0)).to.be.revertedWithCustomError(dotcManager, errorMsg);
-      await expect(dotcManager['unstandardizeNumber(uint256,uint8)'](1, 0)).to.be.revertedWithCustomError(dotcManager, errorMsg);
-      await expect(dotcManager['unstandardizeNumber(uint256,address)'](0, acc1.address)).to.be.revertedWithCustomError(dotcManager, errorMsg);
+      await expect(dotcManager['standardizeNumber(uint256,address)'](0, acc1.address)).to.be.revertedWithCustomError(
+        dotcManager,
+        errorMsg,
+      );
+      await expect(dotcManager['standardizeNumber(uint256,address)'](0, acc1.address)).to.be.revertedWithCustomError(
+        dotcManager,
+        errorMsg,
+      );
+      await expect(dotcManager['standardizeNumber(uint256,uint8)'](0, 1)).to.be.revertedWithCustomError(
+        dotcManager,
+        errorMsg,
+      );
+      await expect(dotcManager['standardizeNumber(uint256,uint8)'](0, 1)).to.be.revertedWithCustomError(
+        dotcManager,
+        errorMsg,
+      );
+      await expect(dotcManager['standardizeNumber(uint256,uint8)'](1, 0)).to.be.revertedWithCustomError(
+        dotcManager,
+        errorMsg,
+      );
+      await expect(dotcManager['unstandardizeNumber(uint256,uint8)'](1, 0)).to.be.revertedWithCustomError(
+        dotcManager,
+        errorMsg,
+      );
+      await expect(dotcManager['unstandardizeNumber(uint256,uint8)'](0, 1)).to.be.revertedWithCustomError(
+        dotcManager,
+        errorMsg,
+      );
+      await expect(dotcManager['unstandardizeNumber(uint256,uint8)'](0, 1)).to.be.revertedWithCustomError(
+        dotcManager,
+        errorMsg,
+      );
+      await expect(dotcManager['unstandardizeNumber(uint256,uint8)'](1, 0)).to.be.revertedWithCustomError(
+        dotcManager,
+        errorMsg,
+      );
+      await expect(dotcManager['unstandardizeNumber(uint256,uint8)'](1, 0)).to.be.revertedWithCustomError(
+        dotcManager,
+        errorMsg,
+      );
+      await expect(dotcManager['unstandardizeNumber(uint256,address)'](0, acc1.address)).to.be.revertedWithCustomError(
+        dotcManager,
+        errorMsg,
+      );
     });
   });
 });
