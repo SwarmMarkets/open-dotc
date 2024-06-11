@@ -1,10 +1,11 @@
 //SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
-import { ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20, IERC721, IERC1155, SafeERC20 } from "./exports/Exports.sol";
+import { ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20, IERC721, IERC1155, SafeERC20 } from "./exports/Exports.sol";
 
 import { IDotcManager } from "./interfaces/IDotcManager.sol";
-import { Asset, AssetType, EscrowCallType, ValidityType, OfferStruct, DotcOffer, UnsupportedAssetType } from "./structures/DotcStructuresV3.sol";
+import { IDotcCompatibleAuthorization } from "./interfaces/IDotcCompatibleAuthorization.sol";
+import { Asset, AssetType, OfferPricingType, TakingOfferType, EscrowCallType, ValidityType, OfferStruct, DotcOffer, UnsupportedAssetType } from "./structures/DotcStructuresV3.sol";
 
 /// @title Errors related to the Dotc contract
 /// @notice Provides error messages for various failure conditions related to Offers and Assets handling
@@ -50,12 +51,21 @@ error UnsupportedPartialOfferForNonERC20AssetsError();
 /// @param _type The type of escrow call that failed.
 error EscrowCallFailedError(EscrowCallType _type);
 
-/// @notice Thrown when the offer address is set to the zero address.
+/// @notice Thrown when the special address is set to the zero address.
 /// @param arrayIndex The index in the array where the zero address was encountered.
-error OfferAddressIsZeroError(uint256 arrayIndex);
+error SpecialAddressIsZeroError(uint256 arrayIndex);
+
+/// @notice Thrown when the authoriaztion address is set to the zero address.
+/// @param arrayIndex The index in the array where the zero address was encountered.
+error AuthAddressIsZeroError(uint256 arrayIndex);
 
 /// @notice Thrown when a non-special address attempts to take a special offer.
-error NotSpecialAddressError();
+/// @param sender The address that attempts to take a special offer.
+error NotSpecialAddressError(address sender);
+
+/// @notice Thrown when a non-authorized address attempts to take a special offer.
+/// @param sender The address that attempts to take a special offer.
+error NotAuthorizedAccountError(address sender);
 
 /// @notice Thrown when the calculated fee amount is zero or less.
 error FeeAmountIsZeroError();
@@ -98,7 +108,7 @@ error ManagerOnlyFunctionError();
  * @dev It uses ERC1155 and ERC721 token standards for asset management and trade settlement.
  * @author Swarm
  */
-contract DotcV3 is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
+contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
     ///@dev Used for Safe transfer tokens
     using SafeERC20 for IERC20;
 
@@ -106,22 +116,17 @@ contract DotcV3 is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721H
      * @notice Emitted when a new trading offer is created.
      * @param maker Address of the user creating the offer.
      * @param offerId Unique identifier of the created offer.
-     * @param isFullType Indicates if the offer is of a full type.
      * @param depositAsset Asset to be deposited by the maker.
      * @param withdrawalAsset Asset to be withdrawn by the maker.
-     * @param specialAddresses Special addresses involved in the trade, if any.
-     * @param expiryTimestamp Expiry time of the offer.
-     * @param timelockPeriod Timelock period for the offer.
+     * @param offer TODO
      */
     event CreatedOffer(
         address indexed maker,
         uint256 indexed offerId,
-        bool isFullType,
         Asset depositAsset,
         Asset withdrawalAsset,
-        address[] specialAddresses,
-        uint256 expiryTimestamp,
-        uint256 timelockPeriod
+        OfferStruct offer
+        // TODO: Min/Max dynamic amount
     );
     /**
      * @notice Emitted when an offer is successfully taken.
@@ -137,6 +142,8 @@ contract DotcV3 is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721H
         bool indexed isFullyTaken,
         uint256 amountToReceive,
         uint256 amountPaid
+        // TODO: rev share amount
+        // TODO: Affiliate address
     );
     /**
      * @notice Emitted when an offer is canceled.
@@ -176,6 +183,12 @@ contract DotcV3 is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721H
      * @param specialAddresses The new special addresses of the offer.
      */
     event OfferSpecialAddressesUpdated(uint256 indexed offerId, address[] specialAddresses);
+    /**
+     * @notice Emitted when the array of special addresses of an offer is udpated.
+     * @param offerId Unique identifier of the offer with updated links.
+     * @param authAddresses The new auth addresses of the offer.
+     */
+    event OfferAuthAddressesUpdated(uint256 indexed offerId, address[] authAddresses);
     /**
      * @notice Emitted when the manager address is changed.
      * @param by Address of the user who changed the manager address.
@@ -262,12 +275,25 @@ contract DotcV3 is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721H
             revert IncorrectTimelockPeriodError(offer.timelockPeriod);
         }
 
-        for (uint256 i = 0; i < offer.specialAddresses.length; ) {
-            if (offer.specialAddresses[i] == address(0)) {
-                revert OfferAddressIsZeroError(i);
+        if (offer.specialAddresses.length > 0) {
+            for (uint256 i = 0; i < offer.specialAddresses.length; ) {
+                if (offer.specialAddresses[i] == address(0)) {
+                    revert SpecialAddressIsZeroError(i);
+                }
+                unchecked {
+                    ++i;
+                }
             }
-            unchecked {
-                ++i;
+        }
+
+        if (offer.authorizationAddresses.length > 0) {
+            for (uint256 i = 0; i < offer.authorizationAddresses.length; ) {
+                if (offer.authorizationAddresses[i] == address(0)) {
+                    revert AuthAddressIsZeroError(i);
+                }
+                unchecked {
+                    ++i;
+                }
             }
         }
 
@@ -301,6 +327,7 @@ contract DotcV3 is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721H
         if (allOffers[offerId].offer.expiryTimestamp <= block.timestamp) {
             revert OfferExpiredError(offerId);
         }
+
         _;
     }
 
@@ -313,6 +340,7 @@ contract DotcV3 is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721H
         if (allOffers[offerId].offer.timelockPeriod >= block.timestamp) {
             revert OfferInTimelockError(offerId);
         }
+
         _;
     }
 
@@ -327,7 +355,6 @@ contract DotcV3 is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721H
      * @param _manager The address of the manager to be set for this contract.
      */
     function initialize(IDotcManager _manager) public initializer {
-        __ReentrancyGuard_init();
         __ERC1155Holder_init();
         __ERC721Holder_init();
 
@@ -345,15 +372,9 @@ contract DotcV3 is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721H
         Asset calldata depositAsset,
         Asset calldata withdrawalAsset,
         OfferStruct calldata offer
-    )
-        external
-        checkAssetStructure(depositAsset)
-        checkAssetStructure(withdrawalAsset)
-        checkOfferStructure(offer)
-        nonReentrant
-    {
+    ) external checkAssetStructure(depositAsset) checkAssetStructure(withdrawalAsset) checkOfferStructure(offer) {
         if (
-            !offer.isFullType &&
+            offer.takingOfferType == TakingOfferType.PartialTaking &&
             (depositAsset.assetType != AssetType.ERC20 || withdrawalAsset.assetType != AssetType.ERC20)
         ) {
             revert UnsupportedPartialOfferForNonERC20AssetsError();
@@ -374,16 +395,7 @@ contract DotcV3 is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721H
             revert EscrowCallFailedError(EscrowCallType.Deposit);
         }
 
-        emit CreatedOffer(
-            msg.sender,
-            _currentOfferId,
-            offer.isFullType,
-            depositAsset,
-            withdrawalAsset,
-            offer.specialAddresses,
-            offer.expiryTimestamp,
-            offer.timelockPeriod
-        );
+        emit CreatedOffer(msg.sender, _currentOfferId, depositAsset, withdrawalAsset, offer);
     }
 
     /**
@@ -392,10 +404,7 @@ contract DotcV3 is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721H
      * @param amountToSend The amount of the withdrawal asset to send.
      * @dev Handles the transfer of assets between maker and taker.
      */
-    function takeOffer(
-        uint256 offerId,
-        uint256 amountToSend
-    ) public checkOffer(offerId) notExpired(offerId) nonReentrant {
+    function takeOffer(uint256 offerId, uint256 amountToSend) public checkOffer(offerId) notExpired(offerId) {
         DotcOffer memory offer = allOffers[offerId];
 
         if (offer.offer.specialAddresses.length > 0) {
@@ -409,8 +418,28 @@ contract DotcV3 is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721H
                     ++i;
                 }
             }
+
             if (!isSpecialTaker) {
-                revert NotSpecialAddressError();
+                revert NotSpecialAddressError(msg.sender);
+            }
+        }
+
+        if (offer.offer.authorizationAddresses.length > 0) {
+            bool isAccountAuthorized = false;
+            for (uint256 i = 0; i < offer.offer.authorizationAddresses.length; ) {
+                if (
+                    IDotcCompatibleAuthorization(offer.offer.authorizationAddresses[i]).isAccountAuthorized(msg.sender)
+                ) {
+                    isAccountAuthorized = true;
+                    break;
+                }
+                unchecked {
+                    ++i;
+                }
+            }
+
+            if (!isAccountAuthorized) {
+                revert NotAuthorizedAccountError(msg.sender);
             }
         }
 
@@ -433,7 +462,7 @@ contract DotcV3 is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721H
                 revert AmountWithoutFeesIsZeroError();
             }
 
-            if (offer.offer.isFullType) {
+            if (offer.offer.takingOfferType == TakingOfferType.FullyTaking) {
                 if (standardizedAmount != offer.withdrawalAsset.amount) {
                     revert IncorrectFullOfferAmountError(standardizedAmount);
                 }
@@ -482,9 +511,7 @@ contract DotcV3 is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721H
      * @param offerId The ID of the offer to cancel.
      * @dev Can only be called by the offer's maker and when the timelock has passed.
      */
-    function cancelOffer(
-        uint256 offerId
-    ) external onlyMaker(offerId) checkOffer(offerId) timelockPassed(offerId) nonReentrant {
+    function cancelOffer(uint256 offerId) external onlyMaker(offerId) checkOffer(offerId) timelockPassed(offerId) {
         delete allOffers[offerId];
 
         (bool success, uint256 amountToWithdraw) = manager.escrow().cancelDeposit(offerId, msg.sender);
@@ -528,7 +555,7 @@ contract DotcV3 is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721H
         if (updatedOffer.specialAddresses.length > 0) {
             for (uint256 i = 0; i < updatedOffer.specialAddresses.length; ) {
                 if (updatedOffer.specialAddresses[i] == address(0)) {
-                    revert OfferAddressIsZeroError(i);
+                    revert SpecialAddressIsZeroError(i);
                 }
                 unchecked {
                     ++i;
@@ -537,6 +564,20 @@ contract DotcV3 is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721H
 
             allOffers[offerId].offer.specialAddresses = updatedOffer.specialAddresses;
             emit OfferSpecialAddressesUpdated(offerId, updatedOffer.specialAddresses);
+        }
+
+        if (updatedOffer.authorizationAddresses.length > 0) {
+            for (uint256 i = 0; i < updatedOffer.authorizationAddresses.length; ) {
+                if (updatedOffer.authorizationAddresses[i] == address(0)) {
+                    revert AuthAddressIsZeroError(i);
+                }
+                unchecked {
+                    ++i;
+                }
+            }
+
+            allOffers[offerId].offer.authorizationAddresses = updatedOffer.authorizationAddresses;
+            emit OfferAuthAddressesUpdated(offerId, updatedOffer.authorizationAddresses);
         }
 
         if (

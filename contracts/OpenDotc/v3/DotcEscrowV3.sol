@@ -56,7 +56,6 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDot
      * @param maker Address of the user who made the offer.
      * @param amount Amount of the asset deposited.
      */
-
     event OfferDeposited(uint256 indexed offerId, address indexed maker, uint256 indexed amount);
     /**
      * @dev Emitted when assets are withdrawn from escrow for an offer.

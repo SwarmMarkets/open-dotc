@@ -3,7 +3,6 @@ pragma solidity 0.8.25;
 
 import { IERC165 } from "@openzeppelin-v5/contracts/utils/introspection/IERC165.sol";
 
-import "@openzeppelin-v5/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin-v5/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import { ERC1155HolderUpgradeable } from "@openzeppelin-v5/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpgradeable.sol";
