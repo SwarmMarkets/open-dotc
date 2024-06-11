@@ -2,8 +2,6 @@
 //SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
-import { IDotcCompatibleAuthorization } from "../interfaces/IDotcCompatibleAuthorization.sol";
-
 /// @notice Indicates the asset type provided is not supported by this contract
 /// @param unsupportedType The unsupported asset type provided
 error UnsupportedAssetType(AssetType unsupportedType);
@@ -43,32 +41,48 @@ enum AssetType {
 }
 
 /**
- * @title Asset Structure
- * @notice Represents an asset in the DOTC trading system.
- * @dev Defines the structure for an asset including type, address, amount, and token ID for NFTs.
- * @param assetType The type of the asset (ERC20, ERC721, ERC1155).
- * @param assetAddress The contract address of the asset.
- * @param amount The amount of the asset (relevant for ERC20 and ERC1155).
- * @param tokenId The token ID (relevant for ERC721 and ERC1155).
+ * @title Offer Pricing Types Enum
+ * @notice Defines the different types of pricing offers that can be used in the system.
+ * @dev Enum representing various pricing offer types supported in DOTC trades.
  * @author Swarm
+ * - NoType: Represents a state with no specific offer type.
+ * - FixedPricing: Represents a Fixed Pricing offer type where `maker` specifies a fixed price.
+ * - DynamicPricing: Represents a Dynamic Pricing offer type where `maker` specifies price feeds for assets.
  */
-struct Asset {
-    AssetType assetType;
-    address assetAddress;
-    uint256 amount;
-    uint256 tokenId;
+enum OfferPricingType {
+    NoType,
+    FixedPricing,
+    DynamicPricing
+}
+
+/**
+ * @title Offer Types Enum
+ * @notice Defines the different types of taking offers that can be used in the system.
+ * @dev Enum representing various taking offer types supported in DOTC trades.
+ * @author Swarm
+ * - NoType: Represents a state with no specific taking offer type.
+ * - PartialTaking: Represents a Partial Taking offer type where `taker` can take not the full amount of assets.
+ * - FullyTaking: Represents a Fully Taking offer type where `taker` should take the full amount of assets.
+ */
+enum TakingOfferType {
+    NoType,
+    PartialTaking,
+    FullyTaking
 }
 
 /**
  * @title Escrow Call Type Enum
  * @notice Defines the different types of calls that can be made to the escrow in the DOTC system.
  * @dev Enum representing various escrow call types such as deposit, withdraw, and cancel operations.
+ * - NoType: Represents a state with no specific escrow call type.
  * - Deposit: Represents a call to deposit assets into escrow.
  * - Withdraw: Represents a call to withdraw assets from escrow.
+ * - WithdrawFees: Represents a call to withdraw fees from escrow.
  * - Cancel: Represents a call to cancel an operation in the escrow.
  * @author Swarm
  */
 enum EscrowCallType {
+    NoType,
     Deposit,
     Withdraw,
     WithdrawFees,
@@ -106,10 +120,30 @@ enum TimeConstraintType {
 }
 
 /**
+ * @title Asset Structure
+ * @notice Represents an asset in the DOTC trading system.
+ * @dev Defines the structure for an asset including type, address, amount, and token ID for NFTs.
+ * @param assetType The type of the asset (ERC20, ERC721, ERC1155).
+ * @param assetAddress The contract address of the asset.
+ * @param assetPriceFeedAddress The contract address of the price feed for this asset.
+ * @param amount The amount of the asset (relevant for ERC20 and ERC1155).
+ * @param tokenId The token ID (relevant for ERC721 and ERC1155).
+ * @author Swarm
+ */
+struct Asset {
+    AssetType assetType;
+    address assetAddress;
+    address assetPriceFeedAddress;
+    uint256 amount;
+    uint256 tokenId;
+}
+
+/**
  * @title Offer Struct for DOTC
  * @notice Describes the structure of an offer within the DOTC trading system.
  * @dev Structure encapsulating details of an offer, including its type, special conditions, and timing constraints.
- * @param isFullType Boolean indicating if the offer is for the full amount of the deposit asset.
+ * @param offerPricingType The type of the offer taking (Partial, Fully).
+ * @param offerPricingType The type of the offer pricing (FixedPricing, DynamicPricing).
  * @param specialAddresses Array of addresses with exclusive rights to take the offer.
  * @param authorizationAddresses TODO
  * @param expiryTimestamp Unix timestamp marking the offer's expiration.
@@ -119,9 +153,10 @@ enum TimeConstraintType {
  * @author Swarm
  */
 struct OfferStruct {
-    bool isFullType;
+    TakingOfferType takingOfferType;
+    OfferPricingType offerPricingType;
     address[] specialAddresses;
-    IDotcCompatibleAuthorization[] authorizationAddresses;
+    address[] authorizationAddresses;
     uint256 expiryTimestamp;
     uint256 timelockPeriod;
     string terms;
