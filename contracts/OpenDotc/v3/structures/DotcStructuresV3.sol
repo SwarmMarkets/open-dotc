@@ -6,6 +6,10 @@ pragma solidity 0.8.25;
 /// @param unsupportedType The unsupported asset type provided
 error UnsupportedAssetType(AssetType unsupportedType);
 
+/// @notice Thrown when the timelock period of an offer is set incorrectly.
+/// @param timelock The incorrect timelock period for the offer.
+error IncorrectTimelockPeriodError(uint256 timelock);
+
 /**
  * @title Structures for DOTC management (as part of the "SwarmX.eth Protocol")
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
@@ -94,11 +98,13 @@ enum EscrowCallType {
  * @notice Defines the types of validity states an offer can have in the DOTC system.
  * @dev Enum representing different states of offer validity, like non-existent or fully taken.
  * - NotExist: Indicates the offer does not exist.
+ * - PartiallyTaken: Indicates the offer has been partially taken.
  * - FullyTaken: Indicates the offer has been fully taken.
  * @author Swarm
  */
 enum ValidityType {
     NotExist,
+    PartiallyTaken,
     FullyTaken
 }
 
@@ -168,7 +174,7 @@ struct OfferStruct {
  * @notice Detailed structure of an offer in the DOTC trading system.
  * @dev Contains comprehensive information about an offer, including assets involved and trade conditions.
  * @param maker Address of the individual creating the offer.
- * @param isFullyTaken Boolean indicating whether the offer has been completely accepted.
+ * @param validityType The type of the dotc offer validation (NotExist, PartiallyTaken, FullyTaken).
  * @param depositAsset Asset offered by the maker.
  * @param withdrawalAsset Asset requested by the maker in exchange.
  * @param availableAmount Quantity of the deposit asset available for trade.
@@ -178,7 +184,7 @@ struct OfferStruct {
  */
 struct DotcOffer {
     address maker;
-    bool isFullyTaken;
+    ValidityType validityType;
     uint256 availableAmount;
     uint256 unitPrice;
     Asset depositAsset;
