@@ -737,9 +737,9 @@
   integrity sha512-2bS18UYgwgJ1aE+nBA/03lM1qWlGJfxFzQ0c9g75qniL67po9rpUmqoTF4gtia4fYqyuf/ntOKFJ5CkhA98NkQ==
 
 "@nomicfoundation/edr-darwin-x64@0.3.6":
-  version "0.3.5"
-  resolved "https://registry.yarnpkg.com/@nomicfoundation/edr-darwin-x64/-/edr-darwin-x64-0.3.5.tgz#fee26c4a83c9fc534bc0a719e88382fafeed69fe"
-  integrity sha512-0MrpOCXUK8gmplpYZ2Cy0holHEylvWoNeecFcrP2WJ5DLQzrB23U5JU2MvUzOJ7aL76Za1VXNBWi/UeTWdHM+w==
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/@nomicfoundation/edr-darwin-x64/-/edr-darwin-x64-0.4.0.tgz#b1ffcd9142418fd8498de34a7336b3f977907c86"
+  integrity sha512-+Hrc0mP9L6vhICJSfyGo/2taOToy1AIzVZawO3lU8Lf7oDQXfhQ4UkZnkWAs9SVu1eUwHUGGGE0qB8644piYgg==
 
 "@nomicfoundation/edr-linux-arm64-gnu@0.3.6":
   version "0.3.6"
