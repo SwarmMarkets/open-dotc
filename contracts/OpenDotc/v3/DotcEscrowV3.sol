@@ -1,14 +1,19 @@
 //SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
+import { ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20, IERC721, IERC1155, SafeERC20, OwnableUpgradeable } from "./exports/Exports.sol";
 
-import { ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20, IERC721, IERC1155, SafeERC20 } from "./exports/Exports.sol";
-
+import { DotcV3 } from "./DotcV3.sol";
+import { AssetHelper } from "./helpers/AssetHelper.sol";
 import { Asset, AssetType, UnsupportedAssetType } from "./structures/DotcStructuresV3.sol";
-import { IDotcManager } from "./interfaces/IDotcManager.sol";
-import { IDotcEscrow } from "./interfaces/IDotcEscrow.sol";
 
 /// @title Errors related to asset management in the Dotc Escrow contract
 /// @notice Provides error messages for various failure conditions related to asset handling
+
+/// @notice Indicates an operation with zero amount which is not allowed
+error ZeroAmountPassed();
+
+/// @notice Indicates usage of a zero address where an actual address is required
+error ZeroAddressPassed();
 
 /// @notice Indicates no asset amount was specified where a non-zero value is required
 error AssetAmountEqZero();
@@ -21,9 +26,6 @@ error AmountToCancelEqZero();
 
 /// @notice Indicates no fee amount was specified where a non-zero value is required
 error FeesAmountEqZero();
-
-/// @notice Indicates that the operation was attempted by an unauthorized entity, not the manager
-error OnlyManager();
 
 /// @notice Indicates that the operation was attempted by an unauthorized entity, not the Dotc contract
 error OnlyDotc();
@@ -46,9 +48,11 @@ error OnlyDotc();
  * @dev This contract handles the escrow of assets for DOTC trades, supporting ERC20, ERC721, and ERC1155 assets.
  * @author Swarm
  */
-contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDotcEscrow {
+contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, OwnableUpgradeable {
     ///@dev Used for Safe transfer tokens
     using SafeERC20 for IERC20;
+    ///@dev Used for Asset interaction
+    using AssetHelper for Asset;
 
     /**
      * @dev Emitted when an offer's assets are deposited into escrow.
@@ -79,31 +83,51 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDot
      */
     event FeesWithdrew(uint256 indexed offerId, address indexed to, uint256 indexed amountToWithdraw);
     /**
-     * @dev Emitted when the manager address of the escrow is changed.
-     * @param by Address of the user who changed the manager address.
-     * @param manager New manager's address.
+     * @dev Emitted when the dotc address is changed.
+     * @param by Address of the user who changed the dotc address.
+     * @param dotc New dotc's address.
      */
-    event ManagerAddressSet(address indexed by, IDotcManager manager);
+    event DotcAddressSet(address indexed by, DotcV3 dotc);
 
     /**
-     * @dev Hash of the string "ESCROW_MANAGER_ROLE", used for access control.
+     * @dev Emitted when the fee receiver address is updated.
+     * @param by Address of the user who performed the update.
+     * @param newFeeReceiver New fee receiver address.
      */
-    bytes32 public constant ESCROW_MANAGER_ROLE = keccak256("ESCROW_MANAGER_ROLE");
+    event FeeReceiverSet(address indexed by, address newFeeReceiver);
     /**
-     * @dev Reference to the DOTC Manager contract which governs this escrow.
+     * @dev Emitted when the fee amount is updated.
+     * @param by Address of the user who performed the update.
+     * @param feeAmount New fee amount.
      */
-    IDotcManager public manager;
+    event FeeAmountSet(address indexed by, uint256 feeAmount);
+
+    /**
+     * @dev Address of the dotc contract.
+     */
+    DotcV3 public dotc;
+
     /**
      * @dev Mapping from offer IDs to their corresponding deposited assets.
      */
     mapping(uint256 offerId => Asset asset) public assetDeposits;
 
+    // Fees
+    /**
+     * @dev Address where trading fees are sent.
+     */
+    address public feeReceiver;
+    /**
+     * @dev Amount of fees charged for trading.
+     */
+    uint256 public feeAmount;
+
     /**
      * @notice Ensures that the function is only callable by the DOTC contract.
-     * @dev Modifier that restricts function access to the address of the DOTC contract set in the manager.
+     * @dev Modifier that restricts function access to the address of the DOTC contract.
      */
     modifier onlyDotc() {
-        if (msg.sender != address(manager.dotc())) {
+        if (msg.sender != address(dotc)) {
             revert OnlyDotc();
         }
         _;
@@ -115,15 +139,16 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDot
     }
 
     /**
-     * @notice Initializes the escrow contract with a DOTC Manager.
-     * @param _manager Address of the DOTC Manager.
+     * @notice Initializes the escrow contract with a fees parameters.
      * @dev Sets up the contract to handle ERC1155 and ERC721 tokens.
+     * @param _newFeeReceiver The address of the fee receiver.
      */
-    function initialize(IDotcManager _manager) public initializer {
+    function initialize(address _newFeeReceiver) public initializer {
         __ERC1155Holder_init();
         __ERC721Holder_init();
 
-        manager = _manager;
+        feeReceiver = _newFeeReceiver;
+        feeAmount = 25 * (10 ** 23);
     }
 
     /**
@@ -160,8 +185,7 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDot
             revert AssetAmountEqZero();
         }
 
-        if (asset.assetType == AssetType.ERC20)
-            amountToWithdraw = manager.unstandardizeNumber(amountToWithdraw, asset.assetAddress);
+        if (asset.assetType == AssetType.ERC20) amountToWithdraw = asset.unstandardizeNumber(amountToWithdraw);
 
         if (amountToWithdraw <= 0) {
             revert AmountToWithdrawEqZero();
@@ -215,13 +239,12 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDot
     function withdrawFees(uint256 offerId, uint256 amountToWithdraw) external onlyDotc returns (bool status) {
         Asset memory asset = assetDeposits[offerId];
 
-        uint256 amount = manager.unstandardizeNumber(amountToWithdraw, asset.assetAddress);
+        uint256 amount = asset.unstandardizeNumber(amountToWithdraw);
+        address to = feeReceiver;
 
         if (amount <= 0) {
             revert FeesAmountEqZero();
         }
-
-        address to = manager.feeReceiver();
 
         assetDeposits[offerId].amount -= amount;
 
@@ -233,20 +256,56 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDot
     }
 
     /**
-     * @notice Changes the manager of the escrow contract.
-     * @param _manager The new manager's address.
+     * @notice Changes the dotc in the escrow contract.
+     * @param _dotc The new dotc's address.
      * @return status True if the operation was successful.
-     * @dev Ensures that only the current manager can perform this operation.
+     * @dev Ensures that only the current owner can perform this operation.
      */
-
-    function changeManager(IDotcManager _manager) external returns (bool status) {
-        if (msg.sender != address(manager)) {
-            revert OnlyManager();
+    function changeDotc(DotcV3 _dotc) external onlyOwner returns (bool status) {
+        if (address(_dotc) == address(0)) {
+            revert ZeroAddressPassed();
         }
 
-        manager = _manager;
+        dotc = _dotc;
 
-        emit ManagerAddressSet(msg.sender, _manager);
+        emit DotcAddressSet(msg.sender, _dotc);
+
+        return true;
+    }
+
+    /**
+     * @notice Updates the address for receiving trading fees.
+     * @param _newFeeReceiver The new fee receiver address.
+     * @return status True if the operation was successful.
+     * @dev Requires caller to be the owner of the contract.
+     */
+
+    function changeFeeReceiver(address _newFeeReceiver) external onlyOwner returns (bool status) {
+        if (_newFeeReceiver == address(0)) {
+            revert ZeroAddressPassed();
+        }
+
+        feeReceiver = _newFeeReceiver;
+
+        emit FeeReceiverSet(msg.sender, _newFeeReceiver);
+
+        return true;
+    }
+
+    /**
+     * @notice Updates the trading fee amount.
+     * @param _feeAmount The new fee amount.
+     * @return status True if the operation was successful.
+     * @dev Requires caller to be the owner of the contract.
+     */
+    function changeFeeAmount(uint256 _feeAmount) external onlyOwner returns (bool status) {
+        if (_feeAmount <= 0) {
+            revert ZeroAmountPassed();
+        }
+
+        feeAmount = _feeAmount;
+
+        emit FeeAmountSet(msg.sender, _feeAmount);
 
         return true;
     }
