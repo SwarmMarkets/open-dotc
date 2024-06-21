@@ -12,7 +12,7 @@ export enum AccountTypes {
   SwarmXMnemonic,
   SwarmPk,
   SwarmXPk,
-  TestnetPk
+  TestnetPk,
 }
 
 function getNetworkAccounts(account: string, accountType: AccountTypes): HttpNetworkAccountsUserConfig {

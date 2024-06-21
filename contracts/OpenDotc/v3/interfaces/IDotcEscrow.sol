@@ -2,7 +2,7 @@
 pragma solidity 0.8.25;
 
 import { IDotcManager } from "./IDotcManager.sol";
-import { Asset } from "../structures/DotcStructuresV2.sol";
+import { Asset } from "../structures/DotcStructuresV3.sol";
 
 /**
  * @title Interface for Dotc Escrow contract (as part of the "SwarmX.eth Protocol")

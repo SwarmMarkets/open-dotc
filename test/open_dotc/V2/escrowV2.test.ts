@@ -1,7 +1,13 @@
 import { ethers, upgrades } from 'hardhat';
 import { BigNumber, ContractFactory } from 'ethers';
 import { expect } from 'chai';
-import { DotcManagerV2 as DotcManager, DotcEscrowV2 as DotcEscrow, ERC20Mock_2, ERC721Mock, ERC1155Mock } from '../../../typechain';
+import {
+  DotcManagerV2 as DotcManager,
+  DotcEscrowV2 as DotcEscrow,
+  ERC20Mock_2,
+  ERC721Mock,
+  ERC1155Mock,
+} from '../../../typechain';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { AssetStruct } from '../../helpers/Structures';
 
@@ -54,7 +60,10 @@ describe('DotcEscrowV2_Open', () => {
     it('Should be initialized', async () => {
       const { dotcManager, escrow } = await loadFixture(fixture);
 
-      await expect(dotcManager.initialize(escrow.address)).to.be.revertedWithCustomError(dotcManager, 'InvalidInitialization');
+      await expect(dotcManager.initialize(escrow.address)).to.be.revertedWithCustomError(
+        dotcManager,
+        'InvalidInitialization',
+      );
       await expect(escrow.initialize(escrow.address)).to.be.revertedWithCustomError(escrow, 'InvalidInitialization');
     });
 
@@ -99,7 +108,10 @@ describe('DotcEscrowV2_Open', () => {
 
       await escrow.connect(otherAcc).setDeposit(offerId, otherAcc.address, AssetERC20);
 
-      await expect(escrow.connect(otherAcc).withdrawFees(offerId, 1)).to.be.revertedWithCustomError(escrow, 'FeesAmountEqZero');
+      await expect(escrow.connect(otherAcc).withdrawFees(offerId, 1)).to.be.revertedWithCustomError(
+        escrow,
+        'FeesAmountEqZero',
+      );
     });
 
     it('Should withdraw deposit', async () => {
@@ -169,9 +181,9 @@ describe('DotcEscrowV2_Open', () => {
 
       await escrow.connect(otherAcc).setDeposit(offerId, otherAcc.address, AssetERC20);
 
-      await expect(escrow.connect(otherAcc).withdrawDeposit(offerId, 1, otherAcc.address)).to.be.revertedWithCustomError(escrow,
-        'AssetAmountEqZero',
-      );
+      await expect(
+        escrow.connect(otherAcc).withdrawDeposit(offerId, 1, otherAcc.address),
+      ).to.be.revertedWithCustomError(escrow, 'AssetAmountEqZero');
 
       ++offerId;
 
@@ -184,9 +196,9 @@ describe('DotcEscrowV2_Open', () => {
 
       await escrow.connect(otherAcc).setDeposit(offerId, otherAcc.address, AssetERC20);
 
-      await expect(escrow.connect(otherAcc).withdrawDeposit(offerId, 1, otherAcc.address)).to.be.revertedWithCustomError(escrow,
-        'AmountToWithdrawEqZero',
-      );
+      await expect(
+        escrow.connect(otherAcc).withdrawDeposit(offerId, 1, otherAcc.address),
+      ).to.be.revertedWithCustomError(escrow, 'AmountToWithdrawEqZero');
 
       ++offerId;
 
@@ -273,7 +285,8 @@ describe('DotcEscrowV2_Open', () => {
 
       await escrow.connect(otherAcc).setDeposit(offerId, otherAcc.address, AssetERC20);
 
-      await expect(escrow.connect(otherAcc).cancelDeposit(offerId, otherAcc.address)).to.be.revertedWithCustomError(escrow,
+      await expect(escrow.connect(otherAcc).cancelDeposit(offerId, otherAcc.address)).to.be.revertedWithCustomError(
+        escrow,
         'AmountToCancelEqZero',
       );
 

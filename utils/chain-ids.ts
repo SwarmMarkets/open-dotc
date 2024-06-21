@@ -7,5 +7,5 @@ export const chainIds = Object.freeze({
   base: 8453,
   base_sepolia: 84532,
   arbitrum: 42161,
-  arbitrum_sepolia: 421614
+  arbitrum_sepolia: 421614,
 });

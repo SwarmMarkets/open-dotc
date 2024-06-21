@@ -3,7 +3,7 @@ pragma solidity 0.8.25;
 
 import { ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20, IERC721, IERC1155, SafeERC20 } from "./exports/Exports.sol";
 
-import { Asset, AssetType, UnsupportedAssetType } from "./structures/DotcStructuresV2.sol";
+import { Asset, AssetType, UnsupportedAssetType } from "./structures/DotcStructuresV3.sol";
 import { IDotcManager } from "./interfaces/IDotcManager.sol";
 import { IDotcEscrow } from "./interfaces/IDotcEscrow.sol";
 
@@ -56,7 +56,6 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDot
      * @param maker Address of the user who made the offer.
      * @param amount Amount of the asset deposited.
      */
-
     event OfferDeposited(uint256 indexed offerId, address indexed maker, uint256 indexed amount);
     /**
      * @dev Emitted when assets are withdrawn from escrow for an offer.
