@@ -1,4 +1,4 @@
-import { verifyContract } from '../helpers/verify-contract';
+import { verifyContract } from './helpers/verify-contract';
 
 // Mumbai
 // const dotcManager_address = '0x0Dfd10EDd2E1D7e32c8c7691B0FBA370f8520f21';
@@ -39,16 +39,16 @@ import { verifyContract } from '../helpers/verify-contract';
 // const escrow_address = '0x450507c2BeBAe848939D8ab5F81DcA0937436ba1';
 
 // Arbitrum Sepolia
-const dotcManager_address = '0x1eD467ae51faC45Db475597ccA46643505310c7b';
-const dotc_address = '0x51D628cD031DdC3305f730b3eb0765Ff12a26186';
-const escrow_address = '0xC618800af6d1b08771407Fb0d072E28f8D9E0700';
+// const dotcManager_address = '0x1eD467ae51faC45Db475597ccA46643505310c7b';
+const dotc_address = '0x88EEfd075Da6f7185c39713296183Cd052eEfd0D';
+// const escrow_address = '0xC618800af6d1b08771407Fb0d072E28f8D9E0700';
 
 async function main(): Promise<void> {
-  await verifyContract(dotcManager_address);
+  // await verifyContract(dotcManager_address);
 
   await verifyContract(dotc_address);
 
-  await verifyContract(escrow_address);
+  // await verifyContract(escrow_address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
