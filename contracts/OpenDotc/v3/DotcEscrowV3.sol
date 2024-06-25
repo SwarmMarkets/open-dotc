@@ -156,15 +156,12 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
      * @param offerId The ID of the offer being deposited.
      * @param maker The address of the maker making the deposit.
      * @param asset The asset being deposited.
-     * @return True if the operation was successful.
      * @dev Only callable by DOTC contract, ensures the asset is correctly deposited.
      */
-    function setDeposit(uint offerId, address maker, Asset calldata asset) external onlyDotc returns (bool) {
+    function setDeposit(uint256 offerId, address maker, Asset calldata asset) external onlyDotc {
         assetDeposits[offerId] = asset;
 
         emit OfferDeposited(offerId, maker, asset.amount);
-
-        return true;
     }
 
     /**
@@ -172,14 +169,9 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
      * @param offerId The ID of the offer being withdrawn.
      * @param amountToWithdraw Amount of the asset to withdraw.
      * @param taker The address receiving the withdrawn assets.
-     * @return True if the operation was successful.
      * @dev Ensures that the withdrawal is valid and transfers the asset to the taker.
      */
-    function withdrawDeposit(
-        uint256 offerId,
-        uint256 amountToWithdraw,
-        address taker
-    ) external onlyDotc returns (bool) {
+    function withdrawDeposit(uint256 offerId, uint256 amountToWithdraw, address taker) external onlyDotc {
         Asset memory asset = assetDeposits[offerId];
         if (asset.amount <= 0) {
             revert AssetAmountEqZero();
@@ -196,22 +188,16 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
         _assetTransfer(asset, address(this), taker, amountToWithdraw);
 
         emit OfferWithdrawn(offerId, taker, amountToWithdraw);
-
-        return true;
     }
 
     /**
      * @notice Cancels a deposit in escrow, returning it to the maker.
      * @param offerId The ID of the offer being cancelled.
      * @param maker The address of the maker to return the assets to.
-     * @return status True if the operation was successful.
      * @return amountToCancel Amount of the asset returned to the maker.
      * @dev Only callable by DOTC contract, ensures the asset is returned to the maker.
      */
-    function cancelDeposit(
-        uint256 offerId,
-        address maker
-    ) external onlyDotc returns (bool status, uint256 amountToCancel) {
+    function cancelDeposit(uint256 offerId, address maker) external onlyDotc returns (uint256 amountToCancel) {
         Asset memory asset = assetDeposits[offerId];
 
         amountToCancel = asset.amount;
@@ -225,18 +211,15 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
         _assetTransfer(asset, address(this), maker, amountToCancel);
 
         emit OfferCancelled(offerId, maker, amountToCancel);
-
-        status = true;
     }
 
     /**
      * @notice Withdraws fee amount from escrow.
      * @param offerId The ID of the offer related to the fees.
      * @param amountToWithdraw The amount of fees to withdraw.
-     * @return status True if the operation was successful.
      * @dev Ensures that the fee withdrawal is valid and transfers the fee to the designated receiver.
      */
-    function withdrawFees(uint256 offerId, uint256 amountToWithdraw) external onlyDotc returns (bool status) {
+    function withdrawFees(uint256 offerId, uint256 amountToWithdraw) external onlyDotc {
         Asset memory asset = assetDeposits[offerId];
 
         uint256 amount = asset.unstandardizeNumber(amountToWithdraw);
@@ -251,17 +234,14 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
         _assetTransfer(asset, address(this), to, amount);
 
         emit FeesWithdrew(offerId, to, amount);
-
-        return true;
     }
 
     /**
      * @notice Changes the dotc in the escrow contract.
      * @param _dotc The new dotc's address.
-     * @return status True if the operation was successful.
      * @dev Ensures that only the current owner can perform this operation.
      */
-    function changeDotc(DotcV3 _dotc) external onlyOwner returns (bool status) {
+    function changeDotc(DotcV3 _dotc) external onlyOwner {
         if (address(_dotc) == address(0)) {
             revert ZeroAddressPassed();
         }
@@ -269,18 +249,15 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
         dotc = _dotc;
 
         emit DotcAddressSet(msg.sender, _dotc);
-
-        return true;
     }
 
     /**
      * @notice Updates the address for receiving trading fees.
      * @param _newFeeReceiver The new fee receiver address.
-     * @return status True if the operation was successful.
      * @dev Requires caller to be the owner of the contract.
      */
 
-    function changeFeeReceiver(address _newFeeReceiver) external onlyOwner returns (bool status) {
+    function changeFeeReceiver(address _newFeeReceiver) external onlyOwner {
         if (_newFeeReceiver == address(0)) {
             revert ZeroAddressPassed();
         }
@@ -288,17 +265,14 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
         feeReceiver = _newFeeReceiver;
 
         emit FeeReceiverSet(msg.sender, _newFeeReceiver);
-
-        return true;
     }
 
     /**
      * @notice Updates the trading fee amount.
      * @param _feeAmount The new fee amount.
-     * @return status True if the operation was successful.
      * @dev Requires caller to be the owner of the contract.
      */
-    function changeFeeAmount(uint256 _feeAmount) external onlyOwner returns (bool status) {
+    function changeFeeAmount(uint256 _feeAmount) external onlyOwner {
         if (_feeAmount <= 0) {
             revert ZeroAmountPassed();
         }
@@ -306,8 +280,6 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
         feeAmount = _feeAmount;
 
         emit FeeAmountSet(msg.sender, _feeAmount);
-
-        return true;
     }
 
     /**
