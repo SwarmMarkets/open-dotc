@@ -6,10 +6,6 @@ pragma solidity 0.8.25;
 /// @param unsupportedType The unsupported asset type provided
 error UnsupportedAssetType(AssetType unsupportedType);
 
-/// @notice Thrown when the timelock period of an offer is set incorrectly.
-/// @param timelock The incorrect timelock period for the offer.
-error IncorrectTimelockPeriodError(uint256 timelock);
-
 /**
  * @title Structures for DOTC management (as part of the "SwarmX.eth Protocol")
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
@@ -75,31 +71,12 @@ enum TakingOfferType {
 }
 
 /**
- * @title Escrow Call Type Enum
- * @notice Defines the different types of calls that can be made to the escrow in the DOTC system.
- * @dev Enum representing various escrow call types such as deposit, withdraw, and cancel operations.
- * - NoType: Represents a state with no specific escrow call type.
- * - Deposit: Represents a call to deposit assets into escrow.
- * - Withdraw: Represents a call to withdraw assets from escrow.
- * - WithdrawFees: Represents a call to withdraw fees from escrow.
- * - Cancel: Represents a call to cancel an operation in the escrow.
- * @author Swarm
- */
-enum EscrowCallType {
-    NoType,
-    Deposit,
-    Withdraw,
-    WithdrawFees,
-    Cancel
-}
-
-/**
  * @title Validity Type Enum
  * @notice Defines the types of validity states an offer can have in the DOTC system.
  * @dev Enum representing different states of offer validity, like non-existent or fully taken.
  * - NotExist: Indicates the offer does not exist.
- * - PartiallyTaken: Indicates the offer has been partially taken.
- * - FullyTaken: Indicates the offer has been fully taken.
+ * - Partial: Represents a Partial Taking offer type where `taker` can take not the full amount of assets.
+ * - Fully: Represents a Fully Taking offer type where `taker` should take the full amount of assets.
  * @author Swarm
  */
 enum ValidityType {
