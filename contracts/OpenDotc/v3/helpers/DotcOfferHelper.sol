@@ -34,20 +34,6 @@ error OfferInTimelockError();
  */
 library DotcOfferHelper {
     /**
-     * @notice Ensures that the offer is valid and available.
-     * @dev Checks if the offer exists and has not been fully taken.
-     * @param offer The offer to be checked.
-     */
-    function checkDotcOfferValidity(DotcOffer calldata offer) external pure {
-        if (offer.maker == address(0)) {
-            revert OfferValidityError(offer.validityType);
-        }
-        if (offer.validityType == ValidityType.FullyTaken) {
-            revert OfferValidityError(offer.validityType);
-        }
-    }
-
-    /**
      * @notice Ensures that the caller to the offer is maker of this offer.
      * Ensures that the timelock period of the offer has passed.
      * @dev Checks if the offer exists and has not been fully taken.
@@ -55,6 +41,13 @@ library DotcOfferHelper {
      * @param offer The offer to be checked.
      */
     function checkDotcOfferParams(DotcOffer calldata offer) external view {
+        if (offer.maker == address(0)) {
+            revert OfferValidityError(offer.validityType);
+        }
+        if (offer.validityType == ValidityType.FullyTaken) {
+            revert OfferValidityError(offer.validityType);
+        }
+
         if (offer.maker != msg.sender) {
             revert OnlyMakerAllowedError(offer.maker);
         }
