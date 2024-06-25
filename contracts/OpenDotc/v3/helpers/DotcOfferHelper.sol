@@ -41,10 +41,7 @@ library DotcOfferHelper {
      * @param offer The offer to be checked.
      */
     function checkDotcOfferParams(DotcOffer calldata offer) external view {
-        if (offer.maker == address(0)) {
-            revert OfferValidityError(offer.validityType);
-        }
-        if (offer.validityType == ValidityType.FullyTaken) {
+        if (offer.maker == address(0) || offer.validityType == ValidityType.FullyTaken) {
             revert OfferValidityError(offer.validityType);
         }
 

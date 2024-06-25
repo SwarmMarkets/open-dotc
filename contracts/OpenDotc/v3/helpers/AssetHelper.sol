@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
-import { SafeERC20, IERC20, IERC20Metadata, IERC721, IERC1155, IERC165 } from "../exports/Exports.sol";
+import { IERC20, IERC20Metadata, IERC721, IERC1155, IERC165 } from "../exports/Exports.sol";
 import { Asset, AssetType, UnsupportedAssetType } from "../structures/DotcStructuresV3.sol";
 
 /// @notice Indicates an operation with zero amount which is not allowed
@@ -15,9 +15,6 @@ error AssetAddressIsZeroError();
 
 /// @notice Thrown when the asset amount is set to zero, indicating no asset.
 error AssetAmountIsZeroError();
-
-/// @notice Thrown when the amount to pay, excluding fees, is zero or less.
-error AmountWithoutFeesIsZeroError();
 
 /// @notice Thrown when the asset amount for an ERC721 asset exceeds one.
 /// ERC721 tokens should have an amount of exactly one.
@@ -74,9 +71,6 @@ error IncorrectAssetTypeForAddress(address token, AssetType incorrectType);
  * @author Swarm
  */
 library AssetHelper {
-    ///@dev Used for Safe transfer tokens
-    using SafeERC20 for IERC20;
-
     /**
      * @dev Base points used to standardize decimals.
      */
@@ -111,50 +105,6 @@ library AssetHelper {
         if (asset.assetType == AssetType.ERC721 && asset.amount > 1) {
             revert ERC721AmountExceedsOneError();
         }
-    }
-
-    /**
-     * @dev Internal function to handle the transfer of different types of assets (ERC20, ERC721, ERC1155).
-     * @param asset The asset to be transferred.
-     * @param from The address sending the asset.
-     * @param to The address receiving the asset.
-     * @param amount The amount of the asset to transfer.
-     */
-    function assetTransfer(Asset memory asset, address from, address to, uint256 amount) public {
-        if (asset.assetType == AssetType.ERC20) {
-            IERC20(asset.assetAddress).safeTransferFrom(from, to, amount);
-        } else if (asset.assetType == AssetType.ERC721) {
-            IERC721(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId);
-        } else if (asset.assetType == AssetType.ERC1155) {
-            IERC1155(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId, asset.amount, "");
-        } else {
-            revert UnsupportedAssetType(asset.assetType);
-        }
-    }
-
-    /**
-     * @notice Standardizes the amount of an asset based on its type.
-     */
-    function transferAssets(
-        Asset memory withdrawalAsset,
-        address from,
-        address offerMaker,
-        uint256 amountToSend,
-        address feeReceiver,
-        uint256 feeAmount
-    ) external {
-        uint256 fees = (amountToSend * feeAmount) / BPS;
-        uint256 amountToPay = amountToSend - feeAmount;
-
-        if (amountToPay == 0) {
-            revert AmountWithoutFeesIsZeroError();
-        }
-
-        if (feeReceiver != address(0) && feeAmount != 0) {
-            assetTransfer(withdrawalAsset, from, feeReceiver, fees);
-        }
-
-        assetTransfer(withdrawalAsset, from, offerMaker, amountToPay);
     }
 
     /**

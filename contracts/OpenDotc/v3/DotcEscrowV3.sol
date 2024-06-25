@@ -9,9 +9,6 @@ import { Asset, AssetType, UnsupportedAssetType } from "./structures/DotcStructu
 /// @title Errors related to asset management in the Dotc Escrow contract
 /// @notice Provides error messages for various failure conditions related to asset handling
 
-/// @notice Indicates an operation with zero amount which is not allowed
-error ZeroAmountPassed();
-
 /// @notice Indicates usage of a zero address where an actual address is required
 error ZeroAddressPassed();
 
@@ -146,6 +143,7 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
     function initialize(address _newFeeReceiver) public initializer {
         __ERC1155Holder_init();
         __ERC721Holder_init();
+        __Ownable_init(msg.sender);
 
         feeReceiver = _newFeeReceiver;
         feeAmount = 25 * (10 ** 23);
@@ -252,6 +250,19 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
     }
 
     /**
+     * @notice Changes the escrow address in the Dotc contract.
+     * @param _escrow The new escrow's address.
+     * @dev Ensures that only the current owner can perform this operation.
+     */
+    function changeEscrowInDotc(DotcEscrowV3 _escrow) external onlyOwner {
+        if (address(_escrow) == address(0)) {
+            revert ZeroAddressPassed();
+        }
+
+        dotc.changeEscrow(_escrow);
+    }
+
+    /**
      * @notice Updates the address for receiving trading fees.
      * @param _newFeeReceiver The new fee receiver address.
      * @dev Requires caller to be the owner of the contract.
@@ -273,10 +284,6 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
      * @dev Requires caller to be the owner of the contract.
      */
     function changeFeeAmount(uint256 _feeAmount) external onlyOwner {
-        if (_feeAmount <= 0) {
-            revert ZeroAmountPassed();
-        }
-
         feeAmount = _feeAmount;
 
         emit FeeAmountSet(msg.sender, _feeAmount);
