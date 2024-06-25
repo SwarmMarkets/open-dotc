@@ -479,7 +479,7 @@ describe('DotcV2_Open', () => {
       offerId++;
     });
 
-    it.only('Check error', async () => {
+    it('Check error', async () => {
       const { dotc, erc20_18, erc20_6, acc1 } = await loadFixture(fixture);
 
       const deposit: AssetStruct = {
