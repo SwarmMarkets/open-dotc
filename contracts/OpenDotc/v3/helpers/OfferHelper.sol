@@ -3,7 +3,7 @@ pragma solidity 0.8.25;
 
 import { AssetHelper } from "./AssetHelper.sol";
 import { IDotcCompatibleAuthorization } from "../interfaces/IDotcCompatibleAuthorization.sol";
-import { Asset, AssetType, OfferStruct, DotcOffer, TakingOfferType, IncorrectTimelockPeriodError } from "../structures/DotcStructuresV3.sol";
+import { Asset, AssetType, OfferStruct, DotcOffer, TakingOfferType } from "../structures/DotcStructuresV3.sol";
 
 /// @notice Thrown when an action is attempted on an offer with an expired timestamp.
 /// @param timestamp The expired timestamp for the offer.
@@ -27,6 +27,13 @@ error AuthAddressIsZeroError(uint256 arrayIndex);
 
 /// @notice Thrown when a partial offer type is attempted with ERC721 or ERC1155 assets, which is unsupported.
 error UnsupportedPartialOfferForNonERC20AssetsError();
+
+/// @notice Thrown when the timelock period of an offer is set incorrectly.
+/// @param timelock The incorrect timelock period for the offer.
+error IncorrectTimelockPeriodError(uint256 timelock);
+
+/// @notice Thrown when an action is attempted on an offer that has already expired.
+error OfferExpiredError();
 
 /**
  * @title TODO (as part of the "SwarmX.eth Protocol")
@@ -59,23 +66,24 @@ library OfferHelper {
         OfferStruct calldata offer,
         Asset calldata depositAsset,
         Asset calldata withdrawalAsset
-    ) external view returns (DotcOffer memory _offer) {
+    ) external view returns (DotcOffer memory dotcOffer) {
         uint256 standardizedDepositAmount = depositAsset.standardizeAsset(msg.sender);
         uint256 standardizedWithdrawalAmount = withdrawalAsset.standardizeAsset();
 
-        _offer.maker = msg.sender;
+        dotcOffer.maker = msg.sender;
 
-        _offer.depositAsset = depositAsset;
-        _offer.withdrawalAsset = withdrawalAsset;
+        dotcOffer.depositAsset = depositAsset;
+        dotcOffer.withdrawalAsset = withdrawalAsset;
 
-        _offer.offer = offer;
+        dotcOffer.offer = offer;
 
-        if (_offer.depositAsset.assetType == AssetType.ERC20) _offer.depositAsset.amount = standardizedDepositAmount;
-        if (_offer.withdrawalAsset.assetType == AssetType.ERC20)
-            _offer.withdrawalAsset.amount = standardizedWithdrawalAmount;
+        if (dotcOffer.depositAsset.assetType == AssetType.ERC20)
+            dotcOffer.depositAsset.amount = standardizedDepositAmount;
+        if (dotcOffer.withdrawalAsset.assetType == AssetType.ERC20)
+            dotcOffer.withdrawalAsset.amount = standardizedWithdrawalAmount;
 
-        _offer.availableAmount = _offer.depositAsset.amount;
-        _offer.unitPrice = (_offer.withdrawalAsset.amount * 10 ** DECIMALS) / _offer.depositAsset.amount;
+        dotcOffer.availableAmount = dotcOffer.depositAsset.amount;
+        dotcOffer.unitPrice = (dotcOffer.withdrawalAsset.amount * 10 ** DECIMALS) / dotcOffer.depositAsset.amount;
     }
 
     /**
@@ -114,7 +122,11 @@ library OfferHelper {
         }
     }
 
-    function checkOfferAddresses(OfferStruct calldata offer) external view {
+    function checkOfferParams(OfferStruct calldata offer) external view returns (TakingOfferType) {
+        if (offer.expiryTimestamp <= block.timestamp) {
+            revert OfferExpiredError();
+        }
+
         if (offer.specialAddresses.length > 0) {
             bool isSpecialTaker = false;
             for (uint256 i = 0; i < offer.specialAddresses.length; ) {
@@ -148,6 +160,8 @@ library OfferHelper {
                 revert NotAuthorizedAccountError(msg.sender);
             }
         }
+
+        return offer.takingOfferType;
     }
 
     function checkZeroAddressForSpecialAddresses(OfferStruct calldata offer) public pure {
