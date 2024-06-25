@@ -16,6 +16,9 @@ error AssetAddressIsZeroError();
 /// @notice Thrown when the asset amount is set to zero, indicating no asset.
 error AssetAmountIsZeroError();
 
+/// @notice Thrown when the amount to pay, excluding fees, is zero or less.
+error AmountWithoutFeesIsZeroError();
+
 /// @notice Thrown when the asset amount for an ERC721 asset exceeds one.
 /// ERC721 tokens should have an amount of exactly one.
 error ERC721AmountExceedsOneError();
@@ -117,7 +120,7 @@ library AssetHelper {
      * @param to The address receiving the asset.
      * @param amount The amount of the asset to transfer.
      */
-    function assetTransfer(Asset memory asset, address from, address to, uint256 amount) external {
+    function assetTransfer(Asset memory asset, address from, address to, uint256 amount) public {
         if (asset.assetType == AssetType.ERC20) {
             IERC20(asset.assetAddress).safeTransferFrom(from, to, amount);
         } else if (asset.assetType == AssetType.ERC721) {
@@ -127,6 +130,31 @@ library AssetHelper {
         } else {
             revert UnsupportedAssetType(asset.assetType);
         }
+    }
+
+    /**
+     * @notice Standardizes the amount of an asset based on its type.
+     */
+    function transferAssets(
+        Asset memory withdrawalAsset,
+        address from,
+        address offerMaker,
+        uint256 amountToSend,
+        address feeReceiver,
+        uint256 feeAmount
+    ) external {
+        uint256 fees = (amountToSend * feeAmount) / BPS;
+        uint256 amountToPay = amountToSend - feeAmount;
+
+        if (amountToPay == 0) {
+            revert AmountWithoutFeesIsZeroError();
+        }
+
+        if (feeReceiver != address(0) && feeAmount != 0) {
+            assetTransfer(withdrawalAsset, from, feeReceiver, fees);
+        }
+
+        assetTransfer(withdrawalAsset, from, offerMaker, amountToPay);
     }
 
     /**
@@ -144,7 +172,7 @@ library AssetHelper {
      * @param asset The asset to standardize.
      * @return amount The standardized amount of the asset.
      */
-    function standardizeAsset(Asset calldata asset) external view returns (uint amount) {
+    function standardizeAsset(Asset calldata asset) external view returns (uint256 amount) {
         amount = (asset.assetType == AssetType.ERC20)
             ? standardizeNumber(asset, asset.amount)
             : _standardize(asset.amount, 1);
@@ -156,7 +184,7 @@ library AssetHelper {
      * @param assetOwner The address to check.
      * @return amount The standardized amount of the asset.
      */
-    function standardizeAsset(Asset calldata asset, address assetOwner) external view returns (uint amount) {
+    function standardizeAsset(Asset calldata asset, address assetOwner) external view returns (uint256 amount) {
         amount = (_checkAssetOwner(asset, assetOwner, asset.amount) == AssetType.ERC20)
             ? standardizeNumber(asset, asset.amount)
             : _standardize(asset.amount, 1);
@@ -167,7 +195,7 @@ library AssetHelper {
      * @param asset The asset to unstandardize.
      * @return amount The unstandardized amount of the asset.
      */
-    function unstandardizeAsset(Asset calldata asset) public view returns (uint amount) {
+    function unstandardizeAsset(Asset calldata asset) public view returns (uint256 amount) {
         amount = (asset.assetType == AssetType.ERC20)
             ? unstandardizeNumber(asset, asset.amount)
             : _unstandardize(asset.amount, 1);
