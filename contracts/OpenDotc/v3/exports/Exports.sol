@@ -1,6 +1,7 @@
 //SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
+import { FixedPointMathLib } from "solady/src/utils/FixedPointMathLib.sol";
 import { IERC165 } from "@openzeppelin-v5/contracts/utils/introspection/IERC165.sol";
 
 import { Ownable } from "@openzeppelin-v5/contracts/access/Ownable.sol";
