@@ -80,7 +80,7 @@ enum TakingOfferType {
  * @author Swarm
  */
 enum ValidityType {
-    NotExist,
+    NotTaken,
     PartiallyTaken,
     FullyTaken
 }
@@ -100,6 +100,15 @@ enum TimeConstraintType {
     TimelockGreaterThanExpirationTime,
     InTimelock,
     IncorrectTimelock
+}
+
+/**
+ * @title FeesManagement Structure
+ * @author Swarm
+ */
+struct FeesManagement {
+    address receiver;
+    uint256 amount;
 }
 
 /**
