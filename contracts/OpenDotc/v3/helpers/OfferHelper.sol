@@ -67,9 +67,6 @@ library OfferHelper {
         Asset calldata depositAsset,
         Asset calldata withdrawalAsset
     ) external view returns (DotcOffer memory dotcOffer) {
-        uint256 standardizedDepositAmount = depositAsset.standardizeAsset(msg.sender);
-        uint256 standardizedWithdrawalAmount = withdrawalAsset.standardizeAsset();
-
         dotcOffer.maker = msg.sender;
 
         dotcOffer.depositAsset = depositAsset;
@@ -77,10 +74,13 @@ library OfferHelper {
 
         dotcOffer.offer = offer;
 
-        if (dotcOffer.depositAsset.assetType == AssetType.ERC20)
-            dotcOffer.depositAsset.amount = standardizedDepositAmount;
-        if (dotcOffer.withdrawalAsset.assetType == AssetType.ERC20)
-            dotcOffer.withdrawalAsset.amount = standardizedWithdrawalAmount;
+        if (
+            dotcOffer.depositAsset.assetType == AssetType.ERC20 &&
+            dotcOffer.withdrawalAsset.assetType == AssetType.ERC20
+        ) {
+            dotcOffer.depositAsset.amount = depositAsset.standardize();
+            dotcOffer.withdrawalAsset.amount = withdrawalAsset.standardize();
+        }
 
         dotcOffer.availableAmount = dotcOffer.depositAsset.amount;
         dotcOffer.unitPrice = (dotcOffer.withdrawalAsset.amount * 10 ** DECIMALS) / dotcOffer.depositAsset.amount;
