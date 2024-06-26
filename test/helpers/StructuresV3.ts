@@ -27,7 +27,7 @@ export enum EscrowCallType {
 	Cancel
 }
 export enum ValidityType {
-	NotExist,
+	NotTaken,
 	PartiallyTaken,
 	FullyTaken
 }
