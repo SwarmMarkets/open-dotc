@@ -204,6 +204,9 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
     ) external {
         depositAsset.checkAssetStructure();
         withdrawalAsset.checkAssetStructure();
+
+        depositAsset.checkAssetOwner(msg.sender);
+
         offer.checkOfferStructure(depositAsset, withdrawalAsset);
 
         uint256 _currentOfferId = currentOfferId;
@@ -230,11 +233,84 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
      * @dev Handles the transfer of assets between maker and taker.
      */
     function takePartialOffer(uint256 offerId, uint256 amountToSend) public {
-        _takeOffer(offerId, amountToSend);
+        DotcOffer memory offer = allOffers[offerId];
+        offer.checkDotcOfferParams();
+
+        TakingOfferType takingOfferType = offer.offer.checkOfferParams();
+
+        if (takingOfferType != TakingOfferType.PartialTaking) {
+            revert OfferCanNotBePartiallyTaken(offerId);
+        }
+
+        if (amountToSend == 0) {
+            revert PartialOfferShouldHaveSpecifiedAmount();
+        }
+
+        uint256 depositAssetAmount = offer.depositAsset.amount;
+        uint256 withdrawalAssetAmount = offer.withdrawalAsset.amount;
+
+        uint256 standardizedAmount = offer.withdrawalAsset.standardize(amountToSend);
+
+        if (standardizedAmount == withdrawalAssetAmount) {
+            depositAssetAmount = offer.availableAmount;
+            allOffers[offerId].withdrawalAsset.amount = 0;
+            allOffers[offerId].availableAmount = 0;
+        } else {
+            depositAssetAmount = (standardizedAmount * 10 ** OfferHelper.DECIMALS) / offer.unitPrice;
+            allOffers[offerId].withdrawalAsset.amount -= standardizedAmount;
+            allOffers[offerId].availableAmount -= depositAssetAmount;
+        }
+
+        validityType = (allOffers[offerId].withdrawalAsset.amount == 0 || allOffers[offerId].availableAmount == 0)
+            ? ValidityType.FullyTaken
+            : ValidityType.PartiallyTaken;
+
+        allOffers[offerId].validityType = validityType;
+        withdrawalAssetAmount = amountToSend;
+
+        //TODO: finish
     }
 
     function takeFullOffer(uint256 offerId) public {
-        _takeOffer(offerId, 0);
+        DotcOffer memory offer = allOffers[offerId];
+        offer.checkDotcOfferParams();
+
+        TakingOfferType takingOfferType = offer.offer.checkOfferParams();
+
+        if (takingOfferType != TakingOfferType.FullyTaking) {
+            revert OfferCanNotBeFullyTaken(offerId);
+        }
+
+        uint256 depositAssetAmount = offer.depositAsset.amount;
+        uint256 withdrawalAssetAmount = offer.withdrawalAsset.amount;
+
+        ValidityType validityType = ValidityType.FullyTaken;
+        allOffers[offerId].withdrawalAsset.amount = 0;
+        allOffers[offerId].availableAmount = 0;
+        allOffers[offerId].validityType = validityType;
+
+        //TODO: implement unstandartization / Or add private functions for different assets
+
+        // If WithdrawalAsset is not an ERC20 then fees will be taken from Maker
+        // If WithdrawalAsset is an ERC20 then fees will be taken from Taker
+        if (offer.withdrawalAsset.checkAssetOwner(msg.sender, withdrawalAssetAmount) != AssetType.ERC20) {
+            if (offer.depositAsset.assetType == AssetType.ERC20) {
+                uint256 feesAmount = _calculateFees(depositAssetAmount);
+                depositAssetAmount -= feesAmount;
+
+                escrow.withdrawFees(offerId, feesAmount);
+            }
+        } else {
+            withdrawalAssetAmount -= _sendWithdrawalFees(withdrawalAssetAmount);
+        }
+
+        //Transfer WithdrawalAsset from Taker to Maker
+        _assetTransfer(offer.withdrawalAsset, msg.sender, offer.maker, withdrawalAssetAmount);
+
+        //Transfer DepositAsset from Maker to Taker
+        escrow.withdrawDeposit(offerId, depositAssetAmount, msg.sender);
+
+        emit TakenOffer(offerId, msg.sender, validityType, depositAssetAmount, withdrawalAssetAmount);
     }
 
     function _takeOffer(uint256 offerId, uint256 amountToSend) private {
@@ -246,26 +322,7 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
         uint256 withdrawalAssetAmount = offer.withdrawalAsset.amount;
         ValidityType validityType;
 
-        if (takingOfferType == TakingOfferType.PartialTaking && amountToSend != 0) {
-            uint256 standardizedAmount = offer.withdrawalAsset.standardizeNumber(amountToSend);
-
-            if (standardizedAmount == withdrawalAssetAmount) {
-                depositAssetAmount = offer.availableAmount;
-                allOffers[offerId].withdrawalAsset.amount = 0;
-                allOffers[offerId].availableAmount = 0;
-            } else {
-                depositAssetAmount = (standardizedAmount * 10 ** OfferHelper.DECIMALS) / offer.unitPrice;
-                allOffers[offerId].withdrawalAsset.amount -= standardizedAmount;
-                allOffers[offerId].availableAmount -= depositAssetAmount;
-            }
-
-            validityType = (allOffers[offerId].withdrawalAsset.amount == 0 || allOffers[offerId].availableAmount == 0)
-                ? ValidityType.FullyTaken
-                : ValidityType.PartiallyTaken;
-
-            allOffers[offerId].validityType = validityType;
-            withdrawalAssetAmount = amountToSend;
-        } else {
+        if (takingOfferType == TakingOfferType.PartialTaking && amountToSend != 0) {} else {
             validityType = ValidityType.FullyTaken;
             allOffers[offerId].withdrawalAsset.amount = 0;
             allOffers[offerId].availableAmount = 0;
@@ -273,21 +330,14 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
 
             if (offer.withdrawalAsset.checkAssetOwner(msg.sender, withdrawalAssetAmount) != AssetType.ERC20) {
                 if (offer.depositAsset.assetType == AssetType.ERC20) {
-                    uint256 feesAmount = (offer.depositAsset.amount * escrow.feeAmount()) / AssetHelper.BPS;
+                    uint256 feesAmount = (offer.depositAsset.amount * escrow.feeAmount()) / OfferHelper.DECIMALS;
                     depositAssetAmount -= feesAmount;
                     escrow.withdrawFees(offerId, feesAmount);
                 }
             }
         }
 
-        _transferAssets(
-            offer.withdrawalAsset,
-            msg.sender,
-            offer.maker,
-            withdrawalAssetAmount,
-            escrow.feeReceiver(),
-            escrow.feeAmount()
-        );
+        _transferAssets(offer, msg.sender, withdrawalAssetAmount, escrow.feeReceiver(), escrow.feeAmount());
 
         escrow.withdrawDeposit(offerId, depositAssetAmount, msg.sender);
 
@@ -302,6 +352,7 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
     function cancelOffer(uint256 offerId) external {
         DotcOffer memory offer = allOffers[offerId];
 
+        offer.onlyMaker();
         offer.checkDotcOfferParams();
 
         delete allOffers[offerId];
@@ -326,6 +377,7 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
     ) external returns (bool status) {
         DotcOffer memory offer = allOffers[offerId];
 
+        offer.onlyMaker();
         offer.checkDotcOfferParams();
 
         if (newAmount > 0) {
@@ -333,7 +385,7 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
                 revert ERC721OfferAmountChangeError();
             }
             uint256 standardizedNewAmount = offer.withdrawalAsset.assetType == AssetType.ERC20
-                ? offer.withdrawalAsset.standardizeNumber(newAmount)
+                ? offer.withdrawalAsset.standardize(newAmount)
                 : newAmount;
 
             allOffers[offerId].withdrawalAsset.amount = standardizedNewAmount;
@@ -430,7 +482,7 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
      */
     function _assetTransfer(Asset memory asset, address from, address to, uint256 amount) private {
         if (asset.assetType == AssetType.ERC20) {
-            IERC20(asset.assetAddress).safeTransfer(to, amount);
+            IERC20(asset.assetAddress).safeTransferFrom(from, to, amount);
         } else if (asset.assetType == AssetType.ERC721) {
             IERC721(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId);
         } else if (asset.assetType == AssetType.ERC1155) {
@@ -441,24 +493,40 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
     }
 
     function _transferAssets(
-        Asset memory withdrawalAsset,
+        DotcOffer memory offer,
         address from,
-        address offerMaker,
         uint256 amountToSend,
         address feeReceiver,
         uint256 feeAmount
     ) private {
-        uint256 fees = (amountToSend * feeAmount) / AssetHelper.BPS;
+        uint256 fees = (amountToSend * feeAmount) / OfferHelper.DECIMALS;
         uint256 amountToPay = amountToSend - feeAmount;
 
-        if (amountToPay == 0) {
+        uint256 unstandartizedAmount = offer.withdrawalAsset.unstandardize(amountToPay);
+
+        if (unstandartizedAmount == 0) {
             revert AmountWithoutFeesIsZeroError();
         }
 
         if (feeReceiver != address(0) && feeAmount != 0) {
-            _assetTransfer(withdrawalAsset, from, feeReceiver, fees);
+            _assetTransfer(offer.withdrawalAsset, from, feeReceiver, fees);
         }
 
-        _assetTransfer(withdrawalAsset, from, offerMaker, amountToPay);
+        _assetTransfer(offer.withdrawalAsset, from, offer.maker, unstandartizedAmount);
+    }
+
+    function _sendWithdrawalFees(uint256 assetAmount) private returns (uint256 fees) {
+        uint256 feeAmount = escrow.feeManagement().amount;
+        uint256 feeReceiver = escrow.feeManagement().receiver;
+
+        fees = _calculateFees(assetAmount, feeAmount);
+
+        if (feeReceiver != address(0) && feeAmount != 0) {
+            _assetTransfer(offer.withdrawalAsset, from, feeReceiver, fees);
+        }
+    }
+
+    function _calculateFees(uint256 amount, uint256 feeAmount) private returns (uin256 fees) {
+        fees = (amount * feeAmount) / OfferHelper.DECIMALS;
     }
 }
