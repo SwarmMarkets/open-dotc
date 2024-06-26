@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: GPL-3.0-only
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
 import { IERC20, IERC20Metadata, IERC721, IERC1155, IERC165 } from "../exports/Exports.sol";
@@ -108,73 +108,33 @@ library AssetHelper {
     }
 
     /**
-     * @notice Checks if the specified account is the owner of the specified asset.
-     * @param asset The asset to check.
-     * @param account The account to verify ownership.
-     * @return The type of the asset if the account owns it.
-     */
-    function checkAssetOwner(Asset calldata asset, address account, uint256 amount) external view returns (AssetType) {
-        return _checkAssetOwner(asset, account, amount);
-    }
-
-    /**
-     * @notice Standardizes the amount of an asset based on its type.
-     * @param asset The asset to standardize.
-     * @return amount The standardized amount of the asset.
-     */
-    function standardizeAsset(Asset calldata asset) external view returns (uint256 amount) {
-        amount = (asset.assetType == AssetType.ERC20)
-            ? standardizeNumber(asset, asset.amount)
-            : _standardize(asset.amount, 1);
-    }
-
-    /**
-     * @notice Standardizes the amount of an asset based on its type with checking the ownership of this asset.
-     * @param asset The asset to standardize.
-     * @param assetOwner The address to check.
-     * @return amount The standardized amount of the asset.
-     */
-    function standardizeAsset(Asset calldata asset, address assetOwner) external view returns (uint256 amount) {
-        amount = (_checkAssetOwner(asset, assetOwner, asset.amount) == AssetType.ERC20)
-            ? standardizeNumber(asset, asset.amount)
-            : _standardize(asset.amount, 1);
-    }
-
-    /**
-     * @notice Converts the standardized amount of an asset back to its original form.
-     * @param asset The asset to unstandardize.
-     * @return amount The unstandardized amount of the asset.
-     */
-    function unstandardizeAsset(Asset calldata asset) public view returns (uint256 amount) {
-        amount = (asset.assetType == AssetType.ERC20)
-            ? unstandardizeNumber(asset, asset.amount)
-            : _unstandardize(asset.amount, 1);
-    }
-
-    /**
      * @notice Standardizes a numerical amount based on token decimals.
      * @param asset The asset to standardize.
-     * @param amount The amount to standardize.
      * @return The standardized numerical amount.
      */
-    function standardizeNumber(
-        Asset calldata asset,
-        uint256 amount
-    ) public view zeroAmountCheck(amount) returns (uint256) {
+    function standardize(Asset calldata asset) public view returns (uint256) {
         uint8 decimals = IERC20Metadata(asset.assetAddress).decimals();
-        return _standardize(amount, decimals);
+        return _standardize(asset.amount, decimals);
+    }
+
+    /**
+     * @notice Converts a standardized numerical amount back to its original form based on token decimals.
+     * @param asset The asset to standardize.
+     * @return The unstandardized numerical amount.
+     */
+    function unstandardize(Asset calldata asset) public view returns (uint256) {
+        uint8 decimals = IERC20Metadata(asset.assetAddress).decimals();
+        return _unstandardize(asset.amount, decimals);
     }
 
     /**
      * @notice Standardizes a numerical amount based on token decimals.
+     * @param asset The asset to standardize.
      * @param amount The amount to standardize.
-     * @param decimals The decimals of the token.
      * @return The standardized numerical amount.
      */
-    function standardizeNumber(
-        uint256 amount,
-        uint8 decimals
-    ) external pure zeroAmountCheck(amount) zeroAmountCheck(decimals) returns (uint256) {
+    function standardize(Asset calldata asset, uint256 amount) public view zeroAmountCheck(amount) returns (uint256) {
+        uint8 decimals = IERC20Metadata(asset.assetAddress).decimals();
         return _standardize(amount, decimals);
     }
 
@@ -184,24 +144,8 @@ library AssetHelper {
      * @param amount The amount to unstandardize.
      * @return The unstandardized numerical amount.
      */
-    function unstandardizeNumber(
-        Asset calldata asset,
-        uint256 amount
-    ) public view zeroAmountCheck(amount) returns (uint256) {
+    function unstandardize(Asset calldata asset, uint256 amount) public view zeroAmountCheck(amount) returns (uint256) {
         uint8 decimals = IERC20Metadata(asset.assetAddress).decimals();
-        return _unstandardize(amount, decimals);
-    }
-
-    /**
-     * @notice Converts a standardized numerical amount back to its original form based on token decimals.
-     * @param amount The amount to unstandardize.
-     * @param decimals The decimals of the token.
-     * @return The unstandardized numerical amount.
-     */
-    function unstandardizeNumber(
-        uint256 amount,
-        uint8 decimals
-    ) external pure zeroAmountCheck(amount) zeroAmountCheck(decimals) returns (uint256) {
         return _unstandardize(amount, decimals);
     }
 
@@ -232,15 +176,16 @@ library AssetHelper {
      * @param amount The amount of the asset.
      * @return assetType The type of the asset if the account owns it.
      */
-    function _checkAssetOwner(
-        Asset memory asset,
+    function checkAssetOwner(
+        Asset calldata asset,
         address account,
         uint256 amount
-    ) private view returns (AssetType assetType) {
+    ) external view returns (AssetType assetType) {
         assetType = asset.assetType;
 
         if (assetType == AssetType.ERC20) {
             uint256 balance = IERC20(asset.assetAddress).balanceOf(account);
+
             if (balance < amount) {
                 revert AddressHaveNoERC20(account, asset.assetAddress, balance, amount);
             }
