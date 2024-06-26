@@ -45,12 +45,14 @@ library DotcOfferHelper {
             revert OfferValidityError(offer.validityType);
         }
 
-        if (offer.maker != msg.sender) {
-            revert OnlyMakerAllowedError(offer.maker);
-        }
-
         if (offer.offer.timelockPeriod >= block.timestamp) {
             revert OfferInTimelockError();
+        }
+    }
+
+    function onlyMaker(DotcOffer calldata offer) external view {
+        if (offer.maker != msg.sender) {
+            revert OnlyMakerAllowedError(offer.maker);
         }
     }
 }
