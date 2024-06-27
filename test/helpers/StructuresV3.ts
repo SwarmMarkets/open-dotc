@@ -39,6 +39,13 @@ export enum TimeConstraintType {
 	IncorrectTimelock
 }
 
+export interface PriceStruct {
+	unitPrice: BigNumberish;
+	min: BigNumberish;
+	max: BigNumberish;
+	percentage: BigNumberish;
+}
+
 export interface AssetStruct {
 	assetType: AssetType;
 	assetAddress: string;
@@ -50,6 +57,7 @@ export interface AssetStruct {
 export interface OfferStruct {
 	takingOfferType: TakingOfferType;
 	offerPricingType: OfferPricingType;
+	price: PriceStruct;
 	specialAddresses: string[];
 	authorizationAddresses: string[];
 	expiryTimestamp: BigNumberish;
@@ -61,14 +69,7 @@ export interface OfferStruct {
 export interface DotcOfferStruct {
 	maker: string;
 	validityType: ValidityType;
-	availableAmount: BigNumberish;
-	unitPrice: BigNumberish;
 	depositAsset: AssetStruct;
 	withdrawalAsset: AssetStruct;
 	offer: OfferStruct;
 }
-
-
-
-
-
