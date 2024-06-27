@@ -4,7 +4,7 @@ import { ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20, IERC721, IER
 
 import { DotcV3 } from "./DotcV3.sol";
 import { AssetHelper } from "./helpers/AssetHelper.sol";
-import { FeesManagement, Asset, AssetType, UnsupportedAssetType } from "./structures/DotcStructuresV3.sol";
+import { Asset, AssetType, UnsupportedAssetType } from "./structures/DotcStructuresV3.sol";
 
 /// @title Errors related to asset management in the Dotc Escrow contract
 /// @notice Provides error messages for various failure conditions related to asset handling
@@ -91,7 +91,7 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
      * @param by Address of the user who performed the update.
      * @param feeAmount New fee amount.
      */
-    event FeeAmountSet(address indexed by, uint256 feeAmount);
+    event FeesSet(address indexed by, address feeReceiver, uint256 feeAmount);
 
     /**
      * @dev Address of the dotc contract.
@@ -104,7 +104,8 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
     mapping(uint256 offerId => Asset asset) public assetDeposits;
 
     // Fees
-    FeesManagement public feeManagement;
+    address public feeReceiver;
+    uint256 public feeAmount;
 
     /**
      * @notice Ensures that the function is only callable by the DOTC contract.
@@ -132,8 +133,8 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
         __ERC721Holder_init();
         __Ownable_init(msg.sender);
 
-        feeManagement.receiver = _newFeeReceiver;
-        feeManagement.amount = 25 * (10 ** 23);
+        feeReceiver = _newFeeReceiver;
+        feeAmount = 25 * (10 ** 23);
     }
 
     /**
@@ -147,6 +148,22 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
         assetDeposits[offerId] = asset;
 
         emit OfferDeposited(offerId, maker, asset.amount);
+    }
+
+    /**
+     * @notice Withdraws a deposit from escrow to the taker's address.
+     * @param offerId The ID of the offer being withdrawn.
+     * @param taker The address receiving the withdrawn assets.
+     * @dev Ensures that the withdrawal is valid and transfers the asset to the taker.
+     */
+    function withdrawFullDeposit(uint256 offerId, address taker) external onlyDotc {
+        Asset memory asset = assetDeposits[offerId];
+
+        assetDeposits[offerId].amount = 0;
+
+        _assetTransfer(asset, address(this), taker, asset.amount);
+
+        emit OfferWithdrawn(offerId, taker, asset.amount);
     }
 
     /**
@@ -204,23 +221,18 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
     /**
      * @notice Withdraws fee amount from escrow.
      * @param offerId The ID of the offer related to the fees.
-     * @param amountToWithdraw The amount of fees to withdraw.
+     * @param feesAmountToWithdraw The amount of fees to withdraw.
      * @dev Ensures that the fee withdrawal is valid and transfers the fee to the designated receiver.
      */
-    function withdrawFees(uint256 offerId, uint256 amountToWithdraw) external onlyDotc {
+    function withdrawFees(uint256 offerId, uint256 feesAmountToWithdraw) external onlyDotc {
         Asset memory asset = assetDeposits[offerId];
+        address receiver = feeReceiver;
 
-        uint256 amount = asset.unstandardize(amountToWithdraw);
+        assetDeposits[offerId].amount -= feesAmountToWithdraw;
 
-        if (amount <= 0) {
-            revert FeesAmountEqZero();
-        }
+        _assetTransfer(asset, address(this), receiver, feesAmountToWithdraw);
 
-        assetDeposits[offerId].amount -= amount;
-
-        _assetTransfer(asset, address(this), feeReceiver, amount);
-
-        emit FeesWithdrew(offerId, feeReceiver, amount);
+        emit FeesWithdrew(offerId, receiver, feesAmountToWithdraw);
     }
 
     /**
@@ -259,12 +271,13 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
      */
 
     function changeFees(address _newFeeReceiver, uint256 _feeAmount) external onlyOwner {
-        if (_newFeeReceiver == address(0)) {
-            revert ZeroAddressPassed();
+        if (_newFeeReceiver != address(0)) {
+            feeReceiver = _newFeeReceiver;
         }
 
-        feeManagement.receiver = _newFeeReceiver;
-        feeManagement.amount = _feeAmount;
+        if (_feeAmount != 0) {
+            feeAmount = _feeAmount;
+        }
 
         emit FeesSet(msg.sender, _newFeeReceiver, _feeAmount);
     }
