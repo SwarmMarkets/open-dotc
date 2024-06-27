@@ -88,6 +88,47 @@ library AssetHelper {
     }
 
     /**
+     * @dev Internal function to check if an account owns an asset.
+     * @param asset The asset to check.
+     * @param account The account to verify ownership.
+     * @param amount The amount of the asset.
+     * @return assetType The type of the asset if the account owns it.
+     */
+    function checkAssetOwner(
+        Asset calldata asset,
+        address account,
+        uint256 amount
+    ) external view returns (AssetType assetType) {
+        assetType = asset.assetType;
+
+        if (assetType == AssetType.ERC20) {
+            uint256 balance = IERC20(asset.assetAddress).balanceOf(account);
+
+            if (balance < amount) {
+                revert AddressHaveNoERC20(account, asset.assetAddress, balance, amount);
+            }
+        } else if (assetType == AssetType.ERC721) {
+            if (!IERC165(asset.assetAddress).supportsInterface(type(IERC721).interfaceId)) {
+                revert IncorrectAssetTypeForAddress(asset.assetAddress, assetType);
+            }
+            if (IERC721(asset.assetAddress).ownerOf(asset.tokenId) != account) {
+                revert AddressHaveNoERC721(account, asset.assetAddress, asset.tokenId);
+            }
+        } else if (assetType == AssetType.ERC1155) {
+            uint256 balance = IERC1155(asset.assetAddress).balanceOf(account, asset.tokenId);
+
+            if (!IERC165(asset.assetAddress).supportsInterface(type(IERC1155).interfaceId)) {
+                revert IncorrectAssetTypeForAddress(asset.assetAddress, assetType);
+            }
+            if (balance < asset.amount) {
+                revert AddressHaveNoERC1155(account, asset.assetAddress, asset.tokenId, balance, asset.amount);
+            }
+        } else {
+            revert UnsupportedAssetType(assetType);
+        }
+    }
+
+    /**
      * @notice Ensures that the asset structure is valid.
      * @dev Checks for asset type, asset address, and amount validity.
      * @param asset The asset to be checked.
@@ -149,6 +190,10 @@ library AssetHelper {
         return _unstandardize(amount, decimals);
     }
 
+    function calculateFees(uint256 amount, uint256 feeAmount) external view returns (uint256 fees) {
+        fees = (amount * feeAmount) / BPS;
+    }
+
     /**
      * @dev Internal function to standardize an amount based on decimals.
      * @param amount The amount to be standardized.
@@ -167,46 +212,5 @@ library AssetHelper {
      */
     function _unstandardize(uint256 amount, uint8 decimals) private pure returns (uint256) {
         return (amount * 10 ** decimals) / BPS;
-    }
-
-    /**
-     * @dev Internal function to check if an account owns an asset.
-     * @param asset The asset to check.
-     * @param account The account to verify ownership.
-     * @param amount The amount of the asset.
-     * @return assetType The type of the asset if the account owns it.
-     */
-    function checkAssetOwner(
-        Asset calldata asset,
-        address account,
-        uint256 amount
-    ) external view returns (AssetType assetType) {
-        assetType = asset.assetType;
-
-        if (assetType == AssetType.ERC20) {
-            uint256 balance = IERC20(asset.assetAddress).balanceOf(account);
-
-            if (balance < amount) {
-                revert AddressHaveNoERC20(account, asset.assetAddress, balance, amount);
-            }
-        } else if (assetType == AssetType.ERC721) {
-            if (!IERC165(asset.assetAddress).supportsInterface(type(IERC721).interfaceId)) {
-                revert IncorrectAssetTypeForAddress(asset.assetAddress, assetType);
-            }
-            if (IERC721(asset.assetAddress).ownerOf(asset.tokenId) != account) {
-                revert AddressHaveNoERC721(account, asset.assetAddress, asset.tokenId);
-            }
-        } else if (assetType == AssetType.ERC1155) {
-            uint256 balance = IERC1155(asset.assetAddress).balanceOf(account, asset.tokenId);
-
-            if (!IERC165(asset.assetAddress).supportsInterface(type(IERC1155).interfaceId)) {
-                revert IncorrectAssetTypeForAddress(asset.assetAddress, assetType);
-            }
-            if (balance < asset.amount) {
-                revert AddressHaveNoERC1155(account, asset.assetAddress, asset.tokenId, balance, asset.amount);
-            }
-        } else {
-            revert UnsupportedAssetType(assetType);
-        }
     }
 }
