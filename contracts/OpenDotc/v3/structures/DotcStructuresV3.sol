@@ -102,13 +102,11 @@ enum TimeConstraintType {
     IncorrectTimelock
 }
 
-/**
- * @title FeesManagement Structure
- * @author Swarm
- */
-struct FeesManagement {
-    address receiver;
-    uint256 amount;
+struct Price {
+    uint256 unitPrice;
+    uint256 min;
+    uint256 max;
+    uint256 percentage;
 }
 
 /**
@@ -147,6 +145,7 @@ struct Asset {
 struct OfferStruct {
     TakingOfferType takingOfferType;
     OfferPricingType offerPricingType;
+    Price price;
     address[] specialAddresses;
     address[] authorizationAddresses;
     uint256 expiryTimestamp;
@@ -171,8 +170,6 @@ struct OfferStruct {
 struct DotcOffer {
     address maker;
     ValidityType validityType;
-    uint256 availableAmount;
-    uint256 unitPrice;
     Asset depositAsset;
     Asset withdrawalAsset;
     OfferStruct offer;
