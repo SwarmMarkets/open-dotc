@@ -3,7 +3,7 @@ pragma solidity 0.8.25;
 
 import { AssetHelper } from "./AssetHelper.sol";
 import { IDotcCompatibleAuthorization } from "../interfaces/IDotcCompatibleAuthorization.sol";
-import { Asset, AssetType, OfferStruct, DotcOffer, TakingOfferType } from "../structures/DotcStructuresV3.sol";
+import { Asset, AssetType, OfferStruct, DotcOffer, TakingOfferType, OfferPricingType } from "../structures/DotcStructuresV3.sol";
 
 /// @notice Thrown when an action is attempted on an offer with an expired timestamp.
 /// @param timestamp The expired timestamp for the offer.
@@ -63,7 +63,7 @@ library OfferHelper {
     uint256 public constant DECIMALS = 18;
 
     function buildOffer(
-        OfferStruct calldata offer,
+        OfferStruct memory offer,
         Asset calldata depositAsset,
         Asset calldata withdrawalAsset
     ) external view returns (DotcOffer memory dotcOffer) {
@@ -74,16 +74,16 @@ library OfferHelper {
 
         dotcOffer.offer = offer;
 
-        if (
-            dotcOffer.depositAsset.assetType == AssetType.ERC20 &&
-            dotcOffer.withdrawalAsset.assetType == AssetType.ERC20
-        ) {
+        if (offer.takingOfferType == TakingOfferType.PartialTaking) {
             dotcOffer.depositAsset.amount = depositAsset.standardize();
             dotcOffer.withdrawalAsset.amount = withdrawalAsset.standardize();
-        }
 
-        dotcOffer.availableAmount = dotcOffer.depositAsset.amount;
-        dotcOffer.unitPrice = (dotcOffer.withdrawalAsset.amount * 10 ** DECIMALS) / dotcOffer.depositAsset.amount;
+            if (offer.offerPricingType == OfferPricingType.FixedPricing) {
+                offer.price.unitPrice =
+                    (dotcOffer.withdrawalAsset.amount * 10 ** DECIMALS) /
+                    dotcOffer.depositAsset.amount;
+            }
+        }
     }
 
     /**
