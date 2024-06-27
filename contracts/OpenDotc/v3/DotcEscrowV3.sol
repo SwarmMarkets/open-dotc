@@ -159,6 +159,10 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
     function withdrawFullDeposit(uint256 offerId, address taker) external onlyDotc {
         Asset memory asset = assetDeposits[offerId];
 
+        if (asset.amount <= 0) {
+            revert AssetAmountEqZero();
+        }
+
         assetDeposits[offerId].amount = 0;
 
         _assetTransfer(asset, address(this), taker, asset.amount);
@@ -180,9 +184,7 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
             revert AssetAmountEqZero();
         }
 
-        if (asset.assetType == AssetType.ERC20) {
-            amountToWithdraw = asset.unstandardize(amountToWithdraw);
-        }
+        amountToWithdraw = asset.unstandardize(amountToWithdraw);
 
         if (amountToWithdraw <= 0) {
             revert AmountToWithdrawEqZero();
