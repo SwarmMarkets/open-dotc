@@ -496,41 +496,9 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
         }
     }
 
-    function _transferAssets(
-        DotcOffer memory offer,
-        address from,
-        uint256 amountToSend,
-        address feeReceiver,
-        uint256 feeAmount
-    ) private {
-        uint256 fees = (amountToSend * feeAmount) / OfferHelper.DECIMALS;
-        uint256 amountToPay = amountToSend - feeAmount;
+    function _sendWithdrawalFees(Asset memory asset, uint256 assetAmount) private returns (uint256 fees) {
+        fees = AssetHelper.calculateFees(assetAmount, escrow.feeAmount());
 
-        uint256 unstandartizedAmount = offer.withdrawalAsset.unstandardize(amountToPay);
-
-        if (unstandartizedAmount == 0) {
-            revert AmountWithoutFeesIsZeroError();
-        }
-
-        if (feeReceiver != address(0) && feeAmount != 0) {
-            _assetTransfer(offer.withdrawalAsset, from, feeReceiver, fees);
-        }
-
-        _assetTransfer(offer.withdrawalAsset, from, offer.maker, unstandartizedAmount);
-    }
-
-    function _sendWithdrawalFees(uint256 assetAmount) private returns (uint256 fees) {
-        uint256 feeAmount = escrow.feeManagement().amount;
-        uint256 feeReceiver = escrow.feeManagement().receiver;
-
-        fees = _calculateFees(assetAmount, feeAmount);
-
-        if (feeReceiver != address(0) && feeAmount != 0) {
-            _assetTransfer(offer.withdrawalAsset, from, feeReceiver, fees);
-        }
-    }
-
-    function _calculateFees(uint256 amount, uint256 feeAmount) private returns (uin256 fees) {
-        fees = (amount * feeAmount) / OfferHelper.DECIMALS;
+        _assetTransfer(asset, msg.sender, escrow.feeReceiver(), fees);
     }
 }
