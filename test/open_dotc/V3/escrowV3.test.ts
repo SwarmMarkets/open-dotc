@@ -11,7 +11,7 @@ import {
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { AssetStruct } from '../../helpers/StructuresV3';
 
-describe.only('OpenDotcEscrowV3', () => {
+describe('OpenDotcEscrowV3', () => {
   async function fixture() {
     const [deployer, otherAcc]: Signer[] = await ethers.getSigners();
 
