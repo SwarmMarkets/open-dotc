@@ -30,6 +30,10 @@ error ERC721OfferAmountChangeError();
 /// @notice Indicates that the operation was attempted by an unauthorized entity, not the Escrow contract
 error OnlyEscrow();
 
+error PartialOfferShouldHaveSpecifiedAmount();
+error OfferCanNotBeFullyTaken(uint256 offerId);
+error OfferCanNotBePartiallyTaken(uint256 offerId);
+
 /**
  * @title Open Dotc smart contract (as part of the "SwarmX.eth Protocol")
  * @notice This contract handles decentralized over-the-counter trading.
