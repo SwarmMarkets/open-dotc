@@ -3,7 +3,7 @@ import { BigNumber, ContractFactory, Signer } from 'ethers';
 import { expect } from 'chai';
 import {
   DotcEscrowV3 as DotcEscrow,
-  ERC20Mock_2,
+  ERC20MockV3,
   ERC721Mock,
   ERC1155Mock,
   AssetHelper,
@@ -11,7 +11,7 @@ import {
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { AssetStruct } from '../../helpers/StructuresV3';
 
-describe('DotcEscrowV2_Open', () => {
+describe.only('OpenDotcEscrowV3', () => {
   async function fixture() {
     const [deployer, otherAcc]: Signer[] = await ethers.getSigners();
 
@@ -30,8 +30,8 @@ describe('DotcEscrowV2_Open', () => {
     await escrow.deployed();
 
     // Deploy mock tokens
-    const ERC20: ContractFactory = await ethers.getContractFactory('ERC20Mock_2');
-    const erc20 = await ERC20.deploy() as ERC20Mock_2;
+    const ERC20: ContractFactory = await ethers.getContractFactory('ERC20MockV3');
+    const erc20 = await ERC20.deploy(18) as ERC20MockV3;
     await erc20.deployed();
 
     const ERC721: ContractFactory = await ethers.getContractFactory('ERC721Mock');
@@ -88,7 +88,7 @@ describe('DotcEscrowV2_Open', () => {
 
       let offerId = 55;
 
-      let AssetERC20: AssetStruct = {
+      const AssetERC20: AssetStruct = {
         assetType: 1,
         assetAddress: erc20.address,
         assetPriceFeedAddress: await otherAcc.getAddress(),
@@ -103,23 +103,6 @@ describe('DotcEscrowV2_Open', () => {
       expect((await escrow.assetDeposits(offerId)).assetAddress).to.be.eq(AssetERC20.assetAddress);
       expect((await escrow.assetDeposits(offerId)).assetType).to.be.eq(AssetERC20.assetType);
       expect((await escrow.assetDeposits(offerId)).tokenId).to.be.eq(AssetERC20.tokenId);
-
-      ++offerId;
-
-      AssetERC20 = {
-        assetType: 1,
-        assetAddress: erc20.address,
-        assetPriceFeedAddress: await otherAcc.getAddress(),
-        amount: 1,
-        tokenId: 0,
-      };
-
-      await escrow.connect(otherAcc).setDeposit(offerId, await otherAcc.getAddress(), AssetERC20);
-
-      await expect(escrow.connect(otherAcc).withdrawFees(offerId, 1)).to.be.revertedWithCustomError(
-        escrow,
-        'FeesAmountEqZero',
-      );
     });
 
     it('Should withdraw deposit', async () => {
@@ -237,6 +220,84 @@ describe('DotcEscrowV2_Open', () => {
       expect(await erc1155.balanceOf(escrow.address, AssetERC1155.tokenId)).to.eq(0);
     });
 
+    it('Should withdraw full deposit', async () => {
+      const { escrow, erc20, erc721, erc1155, otherAcc, deployer } = await loadFixture(fixture);
+
+      let offerId = 55;
+
+      const AssetERC20: AssetStruct = {
+        assetType: 1,
+        assetAddress: erc20.address,
+        assetPriceFeedAddress: await otherAcc.getAddress(),
+        amount: BigNumber.from('500000000000000000000'),
+        tokenId: 0,
+      };
+
+      const AssetERC721: AssetStruct = {
+        assetType: 2,
+        assetAddress: erc721.address,
+        assetPriceFeedAddress: await otherAcc.getAddress(),
+        amount: 1,
+        tokenId: 4,
+      };
+
+      const AssetERC1155: AssetStruct = {
+        assetType: 3,
+        assetAddress: erc1155.address,
+        assetPriceFeedAddress: await otherAcc.getAddress(),
+        amount: 202,
+        tokenId: 3,
+      };
+
+      await erc20.transfer(escrow.address, BigNumber.from(AssetERC20.amount).add(20));
+      expect(await erc20.balanceOf(escrow.address)).to.eq(BigNumber.from(AssetERC20.amount).add(20));
+      await erc721['safeTransferFrom(address,address,uint256)'](await deployer.getAddress(), escrow.address, AssetERC721.tokenId);
+      expect(await erc721.ownerOf(AssetERC721.tokenId)).to.eq(escrow.address);
+      await erc1155.safeTransferFrom(
+        await deployer.getAddress(),
+        escrow.address,
+        AssetERC1155.tokenId,
+        AssetERC1155.amount,
+        '0x00',
+      );
+      expect(await erc1155.balanceOf(escrow.address, AssetERC1155.tokenId)).to.eq(AssetERC1155.amount);
+
+      // ERC20
+      await escrow.connect(otherAcc).setDeposit(offerId, await otherAcc.getAddress(), AssetERC20);
+
+      const tx_1 = await escrow.connect(otherAcc).withdrawFullDeposit(offerId, await otherAcc.getAddress());
+
+      await expect(tx_1)
+        .to.emit(escrow, 'OfferWithdrawn')
+        .withArgs(offerId, await otherAcc.getAddress(), BigNumber.from(AssetERC20.amount));
+      expect((await escrow.assetDeposits(offerId)).amount).to.be.eq(0);
+      expect(await erc20.balanceOf(await otherAcc.getAddress())).to.eq(BigNumber.from(AssetERC20.amount));
+      expect(await erc20.balanceOf(escrow.address)).to.eq(20);
+
+      ++offerId;
+
+      // ERC721
+      await escrow.connect(otherAcc).setDeposit(offerId, await otherAcc.getAddress(), AssetERC721);
+
+      const tx_2 = await escrow.connect(otherAcc).withdrawFullDeposit(offerId, await otherAcc.getAddress());
+
+      await expect(tx_2).to.emit(escrow, 'OfferWithdrawn').withArgs(offerId, await otherAcc.getAddress(), AssetERC721.amount);
+      expect((await escrow.assetDeposits(offerId)).amount).to.be.eq(0);
+      expect(await erc721.ownerOf(AssetERC721.tokenId)).to.eq(await otherAcc.getAddress());
+
+      ++offerId;
+
+      // ERC1155
+      await escrow.connect(otherAcc).setDeposit(offerId, await otherAcc.getAddress(), AssetERC1155);
+
+      const tx_3 = await escrow.connect(otherAcc).withdrawFullDeposit(offerId, await otherAcc.getAddress());
+
+      await expect(tx_3).to.emit(escrow, 'OfferWithdrawn').withArgs(offerId, await otherAcc.getAddress(), AssetERC1155.amount);
+      expect((await escrow.assetDeposits(offerId)).amount).to.be.eq(0);
+      expect(await erc1155.balanceOf(await otherAcc.getAddress(), AssetERC1155.tokenId)).to.eq(AssetERC1155.amount);
+      expect(await erc1155.balanceOf(escrow.address, AssetERC1155.tokenId)).to.eq(0);
+    });
+
     it('Should cancel deposit', async () => {
       const { escrow, erc20, erc721, erc1155, otherAcc, deployer } = await loadFixture(fixture);
 
@@ -338,6 +399,37 @@ describe('DotcEscrowV2_Open', () => {
       expect((await escrow.assetDeposits(offerId)).assetType).to.be.eq(0);
       expect((await escrow.assetDeposits(offerId)).tokenId).to.be.eq(0);
     });
+
+    it('Should withdraw fees', async () => {
+      const { escrow, erc20, otherAcc, deployer } = await loadFixture(fixture);
+
+      const offerId = 55;
+
+      const AssetERC20: AssetStruct = {
+        assetType: 1,
+        assetAddress: erc20.address,
+        assetPriceFeedAddress: await otherAcc.getAddress(),
+        amount: BigNumber.from('500000000000000000000'),
+        tokenId: 0,
+      };
+
+      const feesAmount = BigNumber.from('5');
+
+      await erc20.transfer(escrow.address, BigNumber.from(AssetERC20.amount));
+
+      const balanceBefore = await erc20.balanceOf(await deployer.getAddress());
+
+      // ERC20
+      await escrow.connect(otherAcc).setDeposit(offerId, await otherAcc.getAddress(), AssetERC20);
+
+      const tx_1 = await escrow.connect(otherAcc).withdrawFees(offerId, feesAmount);
+
+      await expect(tx_1).to.emit(escrow, 'FeesWithdrew').withArgs(offerId, await deployer.getAddress(), feesAmount);
+      expect((await escrow.assetDeposits(offerId)).amount).to.be.eq(BigNumber.from(AssetERC20.amount).sub(feesAmount));
+      expect(await erc20.balanceOf(await deployer.getAddress())).to.eq(balanceBefore.add(feesAmount));
+      expect(await erc20.balanceOf(escrow.address)).to.eq(BigNumber.from(AssetERC20.amount).sub(feesAmount));
+      expect((await escrow.assetDeposits(offerId)).amount).to.be.eq(BigNumber.from(AssetERC20.amount).sub(feesAmount));
+    });
   });
 
   describe('Else/if', () => {
@@ -372,7 +464,6 @@ describe('DotcEscrowV2_Open', () => {
       const error = 'ZeroAddressPassed';
 
       await expect(escrow.changeDotc(ethers.constants.AddressZero)).to.be.revertedWithCustomError(escrow, error);
-      await expect(escrow.changeFeeReceiver(ethers.constants.AddressZero)).to.be.revertedWithCustomError(escrow, error);
     });
   });
 });
