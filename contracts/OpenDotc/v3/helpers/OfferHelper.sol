@@ -74,15 +74,16 @@ library OfferHelper {
 
         dotcOffer.offer = offer;
 
-        if (offer.takingOfferType == TakingOfferType.PartialTaking) {
-            dotcOffer.depositAsset.amount = depositAsset.standardize();
-            dotcOffer.withdrawalAsset.amount = withdrawalAsset.standardize();
+        uint256 depositAmount = depositAsset.amount;
+        uint256 withdrawalAmount = withdrawalAsset.amount;
 
-            if (offer.offerPricingType == OfferPricingType.FixedPricing) {
-                offer.price.unitPrice =
-                    (dotcOffer.withdrawalAsset.amount * 10 ** DECIMALS) /
-                    dotcOffer.depositAsset.amount;
+        if (offer.offerPricingType == OfferPricingType.FixedPricing) {
+            if (offer.takingOfferType == TakingOfferType.PartialTaking) {
+                depositAmount = depositAsset.standardize();
+                withdrawalAmount = withdrawalAsset.standardize();
             }
+
+            offer.price.unitPrice = (withdrawalAmount * 10 ** DECIMALS) / depositAmount;
         }
     }
 
