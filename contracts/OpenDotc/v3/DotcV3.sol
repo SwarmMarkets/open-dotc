@@ -412,33 +412,6 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
     }
 
     /**
-     * @notice Retrieves all offers made by a specific address.
-     * @param account The address to query offers for.
-     * @return A list of offer IDs created by the given account.
-     */
-    function getOffersFromAddress(address account) external view returns (uint256[] memory) {
-        return offersFromAddress[account];
-    }
-
-    /**
-     * @notice Gets the owner (maker) of a specific offer.
-     * @param offerId The ID of the offer.
-     * @return maker The address of the offer's maker.
-     */
-    function getOfferOwner(uint256 offerId) external view returns (address maker) {
-        maker = allOffers[offerId].maker;
-    }
-
-    /**
-     * @notice Retrieves details of a specific offer.
-     * @param offerId The ID of the offer to retrieve.
-     * @return offer The details of the specified offer.
-     */
-    function getOffer(uint256 offerId) external view returns (DotcOffer memory offer) {
-        return allOffers[offerId];
-    }
-
-    /**
      * @notice Checks if the contract supports a specific interface.
      * @param interfaceId The interface identifier to check.
      * @return True if the interface is supported.

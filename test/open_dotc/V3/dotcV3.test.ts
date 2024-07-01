@@ -221,10 +221,10 @@ describe.only('OpenDotcV3', () => {
 
       expect(await dotc.offersFromAddress(await acc1.getAddress(), offerId)).to.eq(0);
 
-      expect((await dotc.getOffer(0)).offer.takingOfferType).to.eq(AwaitingOffer.offer.takingOfferType);
-      expect((await dotc.getOffer(0)).maker).to.eq(AwaitingOffer.maker);
-      expect((await dotc.getOffer(0)).validityType).to.eq(AwaitingOffer.validityType);
-      expect((await dotc.getOffer(0)).offer.price.unitPrice).to.eq(unitPrice);
+      expect((await dotc.allOffers(0)).offer.takingOfferType).to.eq(AwaitingOffer.offer.takingOfferType);
+      expect((await dotc.allOffers(0)).maker).to.eq(AwaitingOffer.maker);
+      expect((await dotc.allOffers(0)).validityType).to.eq(AwaitingOffer.validityType);
+      expect((await dotc.allOffers(0)).offer.price.unitPrice).to.eq(unitPrice);
       expect((await dotc.allOffers(0)).offer.specialAddresses).to.deep.eq(AwaitingOffer.offer.specialAddresses);
       expect((await dotc.allOffers(0)).offer.expiryTimestamp).to.eq(AwaitingOffer.offer.expiryTimestamp);
       expect((await dotc.allOffers(0)).offer.timelockPeriod).to.eq(AwaitingOffer.offer.timelockPeriod);
@@ -238,8 +238,8 @@ describe.only('OpenDotcV3', () => {
 
       expect((await escrow.escrowOffers(offerId)).escrowType).to.be.eq(EscrowType.OfferDeposited);
 
-      expect(await dotc.getOffersFromAddress(await acc1.getAddress())).to.deep.eq([0]);
-      expect(await dotc.getOfferOwner(0)).to.eq(await acc1.getAddress());
+      expect(await dotc.offersFromAddress(await acc1.getAddress(), 0)).to.eq(0);
+      expect((await dotc.allOffers(0)).maker).to.eq(await acc1.getAddress());
 
       offerId++;
 
@@ -1524,7 +1524,7 @@ describe.only('OpenDotcV3', () => {
     });
 
     it('Should take partial offer fully (erc20 => erc20)', async () => {
-      const { dotc, escrow, dotcManager, erc20_18, erc20_6, acc1, acc2, deployer } = await loadFixture(fixture);
+      const { dotc, escrow, offerHelper, assetHelper, erc20_18, erc20_6, acc1, acc2, deployer } = await loadFixture(fixture);
 
 
       let offerId = 0;
@@ -1592,12 +1592,12 @@ describe.only('OpenDotcV3', () => {
       };
 
       const fees = BigNumber.from(amountOut_asset)
-        .mul(await dotcManager.feeAmount())
-        .div(await dotcManager.BPS());
+        .mul(await escrow.feeAmount())
+        .div(await assetHelper.BPS());
       const deployerBalance_2 = await erc20_6.balanceOf(await deployer.getAddress());
 
       const amountToWitdraw = BigNumber.from(WithdrawalAssetERC20_standardized.amount)
-        .mul(BigNumber.from(10).pow(await dotcManager.DECIMALS()))
+        .mul(BigNumber.from(10).pow(await offerHelper.DECIMALS()))
         .div(BigNumber.from(AwaitingOffer.unitPrice));
       const realAmount = unstandardizeNumber(amountToWitdraw, await erc20_18.decimals());
 
