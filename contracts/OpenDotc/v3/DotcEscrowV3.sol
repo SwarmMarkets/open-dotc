@@ -4,7 +4,7 @@ import { ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20, IERC721, IER
 
 import { DotcV3 } from "./DotcV3.sol";
 import { AssetHelper } from "./helpers/AssetHelper.sol";
-import { Asset, AssetType, UnsupportedAssetType } from "./structures/DotcStructuresV3.sol";
+import { Asset, AssetType, EscrowType, EscrowOffer, UnsupportedAssetType } from "./structures/DotcStructuresV3.sol";
 
 /// @title Errors related to asset management in the Dotc Escrow contract
 /// @notice Provides error messages for various failure conditions related to asset handling
@@ -101,7 +101,7 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
     /**
      * @dev Mapping from offer IDs to their corresponding deposited assets.
      */
-    mapping(uint256 offerId => Asset asset) public assetDeposits;
+    mapping(uint256 offerId => EscrowOffer escrowOffer) public escrowOffers;
 
     // Fees
     address public feeReceiver;
@@ -145,7 +145,8 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
      * @dev Only callable by DOTC contract, ensures the asset is correctly deposited.
      */
     function setDeposit(uint256 offerId, address maker, Asset calldata asset) external onlyDotc {
-        assetDeposits[offerId] = asset;
+        escrowOffers[offerId].escrowType = EscrowType.OfferDeposited;
+        escrowOffers[offerId].depositAsset = asset;
 
         emit OfferDeposited(offerId, maker, asset.amount);
     }
@@ -157,17 +158,18 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
      * @dev Ensures that the withdrawal is valid and transfers the asset to the taker.
      */
     function withdrawFullDeposit(uint256 offerId, address taker) external onlyDotc {
-        Asset memory asset = assetDeposits[offerId];
+        EscrowOffer memory offer = escrowOffers[offerId];
 
-        if (asset.amount <= 0) {
+        if (offer.depositAsset.amount <= 0) {
             revert AssetAmountEqZero();
         }
 
-        assetDeposits[offerId].amount = 0;
+        escrowOffers[offerId].escrowType = EscrowType.OfferFullyWithdrew;
+        escrowOffers[offerId].depositAsset.amount = 0;
 
-        _assetTransfer(asset, address(this), taker, asset.amount);
+        _assetTransfer(offer.depositAsset, address(this), taker, offer.depositAsset.amount);
 
-        emit OfferWithdrawn(offerId, taker, asset.amount);
+        emit OfferWithdrawn(offerId, taker, offer.depositAsset.amount);
     }
 
     /**
@@ -178,21 +180,22 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
      * @dev Ensures that the withdrawal is valid and transfers the asset to the taker.
      */
     function withdrawDeposit(uint256 offerId, uint256 amountToWithdraw, address taker) external onlyDotc {
-        Asset memory asset = assetDeposits[offerId];
+        EscrowOffer memory offer = escrowOffers[offerId];
 
-        if (asset.amount <= 0) {
+        if (offer.depositAsset.amount <= 0) {
             revert AssetAmountEqZero();
         }
 
-        amountToWithdraw = asset.unstandardize(amountToWithdraw);
+        amountToWithdraw = offer.depositAsset.unstandardize(amountToWithdraw);
 
         if (amountToWithdraw <= 0) {
             revert AmountToWithdrawEqZero();
         }
 
-        assetDeposits[offerId].amount -= amountToWithdraw;
+        escrowOffers[offerId].escrowType = EscrowType.OfferPartiallyWithdrew;
+        escrowOffers[offerId].depositAsset.amount -= amountToWithdraw;
 
-        _assetTransfer(asset, address(this), taker, amountToWithdraw);
+        _assetTransfer(offer.depositAsset, address(this), taker, amountToWithdraw);
 
         emit OfferWithdrawn(offerId, taker, amountToWithdraw);
     }
@@ -205,19 +208,18 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
      * @dev Only callable by DOTC contract, ensures the asset is returned to the maker.
      */
     function cancelDeposit(uint256 offerId, address maker) external onlyDotc returns (uint256 amountToCancel) {
-        Asset memory asset = assetDeposits[offerId];
+        EscrowOffer memory offer = escrowOffers[offerId];
 
-        amountToCancel = asset.amount;
-
-        if (amountToCancel <= 0) {
+        if (offer.depositAsset.amount <= 0) {
             revert AmountToCancelEqZero();
         }
 
-        delete assetDeposits[offerId];
+        escrowOffers[offerId].escrowType = EscrowType.OfferCancelled;
+        escrowOffers[offerId].depositAsset.amount = 0;
 
-        _assetTransfer(asset, address(this), maker, amountToCancel);
+        _assetTransfer(offer.depositAsset, address(this), maker, offer.depositAsset.amount);
 
-        emit OfferCancelled(offerId, maker, amountToCancel);
+        emit OfferCancelled(offerId, maker, offer.depositAsset.amount);
     }
 
     /**
@@ -227,12 +229,13 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
      * @dev Ensures that the fee withdrawal is valid and transfers the fee to the designated receiver.
      */
     function withdrawFees(uint256 offerId, uint256 feesAmountToWithdraw) external onlyDotc {
-        Asset memory asset = assetDeposits[offerId];
+        EscrowOffer memory offer = escrowOffers[offerId];
+
         address receiver = feeReceiver;
 
-        assetDeposits[offerId].amount -= feesAmountToWithdraw;
+        escrowOffers[offerId].depositAsset.amount -= feesAmountToWithdraw;
 
-        _assetTransfer(asset, address(this), receiver, feesAmountToWithdraw);
+        _assetTransfer(offer.depositAsset, address(this), receiver, feesAmountToWithdraw);
 
         emit FeesWithdrew(offerId, receiver, feesAmountToWithdraw);
     }

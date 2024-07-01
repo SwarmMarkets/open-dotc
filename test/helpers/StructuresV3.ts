@@ -19,24 +19,19 @@ export enum TakingOfferType {
 	FullyTaking
 }
 
-export enum EscrowCallType {
-	NoType,
-	Deposit,
-	Withdraw,
-	WithdrawFees,
-	Cancel
-}
 export enum ValidityType {
 	NotTaken,
+	Cancelled,
 	PartiallyTaken,
 	FullyTaken
 }
 
-export enum TimeConstraintType {
-	Expired,
-	TimelockGreaterThanExpirationTime,
-	InTimelock,
-	IncorrectTimelock
+export enum EscrowType {
+	NoType,
+	OfferDeposited,
+	OfferFullyWithdrew,
+	OfferPartiallyWithdrew,
+	OfferCancelled
 }
 
 export interface PriceStruct {
@@ -73,3 +68,9 @@ export interface DotcOfferStruct {
 	withdrawalAsset: AssetStruct;
 	offer: OfferStruct;
 }
+
+export interface EscrowOfferStruct {
+	escrowType: EscrowType;
+	depositAsset: AssetStruct;
+}
+

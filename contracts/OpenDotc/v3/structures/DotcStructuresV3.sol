@@ -81,25 +81,17 @@ enum TakingOfferType {
  */
 enum ValidityType {
     NotTaken,
+    Cancelled,
     PartiallyTaken,
     FullyTaken
 }
 
-/**
- * @title Time Constraint Type Enum
- * @notice Defines the types of time constraints an offer can have in the DOTC system.
- * @dev Enum representing different time-related constraints for offers.
- * - Expired: Indicates the offer has expired.
- * - TimelockGreaterThanExpirationTime: Indicates the timelock is greater than the offer's expiration time.
- * - InTimelock: Indicates the offer is currently in its timelock period.
- * - IncorrectTimelock: Indicates an incorrect setting of the timelock period.
- * @author Swarm
- */
-enum TimeConstraintType {
-    Expired,
-    TimelockGreaterThanExpirationTime,
-    InTimelock,
-    IncorrectTimelock
+enum EscrowType {
+    NoType,
+    OfferDeposited,
+    OfferFullyWithdrew,
+    OfferPartiallyWithdrew,
+    OfferCancelled
 }
 
 struct Price {
@@ -173,4 +165,9 @@ struct DotcOffer {
     Asset depositAsset;
     Asset withdrawalAsset;
     OfferStruct offer;
+}
+
+struct EscrowOffer {
+    EscrowType escrowType;
+    Asset depositAsset;
 }
