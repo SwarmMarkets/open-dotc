@@ -227,6 +227,51 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
         emit CreatedOffer(msg.sender, _currentOfferId, depositAsset, withdrawalAsset, offer);
     }
 
+    function takeFullOffer(uint256 offerId) public {
+        DotcOffer memory offer = allOffers[offerId];
+        offer.checkDotcOfferParams();
+
+        if (offer.offer.checkOfferParams() != TakingOfferType.FullyTaking) {
+            revert OfferCanNotBeFullyTaken(offerId);
+        }
+
+        offer.withdrawalAsset.checkAssetOwner(msg.sender, offer.withdrawalAsset.amount);
+
+        uint256 depositAssetAmount = offer.depositAsset.amount;
+        uint256 withdrawalAssetAmount = offer.withdrawalAsset.amount;
+
+        ValidityType validityType = ValidityType.FullyTaken;
+
+        allOffers[offerId].withdrawalAsset.amount = 0;
+        allOffers[offerId].depositAsset.amount = 0;
+        allOffers[offerId].validityType = validityType;
+
+        // Check if fees can be taken
+        if (escrow.feeAmount() != 0) {
+            // If WithdrawalAsset is not an ERC20 then fees will be taken from Maker
+            if (offer.withdrawalAsset.assetType != AssetType.ERC20) {
+                // If DepositAsset is not an ERC20 then fees will not be taken
+                if (offer.depositAsset.assetType == AssetType.ERC20) {
+                    uint256 fees = AssetHelper.calculateFees(depositAssetAmount, escrow.feeAmount());
+                    depositAssetAmount -= fees;
+
+                    escrow.withdrawFees(offerId, fees);
+                }
+            } else {
+                // If WithdrawalAsset is an ERC20 then fees will be taken from Taker
+                withdrawalAssetAmount -= _sendWithdrawalFees(offer.withdrawalAsset, withdrawalAssetAmount);
+            }
+        }
+
+        //Transfer WithdrawalAsset from Taker to Maker
+        _assetTransfer(offer.withdrawalAsset, msg.sender, offer.maker, withdrawalAssetAmount);
+
+        //Transfer DepositAsset from Maker to Taker
+        escrow.withdrawDeposit(offerId, depositAssetAmount, msg.sender);
+
+        emit TakenOffer(offerId, msg.sender, validityType, depositAssetAmount, withdrawalAssetAmount);
+    }
+
     /**
      * @notice Allows a user to take an available offer.
      * @dev Ensures the current time is before the offer's expiry time.
@@ -280,51 +325,6 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
         escrow.withdrawDeposit(offerId, depositAssetAmount, msg.sender);
 
         emit TakenOffer(offerId, msg.sender, validityType, depositAssetAmount, fullWithdrawalAmountPaid);
-    }
-
-    function takeFullOffer(uint256 offerId) public {
-        DotcOffer memory offer = allOffers[offerId];
-        offer.checkDotcOfferParams();
-
-        if (offer.offer.checkOfferParams() != TakingOfferType.FullyTaking) {
-            revert OfferCanNotBeFullyTaken(offerId);
-        }
-
-        offer.withdrawalAsset.checkAssetOwner(msg.sender, offer.withdrawalAsset.amount);
-
-        uint256 depositAssetAmount = offer.depositAsset.amount;
-        uint256 withdrawalAssetAmount = offer.withdrawalAsset.amount;
-
-        ValidityType validityType = ValidityType.FullyTaken;
-
-        allOffers[offerId].withdrawalAsset.amount = 0;
-        allOffers[offerId].depositAsset.amount = 0;
-        allOffers[offerId].validityType = validityType;
-
-        // Check if fees can be taken
-        if (escrow.feeAmount() != 0) {
-            // If WithdrawalAsset is not an ERC20 then fees will be taken from Maker
-            if (offer.withdrawalAsset.assetType != AssetType.ERC20) {
-                // If DepositAsset is not an ERC20 then fees will not be taken
-                if (offer.depositAsset.assetType == AssetType.ERC20) {
-                    uint256 fees = AssetHelper.calculateFees(depositAssetAmount, escrow.feeAmount());
-                    depositAssetAmount -= fees;
-
-                    escrow.withdrawFees(offerId, fees);
-                }
-            } else {
-                // If WithdrawalAsset is an ERC20 then fees will be taken from Taker
-                withdrawalAssetAmount -= _sendWithdrawalFees(offer.withdrawalAsset, withdrawalAssetAmount);
-            }
-        }
-
-        //Transfer WithdrawalAsset from Taker to Maker
-        _assetTransfer(offer.withdrawalAsset, msg.sender, offer.maker, withdrawalAssetAmount);
-
-        //Transfer DepositAsset from Maker to Taker
-        escrow.withdrawDeposit(offerId, depositAssetAmount, msg.sender);
-
-        emit TakenOffer(offerId, msg.sender, validityType, depositAssetAmount, withdrawalAssetAmount);
     }
 
     /**
