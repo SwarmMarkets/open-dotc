@@ -250,15 +250,17 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
 
         uint256 fullWithdrawalAmountPaid = withdrawalAmountPaid;
         uint256 depositAssetAmount = offer.depositAsset.amount;
-        uint256 withdrawalAmountPaidStandardized = offer.withdrawalAsset.standardize(withdrawalAmountPaid);
 
         if (withdrawalAmountPaid == offer.withdrawalAsset.amount) {
             allOffers[offerId].withdrawalAsset.amount = 0;
             allOffers[offerId].depositAsset.amount = 0;
         } else {
-            depositAssetAmount = (withdrawalAmountPaidStandardized * AssetHelper.BPS) / offer.offer.price.unitPrice;
+            depositAssetAmount = offer.depositAsset.unstandardize(
+                (offer.withdrawalAsset.standardize(withdrawalAmountPaid) * AssetHelper.BPS) /
+                    offer.offer.price.unitPrice
+            );
 
-            allOffers[offerId].withdrawalAsset.amount -= withdrawalAmountPaidStandardized;
+            allOffers[offerId].withdrawalAsset.amount -= withdrawalAmountPaid;
             allOffers[offerId].depositAsset.amount -= depositAssetAmount;
         }
 
@@ -277,13 +279,7 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
         //Transfer DepositAsset from Maker to Taker
         escrow.withdrawDeposit(offerId, depositAssetAmount, msg.sender);
 
-        emit TakenOffer(
-            offerId,
-            msg.sender,
-            validityType,
-            offer.depositAsset.unstandardize(depositAssetAmount),
-            fullWithdrawalAmountPaid
-        );
+        emit TakenOffer(offerId, msg.sender, validityType, depositAssetAmount, fullWithdrawalAmountPaid);
     }
 
     function takeFullOffer(uint256 offerId) public {
