@@ -4,7 +4,7 @@ import { ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20, IERC721, IER
 
 import { DotcV3 } from "./DotcV3.sol";
 import { AssetHelper } from "./helpers/AssetHelper.sol";
-import { Asset, AssetType, EscrowType, EscrowOffer, UnsupportedAssetType } from "./structures/DotcStructuresV3.sol";
+import { Asset, AssetType, EscrowType, EscrowOffer } from "./structures/DotcStructuresV3.sol";
 
 /// @title Errors related to asset management in the Dotc Escrow contract
 /// @notice Provides error messages for various failure conditions related to asset handling
@@ -319,8 +319,6 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
             IERC721(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId);
         } else if (asset.assetType == AssetType.ERC1155) {
             IERC1155(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId, asset.amount, "");
-        } else {
-            revert UnsupportedAssetType(asset.assetType);
         }
     }
 }

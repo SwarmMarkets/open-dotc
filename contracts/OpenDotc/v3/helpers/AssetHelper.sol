@@ -2,7 +2,7 @@
 pragma solidity 0.8.25;
 
 import { IERC20, IERC20Metadata, IERC721, IERC1155, IERC165 } from "../exports/Exports.sol";
-import { Asset, AssetType, UnsupportedAssetType } from "../structures/DotcStructuresV3.sol";
+import { Asset, AssetType } from "../structures/DotcStructuresV3.sol";
 
 /// @notice Indicates an operation with zero amount which is not allowed
 error ZeroAmountPassed();
@@ -51,6 +51,10 @@ error AddressHaveNoERC1155(
 /// @param token The token address
 /// @param incorrectType The incorrect asset type provided
 error IncorrectAssetTypeForAddress(address token, AssetType incorrectType);
+
+/// @notice Indicates the asset type provided is not supported by this contract
+/// @param unsupportedType The unsupported asset type provided
+error UnsupportedAssetType(AssetType unsupportedType);
 
 /**
  * @title TODO (as part of the "SwarmX.eth Protocol")

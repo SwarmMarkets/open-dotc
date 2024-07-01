@@ -7,7 +7,6 @@ import { AssetHelper } from "./helpers/AssetHelper.sol";
 import { OfferHelper } from "./helpers/OfferHelper.sol";
 import { DotcOfferHelper } from "./helpers/DotcOfferHelper.sol";
 import { DotcEscrowV3 } from "./DotcEscrowV3.sol";
-import { UnsupportedAssetType } from "./structures/DotcStructuresV3.sol";
 
 import { Asset, AssetType, OfferPricingType, TakingOfferType, ValidityType, OfferStruct, DotcOffer } from "./structures/DotcStructuresV3.sol";
 
@@ -435,8 +434,6 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
             IERC721(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId);
         } else if (asset.assetType == AssetType.ERC1155) {
             IERC1155(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId, asset.amount, "");
-        } else {
-            revert UnsupportedAssetType(asset.assetType);
         }
     }
 
