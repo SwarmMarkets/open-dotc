@@ -56,11 +56,7 @@ describe.only('OpenDotcV3', () => {
     const dotcOfferHelper = await DotcOfferHelper.deploy() as DotcOfferHelper;
     await dotcOfferHelper.deployed();
 
-    const DotcEscrow: ContractFactory = await ethers.getContractFactory('DotcEscrowV3', {
-      libraries: {
-        AssetHelper: assetHelper.address,
-      },
-    });
+    const DotcEscrow: ContractFactory = await ethers.getContractFactory('DotcEscrowV3');
     const escrow = await upgrades.deployProxy(DotcEscrow, [await deployer.getAddress()], { unsafeAllowLinkedLibraries: true }) as DotcEscrow;
     await escrow.deployed();
 
@@ -204,7 +200,7 @@ describe.only('OpenDotcV3', () => {
       };
 
       const unitPrice = BigNumber.from(WithdrawalAssetERC20.amount)
-        .mul(BigNumber.from(10).pow(decimals_18))
+        .mul(await assetHelper.BPS())
         .div(BigNumber.from(DepositAssetERC20.amount));
 
       const make_offer = await dotc
@@ -396,7 +392,7 @@ describe.only('OpenDotcV3', () => {
     });
 
     it('Should make partial offer (erc20 => erc20)', async () => {
-      const { dotc, escrow, erc20_18, erc20_6, acc1, acc2, otherAcc } = await loadFixture(fixture);
+      const { dotc, escrow, assetHelper, erc20_18, erc20_6, acc1, acc2, otherAcc } = await loadFixture(fixture);
 
       const offerId = 0;
 
@@ -472,7 +468,7 @@ describe.only('OpenDotcV3', () => {
       };
 
       const unitPrice = BigNumber.from(WithdrawalAssetERC20_standardized.amount)
-        .mul(BigNumber.from(10).pow(decimals_18))
+        .mul(await assetHelper.BPS())
         .div(BigNumber.from(DepositAssetERC20_standardized.amount))
 
       const make_offer = await dotc
@@ -509,7 +505,7 @@ describe.only('OpenDotcV3', () => {
     });
 
     it('Should make full offer (erc20 => erc721)', async () => {
-      const { dotc, escrow, erc20_18, erc721, acc1, acc2, deployer, otherAcc } = await loadFixture(fixture);
+      const { dotc, escrow, assetHelper, erc20_18, erc721, acc1, acc2, deployer, otherAcc } = await loadFixture(fixture);
 
       const offerId = 0;
 
@@ -567,7 +563,7 @@ describe.only('OpenDotcV3', () => {
       };
 
       const unitPrice = BigNumber.from(WithdrawalAssetERC721.amount)
-        .mul(BigNumber.from(10).pow(decimals_18))
+        .mul(await assetHelper.BPS())
         .div(BigNumber.from(DepositAssetERC20.amount));
 
       const make_offer = await dotc
@@ -603,7 +599,7 @@ describe.only('OpenDotcV3', () => {
     });
 
     it('Should make full offer (erc721 => erc20)', async () => {
-      const { dotc, escrow, erc20_18, erc721, acc1, acc2, deployer, otherAcc } = await loadFixture(fixture);
+      const { dotc, escrow, assetHelper, erc20_18, erc721, acc1, acc2, deployer, otherAcc } = await loadFixture(fixture);
 
       const offerId = 0;
 
@@ -661,7 +657,7 @@ describe.only('OpenDotcV3', () => {
       };
 
       const unitPrice = BigNumber.from(DepositAssetERC20.amount)
-        .mul(BigNumber.from(10).pow(decimals_18))
+        .mul(await assetHelper.BPS())
         .div(BigNumber.from(WithdrawalAssetERC721.amount));
 
       const make_offer = await dotc
@@ -697,7 +693,7 @@ describe.only('OpenDotcV3', () => {
     });
 
     it('Should make full offer (erc20 => erc1155)', async () => {
-      const { dotc, escrow, erc20_18, erc1155, acc1, acc2, deployer, otherAcc } = await loadFixture(fixture);
+      const { dotc, escrow, assetHelper, erc20_18, erc1155, acc1, acc2, deployer, otherAcc } = await loadFixture(fixture);
 
       const offerId = 0;
 
@@ -755,7 +751,7 @@ describe.only('OpenDotcV3', () => {
       };
 
       const unitPrice = BigNumber.from(WithdrawalAssetERC1155.amount)
-        .mul(BigNumber.from(10).pow(decimals_18))
+        .mul(await assetHelper.BPS())
         .div(BigNumber.from(DepositAssetERC20.amount))
 
       const make_offer = await dotc
@@ -791,7 +787,7 @@ describe.only('OpenDotcV3', () => {
     });
 
     it('Should make full offer (erc1155 => erc20)', async () => {
-      const { dotc, escrow, erc20_18, erc1155, acc1, acc2, deployer, otherAcc } = await loadFixture(fixture);
+      const { dotc, escrow, assetHelper, erc20_18, erc1155, acc1, acc2, deployer, otherAcc } = await loadFixture(fixture);
 
       const offerId = 0;
 
@@ -849,7 +845,7 @@ describe.only('OpenDotcV3', () => {
       };
 
       const unitPrice = BigNumber.from(DepositAssetERC20.amount)
-        .mul(BigNumber.from(10).pow(decimals_18))
+        .mul(await assetHelper.BPS())
         .div(BigNumber.from(WithdrawalAssetERC1155.amount))
 
       const make_offer = await dotc
@@ -887,7 +883,7 @@ describe.only('OpenDotcV3', () => {
     });
 
     it('Should make full offer (erc721 => erc721)', async () => {
-      const { dotc, escrow, erc721, acc1, acc2, deployer, otherAcc } = await loadFixture(fixture);
+      const { dotc, escrow, assetHelper, erc721, acc1, acc2, deployer, otherAcc } = await loadFixture(fixture);
 
       const offerId = 0;
 
@@ -941,7 +937,7 @@ describe.only('OpenDotcV3', () => {
       };
 
       const unitPrice = BigNumber.from(WithdrawalAssetERC721.amount)
-        .mul(ethers.utils.parseEther('1'))
+        .mul(await assetHelper.BPS())
         .div(BigNumber.from(DepositAssetERC721.amount));
 
       const make_offer = await dotc
@@ -977,7 +973,7 @@ describe.only('OpenDotcV3', () => {
     });
 
     it('Should make full offer (erc1155 => erc1155)', async () => {
-      const { dotc, escrow, erc1155, acc1, acc2, deployer, otherAcc } = await loadFixture(fixture);
+      const { dotc, escrow, assetHelper, erc1155, acc1, acc2, deployer, otherAcc } = await loadFixture(fixture);
 
       const offerId = 0;
 
@@ -1031,7 +1027,7 @@ describe.only('OpenDotcV3', () => {
       };
 
       const unitPrice = BigNumber.from(WithdrawalAssetERC1155.amount)
-        .mul(ethers.utils.parseEther('1'))
+        .mul(await assetHelper.BPS())
         .div(BigNumber.from(DepositAssetERC1155.amount))
 
       const make_offer = await dotc
@@ -1403,7 +1399,7 @@ describe.only('OpenDotcV3', () => {
     });
 
     it('Should take partial offer (erc20 => erc20)', async () => {
-      const { dotc, escrow, assetHelper, offerHelper, erc20_18, erc20_6, acc1, acc2, deployer, otherAcc } = await loadFixture(fixture);
+      const { dotc, escrow, assetHelper, erc20_18, erc20_6, acc1, acc2, deployer, otherAcc } = await loadFixture(fixture);
 
       const offerId = 0;
 
@@ -1476,14 +1472,14 @@ describe.only('OpenDotcV3', () => {
 
       const AwaitingOffer: DotcOfferStruct = {
         maker: await acc1.getAddress(),
-        validityType: ValidityType.NotTaken,
+        validityType: ValidityType.PartiallyTaken,
         depositAsset: DepositAssetERC20_standardized,
         withdrawalAsset: WithdrawalAssetERC20_standardized,
         offer: Offer,
       };
 
       const unitPrice = BigNumber.from(WithdrawalAssetERC20_standardized.amount)
-        .mul(BigNumber.from(10).pow(decimals_18))
+        .mul(await assetHelper.BPS())
         .div(BigNumber.from(DepositAssetERC20_standardized.amount));
 
       const fees = BigNumber.from(amountOut_to_take)
@@ -1492,7 +1488,7 @@ describe.only('OpenDotcV3', () => {
       const deployerBalance_2 = await erc20_6.balanceOf(await deployer.getAddress());
 
       const amountToWithdraw = standardized_amountOut_to_take
-        .mul(BigNumber.from(10).pow(await offerHelper.DECIMALS()))
+        .mul(await assetHelper.BPS())
         .div(unitPrice);
 
       const realAmount = unstandardizeNumber(amountToWithdraw, await erc20_18.decimals());
@@ -1505,7 +1501,7 @@ describe.only('OpenDotcV3', () => {
 
       await expect(take_offer)
         .to.emit(dotc, 'TakenOffer')
-        .withArgs(offerId, await acc2.getAddress(), false, realAmount, amountOut_to_take);
+        .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.validityType, realAmount, amountOut_to_take);
       await expect(take_offer).to.emit(escrow, 'OfferWithdrawn').withArgs(offerId, await acc2.getAddress(), realAmount);
 
       expect((await escrow.escrowOffers(offerId)).depositAsset.amount).to.be.eq(balance.sub(realAmount));
@@ -1515,23 +1511,20 @@ describe.only('OpenDotcV3', () => {
       expect(await erc20_6.balanceOf(await deployer.getAddress())).to.eq(BigNumber.from(deployerBalance_2).add(fees));
 
       expect((await dotc.allOffers(0)).withdrawalAsset.amount).to.eq(
-        standardizeNumber(BigNumber.from(50).mul(BigNumber.from(10).pow(decimals_6)), decimals_6),
+        BigNumber.from(50).mul(BigNumber.from(10).pow(decimals_6))
       );
       expect((await dotc.allOffers(0)).validityType).to.eq(AwaitingOffer.validityType);
 
       expect(await dotc.offersFromAddress(await acc1.getAddress(), 0)).to.eq(offerId);
-
     });
 
     it('Should take partial offer fully (erc20 => erc20)', async () => {
-      const { dotc, escrow, offerHelper, assetHelper, erc20_18, erc20_6, acc1, acc2, deployer } = await loadFixture(fixture);
+      const { dotc, escrow, assetHelper, erc20_18, erc20_6, acc1, acc2, deployer, otherAcc } = await loadFixture(fixture);
 
-
-      let offerId = 0;
+      const offerId = 0;
 
       const amountIn = 43;
       const amountOut = 104;
-
 
       const amountIn_asset = BigNumber.from(amountIn).mul(BigNumber.from(10).pow(decimals_18));
       const amountOut_asset = BigNumber.from(amountOut).mul(BigNumber.from(10).pow(decimals_6));
@@ -1545,6 +1538,7 @@ describe.only('OpenDotcV3', () => {
       const DepositAssetERC20: AssetStruct = {
         assetType: 1,
         assetAddress: erc20_18.address,
+        assetPriceFeedAddress: await otherAcc.getAddress(),
         amount: amountIn_asset,
         tokenId: 0,
       };
@@ -1552,6 +1546,7 @@ describe.only('OpenDotcV3', () => {
       const WithdrawalAssetERC20: AssetStruct = {
         assetType: 1,
         assetAddress: erc20_6.address,
+        assetPriceFeedAddress: await otherAcc.getAddress(),
         amount: amountOut_asset,
         tokenId: 0,
       };
@@ -1559,6 +1554,7 @@ describe.only('OpenDotcV3', () => {
       const DepositAssetERC20_standardized: AssetStruct = {
         assetType: 1,
         assetAddress: erc20_18.address,
+        assetPriceFeedAddress: await otherAcc.getAddress(),
         amount: standardizeNumber(amountIn_asset, decimals_18),
         tokenId: 0,
       };
@@ -1566,13 +1562,24 @@ describe.only('OpenDotcV3', () => {
       const WithdrawalAssetERC20_standardized: AssetStruct = {
         assetType: 1,
         assetAddress: erc20_6.address,
+        assetPriceFeedAddress: await otherAcc.getAddress(),
         amount: standardizeNumber(amountOut_asset, decimals_6),
         tokenId: 0,
       };
 
-      const Offer: OfferStructStruct = {
-        isFullType: false,
+      const Price: PriceStruct = {
+        unitPrice: 0,
+        min: 0,
+        max: 0,
+        percentage: 0
+      }
+
+      const Offer: OfferStruct = {
+        takingOfferType: TakingOfferType.PartialTaking,
+        offerPricingType: OfferPricingType.FixedPricing,
+        price: Price,
         specialAddresses: [],
+        authorizationAddresses: [],
         expiryTimestamp: now + 2000,
         timelockPeriod: 0,
         terms,
@@ -1581,13 +1588,9 @@ describe.only('OpenDotcV3', () => {
 
       const AwaitingOffer: DotcOfferStruct = {
         maker: await acc1.getAddress(),
-        isFullyTaken: true,
+        validityType: ValidityType.FullyTaken,
         depositAsset: DepositAssetERC20_standardized,
         withdrawalAsset: WithdrawalAssetERC20_standardized,
-        availableAmount: DepositAssetERC20_standardized.amount,
-        unitPrice: BigNumber.from(WithdrawalAssetERC20_standardized.amount)
-          .mul(BigNumber.from(10).pow(decimals_18))
-          .div(BigNumber.from(DepositAssetERC20_standardized.amount)),
         offer: Offer,
       };
 
@@ -1596,20 +1599,15 @@ describe.only('OpenDotcV3', () => {
         .div(await assetHelper.BPS());
       const deployerBalance_2 = await erc20_6.balanceOf(await deployer.getAddress());
 
-      const amountToWitdraw = BigNumber.from(WithdrawalAssetERC20_standardized.amount)
-        .mul(BigNumber.from(10).pow(await offerHelper.DECIMALS()))
-        .div(BigNumber.from(AwaitingOffer.unitPrice));
-      const realAmount = unstandardizeNumber(amountToWitdraw, await erc20_18.decimals());
-
       await dotc.connect(acc1).makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
 
       const balance = await erc20_18.balanceOf(escrow.address);
 
-      const take_offer = await dotc.connect(acc2).takeOffer(offerId, WithdrawalAssetERC20.amount);
+      const take_offer = await dotc.connect(acc2).takePartialOffer(offerId, WithdrawalAssetERC20.amount);
 
       await expect(take_offer)
         .to.emit(dotc, 'TakenOffer')
-        .withArgs(offerId, await acc2.getAddress(), true, DepositAssetERC20.amount, WithdrawalAssetERC20.amount);
+        .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.validityType, DepositAssetERC20.amount, WithdrawalAssetERC20.amount);
 
       await expect(take_offer)
         .to.emit(escrow, 'OfferWithdrawn')
@@ -1634,7 +1632,7 @@ describe.only('OpenDotcV3', () => {
         fixture,
       );
 
-      let offerId = 0;
+      const offerId = 0;
 
       const amountIn = 43;
 
@@ -2362,13 +2360,12 @@ describe.only('OpenDotcV3', () => {
     });
 
     it('Should cancel partial with taken amount offer (erc20 => erc20)', async () => {
-      const { dotc, escrow, offerHelper, erc20_18, erc20_6, acc1, acc2, deployer } = await loadFixture(fixture);
+      const { dotc, escrow, assetHelper, erc20_18, erc20_6, acc1, acc2, deployer, otherAcc } = await loadFixture(fixture);
 
       const offerId = 0;
 
       const amountIn = 43;
       const amountOut = 104;
-
 
       const amountIn_asset = BigNumber.from(amountIn).mul(BigNumber.from(10).pow(decimals_18));
       const amountOut_asset = BigNumber.from(amountOut).mul(BigNumber.from(10).pow(decimals_6));
@@ -2384,6 +2381,7 @@ describe.only('OpenDotcV3', () => {
       const DepositAssetERC20: AssetStruct = {
         assetType: 1,
         assetAddress: erc20_18.address,
+        assetPriceFeedAddress: await otherAcc.getAddress(),
         amount: amountIn_asset,
         tokenId: 0,
       };
@@ -2391,6 +2389,7 @@ describe.only('OpenDotcV3', () => {
       const WithdrawalAssetERC20: AssetStruct = {
         assetType: 1,
         assetAddress: erc20_6.address,
+        assetPriceFeedAddress: await otherAcc.getAddress(),
         amount: amountOut_asset,
         tokenId: 0,
       };
@@ -2398,6 +2397,7 @@ describe.only('OpenDotcV3', () => {
       const DepositAssetERC20_standardized: AssetStruct = {
         assetType: 1,
         assetAddress: erc20_18.address,
+        assetPriceFeedAddress: await otherAcc.getAddress(),
         amount: standardizeNumber(amountIn_asset, decimals_18),
         tokenId: 0,
       };
@@ -2405,6 +2405,7 @@ describe.only('OpenDotcV3', () => {
       const WithdrawalAssetERC20_standardized: AssetStruct = {
         assetType: 1,
         assetAddress: erc20_6.address,
+        assetPriceFeedAddress: await otherAcc.getAddress(),
         amount: standardizeNumber(amountOut_asset, decimals_6),
         tokenId: 0,
       };
@@ -2430,25 +2431,22 @@ describe.only('OpenDotcV3', () => {
 
       const AwaitingOffer: DotcOfferStruct = {
         maker: await acc1.getAddress(),
-        validityType: ValidityType.FullyTaken,
+        validityType: ValidityType.Cancelled,
         depositAsset: DepositAssetERC20,
         withdrawalAsset: WithdrawalAssetERC20,
         offer: Offer,
       };
 
       const unitPrice = BigNumber.from(WithdrawalAssetERC20_standardized.amount)
-        .mul(BigNumber.from(10).pow(decimals_18))
+        .mul(await assetHelper.BPS())
         .div(BigNumber.from(DepositAssetERC20_standardized.amount))
       const amountToWitdraw = standardized_amountOut_to_take
-        .mul(BigNumber.from(10).pow(await offerHelper.DECIMALS()))
+        .mul(await assetHelper.BPS())
         .div(BigNumber.from(unitPrice));
 
       let amountToCancel = BigNumber.from(DepositAssetERC20_standardized.amount).sub(amountToWitdraw);
-      const unstandardAmount = unstandardizeNumber(amountToCancel, await erc20_18.decimals());
 
       await dotc.connect(acc1).makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
-
-      const balance = await erc20_18.balanceOf(escrow.address);
 
       await dotc.connect(acc2).takePartialOffer(offerId, amountOut_to_take);
 
@@ -2462,14 +2460,7 @@ describe.only('OpenDotcV3', () => {
       expect(await erc20_18.balanceOf(escrow.address)).to.eq(0);
       expect(await erc20_18.balanceOf(await acc1.getAddress())).to.eq(amountToCancel);
 
-      expect((await dotc.allOffers(0)).offer.takingOfferType).to.eq(false);
-      expect((await dotc.allOffers(0)).maker).to.eq(addressZero);
-      expect((await dotc.allOffers(0)).validityType).to.eq(false);
-      expect((await dotc.allOffers(0)).offer.price.unitPrice).to.eq(0);
-      expect((await dotc.allOffers(0)).offer.specialAddresses).to.deep.eq([]);
-
-      expect((await dotc.allOffers(0)).offer.expiryTimestamp).to.eq(0);
-      expect((await dotc.allOffers(0)).offer.timelockPeriod).to.eq(0);
+      expect((await dotc.allOffers(0)).validityType).to.eq(AwaitingOffer.validityType);
 
       expect(await dotc.offersFromAddress(await acc1.getAddress(), 0)).to.eq(offerId);
 
@@ -2982,7 +2973,7 @@ describe.only('OpenDotcV3', () => {
   });
 
   describe('Update Offer', () => {
-    it('Should update full offer (erc20 => erc20)', async () => {
+    it('Should update full offer', async () => {
       const { dotc, dotcOfferHelper, offerHelper, erc20_18, erc20_6, acc1, acc2, acc3, deployer, otherAcc } = await loadFixture(fixture);
 
       const offerId = 0;
