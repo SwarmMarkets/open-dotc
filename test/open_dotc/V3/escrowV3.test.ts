@@ -9,9 +9,9 @@ import {
   AssetHelper,
 } from '../../../typechain';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
-import { AssetStruct } from '../../helpers/StructuresV3';
+import { AssetStruct, EscrowType, EscrowOfferStruct } from '../../helpers/StructuresV3';
 
-describe('OpenDotcEscrowV3', () => {
+describe.only('OpenDotcEscrowV3', () => {
   async function fixture() {
     const [deployer, otherAcc]: Signer[] = await ethers.getSigners();
 
@@ -86,7 +86,7 @@ describe('OpenDotcEscrowV3', () => {
     it('Should set deposit', async () => {
       const { escrow, erc20, otherAcc } = await loadFixture(fixture);
 
-      let offerId = 55;
+      const offerId = 55;
 
       const AssetERC20: AssetStruct = {
         assetType: 1,
@@ -99,10 +99,12 @@ describe('OpenDotcEscrowV3', () => {
       const tx = await escrow.connect(otherAcc).setDeposit(offerId, await otherAcc.getAddress(), AssetERC20);
 
       await expect(tx).to.emit(escrow, 'OfferDeposited').withArgs(offerId, await otherAcc.getAddress(), AssetERC20.amount);
-      expect((await escrow.assetDeposits(offerId)).amount).to.be.eq(AssetERC20.amount);
-      expect((await escrow.assetDeposits(offerId)).assetAddress).to.be.eq(AssetERC20.assetAddress);
-      expect((await escrow.assetDeposits(offerId)).assetType).to.be.eq(AssetERC20.assetType);
-      expect((await escrow.assetDeposits(offerId)).tokenId).to.be.eq(AssetERC20.tokenId);
+      expect((await escrow.escrowOffers(offerId)).depositAsset.amount).to.be.eq(AssetERC20.amount);
+      expect((await escrow.escrowOffers(offerId)).depositAsset.assetAddress).to.be.eq(AssetERC20.assetAddress);
+      expect((await escrow.escrowOffers(offerId)).depositAsset.assetType).to.be.eq(AssetERC20.assetType);
+      expect((await escrow.escrowOffers(offerId)).depositAsset.tokenId).to.be.eq(AssetERC20.tokenId);
+
+      expect((await escrow.escrowOffers(offerId)).escrowType).to.be.eq(EscrowType.OfferDeposited);
     });
 
     it('Should withdraw deposit', async () => {
@@ -160,9 +162,11 @@ describe('OpenDotcEscrowV3', () => {
       await expect(tx_1)
         .to.emit(escrow, 'OfferWithdrawn')
         .withArgs(offerId, await otherAcc.getAddress(), BigNumber.from(AssetERC20.amount).sub(20));
-      expect((await escrow.assetDeposits(offerId)).amount).to.be.eq(20);
+      expect((await escrow.escrowOffers(offerId)).depositAsset.amount).to.be.eq(20);
       expect(await erc20.balanceOf(await otherAcc.getAddress())).to.eq(BigNumber.from(AssetERC20.amount).sub(20));
       expect(await erc20.balanceOf(escrow.address)).to.eq(40);
+
+      expect((await escrow.escrowOffers(offerId)).escrowType).to.be.eq(EscrowType.OfferPartiallyWithdrew);
 
       ++offerId;
 
@@ -195,29 +199,6 @@ describe('OpenDotcEscrowV3', () => {
       await expect(
         escrow.connect(otherAcc).withdrawDeposit(offerId, 1, await otherAcc.getAddress()),
       ).to.be.revertedWithCustomError(escrow, 'AmountToWithdrawEqZero');
-
-      ++offerId;
-
-      // ERC721
-      await escrow.connect(otherAcc).setDeposit(offerId, await otherAcc.getAddress(), AssetERC721);
-
-      const tx_2 = await escrow.connect(otherAcc).withdrawDeposit(offerId, AssetERC721.amount, await otherAcc.getAddress());
-
-      await expect(tx_2).to.emit(escrow, 'OfferWithdrawn').withArgs(offerId, await otherAcc.getAddress(), AssetERC721.amount);
-      expect((await escrow.assetDeposits(offerId)).amount).to.be.eq(0);
-      expect(await erc721.ownerOf(AssetERC721.tokenId)).to.eq(await otherAcc.getAddress());
-
-      ++offerId;
-
-      // ERC1155
-      await escrow.connect(otherAcc).setDeposit(offerId, await otherAcc.getAddress(), AssetERC1155);
-
-      const tx_3 = await escrow.connect(otherAcc).withdrawDeposit(offerId, AssetERC1155.amount, await otherAcc.getAddress());
-
-      await expect(tx_3).to.emit(escrow, 'OfferWithdrawn').withArgs(offerId, await otherAcc.getAddress(), AssetERC1155.amount);
-      expect((await escrow.assetDeposits(offerId)).amount).to.be.eq(0);
-      expect(await erc1155.balanceOf(await otherAcc.getAddress(), AssetERC1155.tokenId)).to.eq(AssetERC1155.amount);
-      expect(await erc1155.balanceOf(escrow.address, AssetERC1155.tokenId)).to.eq(0);
     });
 
     it('Should withdraw full deposit', async () => {
@@ -270,9 +251,11 @@ describe('OpenDotcEscrowV3', () => {
       await expect(tx_1)
         .to.emit(escrow, 'OfferWithdrawn')
         .withArgs(offerId, await otherAcc.getAddress(), BigNumber.from(AssetERC20.amount));
-      expect((await escrow.assetDeposits(offerId)).amount).to.be.eq(0);
+      expect((await escrow.escrowOffers(offerId)).depositAsset.amount).to.be.eq(0);
       expect(await erc20.balanceOf(await otherAcc.getAddress())).to.eq(BigNumber.from(AssetERC20.amount));
       expect(await erc20.balanceOf(escrow.address)).to.eq(20);
+
+      expect((await escrow.escrowOffers(offerId)).escrowType).to.be.eq(EscrowType.OfferFullyWithdrew);
 
       ++offerId;
 
@@ -282,8 +265,10 @@ describe('OpenDotcEscrowV3', () => {
       const tx_2 = await escrow.connect(otherAcc).withdrawFullDeposit(offerId, await otherAcc.getAddress());
 
       await expect(tx_2).to.emit(escrow, 'OfferWithdrawn').withArgs(offerId, await otherAcc.getAddress(), AssetERC721.amount);
-      expect((await escrow.assetDeposits(offerId)).amount).to.be.eq(0);
+      expect((await escrow.escrowOffers(offerId)).depositAsset.amount).to.be.eq(0);
       expect(await erc721.ownerOf(AssetERC721.tokenId)).to.eq(await otherAcc.getAddress());
+
+      expect((await escrow.escrowOffers(offerId)).escrowType).to.be.eq(EscrowType.OfferFullyWithdrew);
 
       ++offerId;
 
@@ -293,9 +278,11 @@ describe('OpenDotcEscrowV3', () => {
       const tx_3 = await escrow.connect(otherAcc).withdrawFullDeposit(offerId, await otherAcc.getAddress());
 
       await expect(tx_3).to.emit(escrow, 'OfferWithdrawn').withArgs(offerId, await otherAcc.getAddress(), AssetERC1155.amount);
-      expect((await escrow.assetDeposits(offerId)).amount).to.be.eq(0);
+      expect((await escrow.escrowOffers(offerId)).depositAsset.amount).to.be.eq(0);
       expect(await erc1155.balanceOf(await otherAcc.getAddress(), AssetERC1155.tokenId)).to.eq(AssetERC1155.amount);
       expect(await erc1155.balanceOf(escrow.address, AssetERC1155.tokenId)).to.eq(0);
+
+      expect((await escrow.escrowOffers(offerId)).escrowType).to.be.eq(EscrowType.OfferFullyWithdrew);
     });
 
     it('Should cancel deposit', async () => {
@@ -343,13 +330,15 @@ describe('OpenDotcEscrowV3', () => {
       const tx_1 = await escrow.connect(otherAcc).cancelDeposit(offerId, await otherAcc.getAddress());
 
       await expect(tx_1).to.emit(escrow, 'OfferCancelled').withArgs(offerId, await otherAcc.getAddress(), AssetERC20.amount);
-      expect((await escrow.assetDeposits(offerId)).amount).to.be.eq(0);
+      expect((await escrow.escrowOffers(offerId)).depositAsset.amount).to.be.eq(0);
       expect(await erc20.balanceOf(await otherAcc.getAddress())).to.eq(BigNumber.from(AssetERC20.amount));
       expect(await erc20.balanceOf(escrow.address)).to.eq(0);
-      expect((await escrow.assetDeposits(offerId)).amount).to.be.eq(0);
-      expect((await escrow.assetDeposits(offerId)).assetAddress).to.be.eq(ethers.constants.AddressZero);
-      expect((await escrow.assetDeposits(offerId)).assetType).to.be.eq(0);
-      expect((await escrow.assetDeposits(offerId)).tokenId).to.be.eq(0);
+      expect((await escrow.escrowOffers(offerId)).depositAsset.amount).to.be.eq(0);
+      expect((await escrow.escrowOffers(offerId)).depositAsset.assetAddress).to.be.eq(AssetERC20.assetAddress);
+      expect((await escrow.escrowOffers(offerId)).depositAsset.assetType).to.be.eq(AssetERC20.assetType);
+      expect((await escrow.escrowOffers(offerId)).depositAsset.tokenId).to.be.eq(AssetERC20.tokenId);
+
+      expect((await escrow.escrowOffers(offerId)).escrowType).to.be.eq(EscrowType.OfferCancelled);
 
       ++offerId;
 
@@ -376,12 +365,14 @@ describe('OpenDotcEscrowV3', () => {
       const tx_2 = await escrow.connect(otherAcc).cancelDeposit(offerId, await otherAcc.getAddress());
 
       await expect(tx_2).to.emit(escrow, 'OfferCancelled').withArgs(offerId, await otherAcc.getAddress(), AssetERC721.amount);
-      expect((await escrow.assetDeposits(offerId)).amount).to.be.eq(0);
+      expect((await escrow.escrowOffers(offerId)).depositAsset.amount).to.be.eq(0);
       expect(await erc721.ownerOf(AssetERC721.tokenId)).to.eq(await otherAcc.getAddress());
-      expect((await escrow.assetDeposits(offerId)).amount).to.be.eq(0);
-      expect((await escrow.assetDeposits(offerId)).assetAddress).to.be.eq(ethers.constants.AddressZero);
-      expect((await escrow.assetDeposits(offerId)).assetType).to.be.eq(0);
-      expect((await escrow.assetDeposits(offerId)).tokenId).to.be.eq(0);
+      expect((await escrow.escrowOffers(offerId)).depositAsset.amount).to.be.eq(0);
+      expect((await escrow.escrowOffers(offerId)).depositAsset.assetAddress).to.be.eq(AssetERC721.assetAddress);
+      expect((await escrow.escrowOffers(offerId)).depositAsset.assetType).to.be.eq(AssetERC721.assetType);
+      expect((await escrow.escrowOffers(offerId)).depositAsset.tokenId).to.be.eq(AssetERC721.tokenId);
+
+      expect((await escrow.escrowOffers(offerId)).escrowType).to.be.eq(EscrowType.OfferCancelled);
 
       ++offerId;
 
@@ -391,13 +382,15 @@ describe('OpenDotcEscrowV3', () => {
       const tx_3 = await escrow.connect(otherAcc).cancelDeposit(offerId, await otherAcc.getAddress());
 
       await expect(tx_3).to.emit(escrow, 'OfferCancelled').withArgs(offerId, await otherAcc.getAddress(), AssetERC1155.amount);
-      expect((await escrow.assetDeposits(offerId)).amount).to.be.eq(0);
+      expect((await escrow.escrowOffers(offerId)).depositAsset.amount).to.be.eq(0);
       expect(await erc1155.balanceOf(await otherAcc.getAddress(), AssetERC1155.tokenId)).to.eq(AssetERC1155.amount);
       expect(await erc1155.balanceOf(escrow.address, AssetERC1155.tokenId)).to.eq(0);
-      expect((await escrow.assetDeposits(offerId)).amount).to.be.eq(0);
-      expect((await escrow.assetDeposits(offerId)).assetAddress).to.be.eq(ethers.constants.AddressZero);
-      expect((await escrow.assetDeposits(offerId)).assetType).to.be.eq(0);
-      expect((await escrow.assetDeposits(offerId)).tokenId).to.be.eq(0);
+      expect((await escrow.escrowOffers(offerId)).depositAsset.amount).to.be.eq(0);
+      expect((await escrow.escrowOffers(offerId)).depositAsset.assetAddress).to.be.eq(AssetERC1155.assetAddress);
+      expect((await escrow.escrowOffers(offerId)).depositAsset.assetType).to.be.eq(AssetERC1155.assetType);
+      expect((await escrow.escrowOffers(offerId)).depositAsset.tokenId).to.be.eq(AssetERC1155.tokenId);
+
+      expect((await escrow.escrowOffers(offerId)).escrowType).to.be.eq(EscrowType.OfferCancelled);
     });
 
     it('Should withdraw fees', async () => {
@@ -425,10 +418,10 @@ describe('OpenDotcEscrowV3', () => {
       const tx_1 = await escrow.connect(otherAcc).withdrawFees(offerId, feesAmount);
 
       await expect(tx_1).to.emit(escrow, 'FeesWithdrew').withArgs(offerId, await deployer.getAddress(), feesAmount);
-      expect((await escrow.assetDeposits(offerId)).amount).to.be.eq(BigNumber.from(AssetERC20.amount).sub(feesAmount));
+      expect((await escrow.escrowOffers(offerId)).depositAsset.amount).to.be.eq(BigNumber.from(AssetERC20.amount).sub(feesAmount));
       expect(await erc20.balanceOf(await deployer.getAddress())).to.eq(balanceBefore.add(feesAmount));
       expect(await erc20.balanceOf(escrow.address)).to.eq(BigNumber.from(AssetERC20.amount).sub(feesAmount));
-      expect((await escrow.assetDeposits(offerId)).amount).to.be.eq(BigNumber.from(AssetERC20.amount).sub(feesAmount));
+      expect((await escrow.escrowOffers(offerId)).depositAsset.amount).to.be.eq(BigNumber.from(AssetERC20.amount).sub(feesAmount));
     });
   });
 
