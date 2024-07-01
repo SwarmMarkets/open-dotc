@@ -334,56 +334,16 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
     }
 
     /**
-     * @notice Cancels an offer and refunds the maker.
-     * @param offerId The ID of the offer to cancel.
-     * @dev Can only be called by the offer's maker and when the timelock has passed.
-     */
-    function cancelOffer(uint256 offerId) external {
-        DotcOffer memory offer = allOffers[offerId];
-
-        offer.onlyMaker();
-        offer.checkDotcOfferParams();
-
-        delete allOffers[offerId];
-
-        uint256 amountToWithdraw = escrow.cancelDeposit(offerId, msg.sender);
-
-        emit CanceledOffer(offerId, msg.sender, amountToWithdraw);
-    }
-
-    /**
      * @notice Updates an existing offer's details.
      * @param offerId The ID of the offer to update.
-     * @param newAmount New amount for the withdrawal asset.
      * @param updatedOffer A structure for the update the offer.
-     * @return status Boolean indicating the success of the operation.
      * @dev Only the maker of the offer can update it.
      */
-    function updateOffer(
-        uint256 offerId,
-        uint256 newAmount,
-        OfferStruct calldata updatedOffer
-    ) external returns (bool status) {
+    function updateOffer(uint256 offerId, OfferStruct calldata updatedOffer) external {
         DotcOffer memory offer = allOffers[offerId];
 
         offer.onlyMaker();
         offer.checkDotcOfferParams();
-
-        if (newAmount > 0) {
-            if (offer.withdrawalAsset.assetType == AssetType.ERC721) {
-                revert ERC721OfferAmountChangeError();
-            }
-            uint256 standardizedNewAmount = offer.withdrawalAsset.assetType == AssetType.ERC20
-                ? offer.withdrawalAsset.standardize(newAmount)
-                : newAmount;
-
-            allOffers[offerId].withdrawalAsset.amount = standardizedNewAmount;
-            allOffers[offerId].offer.price.unitPrice =
-                (standardizedNewAmount * 10 ** OfferHelper.DECIMALS) /
-                offer.depositAsset.amount;
-
-            emit OfferAmountUpdated(offerId, newAmount);
-        }
 
         if (updatedOffer.specialAddresses.length > 0) {
             updatedOffer.checkZeroAddressForSpecialAddresses();
@@ -399,6 +359,19 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
             emit OfferAuthAddressesUpdated(offerId, updatedOffer.authorizationAddresses);
         }
 
+        if (updatedOffer.expiryTimestamp > offer.offer.expiryTimestamp) {
+            allOffers[offerId].offer.expiryTimestamp = updatedOffer.expiryTimestamp;
+            emit UpdatedOfferExpiry(offerId, updatedOffer.expiryTimestamp);
+        }
+
+        if (
+            updatedOffer.timelockPeriod > offer.offer.timelockPeriod &&
+            allOffers[offerId].offer.expiryTimestamp > updatedOffer.timelockPeriod
+        ) {
+            allOffers[offerId].offer.timelockPeriod = updatedOffer.timelockPeriod;
+            emit UpdatedTimeLockPeriod(offerId, updatedOffer.timelockPeriod);
+        }
+
         if (
             keccak256(abi.encodePacked(updatedOffer.terms)) != keccak256("") &&
             keccak256(abi.encodePacked(updatedOffer.commsLink)) != keccak256("")
@@ -407,13 +380,24 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
             allOffers[offerId].offer.commsLink = updatedOffer.commsLink;
             emit OfferLinksUpdated(offerId, updatedOffer.terms, updatedOffer.commsLink);
         }
+    }
 
-        if (updatedOffer.expiryTimestamp > offer.offer.expiryTimestamp) {
-            allOffers[offerId].offer.expiryTimestamp = updatedOffer.expiryTimestamp;
-            emit UpdatedOfferExpiry(offerId, updatedOffer.expiryTimestamp);
-        }
+    /**
+     * @notice Cancels an offer and refunds the maker.
+     * @param offerId The ID of the offer to cancel.
+     * @dev Can only be called by the offer's maker and when the timelock has passed.
+     */
+    function cancelOffer(uint256 offerId) external {
+        DotcOffer memory offer = allOffers[offerId];
 
-        return true;
+        offer.onlyMaker();
+        offer.checkDotcOfferParams();
+
+        allOffers[offerId].validityType = ValidityType.Cancelled;
+
+        uint256 amountToWithdraw = escrow.cancelDeposit(offerId, msg.sender);
+
+        emit CanceledOffer(offerId, msg.sender, amountToWithdraw);
     }
 
     /**
