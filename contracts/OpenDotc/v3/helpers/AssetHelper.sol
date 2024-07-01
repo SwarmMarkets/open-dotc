@@ -190,7 +190,7 @@ library AssetHelper {
         return _unstandardize(amount, decimals);
     }
 
-    function calculateFees(uint256 amount, uint256 feeAmount) external view returns (uint256 fees) {
+    function calculateFees(uint256 amount, uint256 feeAmount) external pure returns (uint256 fees) {
         fees = (amount * feeAmount) / BPS;
     }
 
