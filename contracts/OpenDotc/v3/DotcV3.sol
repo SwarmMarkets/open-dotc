@@ -29,7 +29,6 @@ error ERC721OfferAmountChangeError();
 /// @notice Indicates that the operation was attempted by an unauthorized entity, not the Escrow contract
 error OnlyEscrow();
 
-error PartialOfferShouldHaveSpecifiedAmount();
 error OfferCanNotBeFullyTaken(uint256 offerId);
 error OfferCanNotBePartiallyTaken(uint256 offerId);
 
@@ -227,23 +226,61 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
         emit CreatedOffer(msg.sender, _currentOfferId, depositAsset, withdrawalAsset, offer);
     }
 
-    function takeFullOffer(uint256 offerId) public {
+    function takeOffer(uint256 offerId, uint256 withdrawalAmountPaid) public {
         DotcOffer memory offer = allOffers[offerId];
         offer.checkDotcOfferParams();
 
-        if (offer.offer.checkOfferParams() != TakingOfferType.FullyTaking) {
-            revert OfferCanNotBeFullyTaken(offerId);
+        ValidityType validityType;
+        uint256 depositAssetAmount;
+        uint256 fullWithdrawalAmountPaid;
+
+        if (withdrawalAmountPaid == 0) {
+            // Full offer case
+            if (offer.offer.checkOfferParams() != TakingOfferType.FullyTaking) {
+                revert OfferCanNotBeFullyTaken(offerId);
+            }
+
+            offer.withdrawalAsset.checkAssetOwner(msg.sender, offer.withdrawalAsset.amount);
+
+            depositAssetAmount = offer.depositAsset.amount;
+            fullWithdrawalAmountPaid = offer.withdrawalAsset.amount;
+
+            withdrawalAmountPaid = offer.withdrawalAsset.amount;
+
+            validityType = ValidityType.FullyTaken;
+
+            allOffers[offerId].withdrawalAsset.amount = 0;
+            allOffers[offerId].depositAsset.amount = 0;
+        } else {
+            // Partial offer case
+            if (offer.offer.checkOfferParams() != TakingOfferType.PartialTaking) {
+                revert OfferCanNotBePartiallyTaken(offerId);
+            }
+
+            offer.withdrawalAsset.checkAssetOwner(msg.sender, withdrawalAmountPaid);
+
+            fullWithdrawalAmountPaid = withdrawalAmountPaid;
+            depositAssetAmount = offer.depositAsset.amount;
+
+            if (withdrawalAmountPaid == offer.withdrawalAsset.amount) {
+                allOffers[offerId].withdrawalAsset.amount = 0;
+                allOffers[offerId].depositAsset.amount = 0;
+            } else {
+                depositAssetAmount = offer.depositAsset.unstandardize(
+                    (offer.withdrawalAsset.standardize(withdrawalAmountPaid) * AssetHelper.BPS) /
+                        offer.offer.price.unitPrice
+                );
+
+                allOffers[offerId].withdrawalAsset.amount -= withdrawalAmountPaid;
+                allOffers[offerId].depositAsset.amount -= depositAssetAmount;
+            }
+
+            validityType = (allOffers[offerId].withdrawalAsset.amount == 0 ||
+                allOffers[offerId].depositAsset.amount == 0)
+                ? ValidityType.FullyTaken
+                : ValidityType.PartiallyTaken;
         }
 
-        offer.withdrawalAsset.checkAssetOwner(msg.sender, offer.withdrawalAsset.amount);
-
-        uint256 depositAssetAmount = offer.depositAsset.amount;
-        uint256 withdrawalAssetAmount = offer.withdrawalAsset.amount;
-
-        ValidityType validityType = ValidityType.FullyTaken;
-
-        allOffers[offerId].withdrawalAsset.amount = 0;
-        allOffers[offerId].depositAsset.amount = 0;
         allOffers[offerId].validityType = validityType;
 
         // Check if fees can be taken
@@ -259,64 +296,9 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
                 }
             } else {
                 // If WithdrawalAsset is an ERC20 then fees will be taken from Taker
-                withdrawalAssetAmount -= _sendWithdrawalFees(offer.withdrawalAsset, withdrawalAssetAmount);
+                withdrawalAmountPaid -= _sendWithdrawalFees(offer.withdrawalAsset, withdrawalAmountPaid);
             }
         }
-
-        //Transfer WithdrawalAsset from Taker to Maker
-        _assetTransfer(offer.withdrawalAsset, msg.sender, offer.maker, withdrawalAssetAmount);
-
-        //Transfer DepositAsset from Maker to Taker
-        escrow.withdrawDeposit(offerId, depositAssetAmount, msg.sender);
-
-        emit TakenOffer(offerId, msg.sender, validityType, depositAssetAmount, withdrawalAssetAmount);
-    }
-
-    /**
-     * @notice Allows a user to take an available offer.
-     * @dev Ensures the current time is before the offer's expiry time.
-     * @param offerId The ID of the offer to take.
-     * @param withdrawalAmountPaid The amount of the withdrawal asset to send.
-     * @dev Handles the transfer of assets between maker and taker.
-     */
-    function takePartialOffer(uint256 offerId, uint256 withdrawalAmountPaid) public {
-        DotcOffer memory offer = allOffers[offerId];
-        offer.checkDotcOfferParams();
-
-        if (offer.offer.checkOfferParams() != TakingOfferType.PartialTaking) {
-            revert OfferCanNotBePartiallyTaken(offerId);
-        }
-
-        if (withdrawalAmountPaid == 0) {
-            revert PartialOfferShouldHaveSpecifiedAmount();
-        }
-
-        offer.withdrawalAsset.checkAssetOwner(msg.sender, withdrawalAmountPaid);
-
-        uint256 fullWithdrawalAmountPaid = withdrawalAmountPaid;
-        uint256 depositAssetAmount = offer.depositAsset.amount;
-
-        if (withdrawalAmountPaid == offer.withdrawalAsset.amount) {
-            allOffers[offerId].withdrawalAsset.amount = 0;
-            allOffers[offerId].depositAsset.amount = 0;
-        } else {
-            depositAssetAmount = offer.depositAsset.unstandardize(
-                (offer.withdrawalAsset.standardize(withdrawalAmountPaid) * AssetHelper.BPS) /
-                    offer.offer.price.unitPrice
-            );
-
-            allOffers[offerId].withdrawalAsset.amount -= withdrawalAmountPaid;
-            allOffers[offerId].depositAsset.amount -= depositAssetAmount;
-        }
-
-        ValidityType validityType = (allOffers[offerId].withdrawalAsset.amount == 0 ||
-            allOffers[offerId].depositAsset.amount == 0)
-            ? ValidityType.FullyTaken
-            : ValidityType.PartiallyTaken;
-
-        allOffers[offerId].validityType = validityType;
-
-        withdrawalAmountPaid -= _sendWithdrawalFees(offer.withdrawalAsset, withdrawalAmountPaid);
 
         //Transfer WithdrawalAsset from Taker to Maker
         _assetTransfer(offer.withdrawalAsset, msg.sender, offer.maker, withdrawalAmountPaid);
