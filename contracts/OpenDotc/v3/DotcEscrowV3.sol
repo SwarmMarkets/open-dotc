@@ -152,27 +152,6 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
     /**
      * @notice Withdraws a deposit from escrow to the taker's address.
      * @param offerId The ID of the offer being withdrawn.
-     * @param taker The address receiving the withdrawn assets.
-     * @dev Ensures that the withdrawal is valid and transfers the asset to the taker.
-     */
-    function withdrawFullDeposit(uint256 offerId, address taker) external onlyDotc {
-        EscrowOffer memory offer = escrowOffers[offerId];
-
-        if (offer.depositAsset.amount <= 0) {
-            revert AssetAmountEqZero();
-        }
-
-        escrowOffers[offerId].escrowType = EscrowType.OfferFullyWithdrew;
-        escrowOffers[offerId].depositAsset.amount = 0;
-
-        _assetTransfer(offer.depositAsset, address(this), taker, offer.depositAsset.amount);
-
-        emit OfferWithdrawn(offerId, taker, offer.depositAsset.amount);
-    }
-
-    /**
-     * @notice Withdraws a deposit from escrow to the taker's address.
-     * @param offerId The ID of the offer being withdrawn.
      * @param amountToWithdraw Amount of the asset to withdraw.
      * @param taker The address receiving the withdrawn assets.
      * @dev Ensures that the withdrawal is valid and transfers the asset to the taker.

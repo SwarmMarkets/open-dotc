@@ -322,7 +322,7 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
         _assetTransfer(offer.withdrawalAsset, msg.sender, offer.maker, withdrawalAssetAmount);
 
         //Transfer DepositAsset from Maker to Taker
-        escrow.withdrawFullDeposit(offerId, msg.sender);
+        escrow.withdrawDeposit(offerId, depositAssetAmount, msg.sender);
 
         emit TakenOffer(offerId, msg.sender, validityType, depositAssetAmount, withdrawalAssetAmount);
     }

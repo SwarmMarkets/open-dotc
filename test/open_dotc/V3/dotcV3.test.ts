@@ -1516,6 +1516,8 @@ describe.only('OpenDotcV3', () => {
       expect((await dotc.allOffers(0)).validityType).to.eq(AwaitingOffer.validityType);
 
       expect(await dotc.offersFromAddress(await acc1.getAddress(), 0)).to.eq(offerId);
+
+      expect((await escrow.escrowOffers(offerId)).escrowType).to.be.eq(EscrowType.OfferPartiallyWithdrew);
     });
 
     it('Should take partial offer fully (erc20 => erc20)', async () => {
@@ -1625,6 +1627,8 @@ describe.only('OpenDotcV3', () => {
       expect((await dotc.allOffers(0)).validityType).to.eq(AwaitingOffer.validityType);
 
       expect(await dotc.offersFromAddress(await acc1.getAddress(), 0)).to.eq(offerId);
+
+      expect((await escrow.escrowOffers(offerId)).escrowType).to.be.eq(EscrowType.OfferFullyWithdrew);
     });
 
     it('Should take full offer (erc20 => erc721)', async () => {
