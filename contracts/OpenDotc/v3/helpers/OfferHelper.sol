@@ -35,6 +35,8 @@ error IncorrectTimelockPeriodError(uint256 timelock);
 /// @notice Thrown when an action is attempted on an offer that has already expired.
 error OfferExpiredError();
 
+error TakingOfferTypeShouldBeSpecified();
+
 /**
  * @title TODO (as part of the "SwarmX.eth Protocol")
  * @notice It allows for depositing, withdrawing, and managing of assets in the course of trading.
@@ -113,6 +115,10 @@ library OfferHelper {
 
         if (offer.authorizationAddresses.length > 0) {
             checkZeroAddressForAuthAddresses(offer);
+        }
+
+        if (offer.takingOfferType == TakingOfferType.NoType) {
+            revert TakingOfferTypeShouldBeSpecified();
         }
 
         if (

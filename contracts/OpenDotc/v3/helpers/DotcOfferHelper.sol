@@ -14,6 +14,9 @@ error OnlyMakerAllowedError(address maker);
 /// @notice Thrown when an action is attempted on an offer that is still within its timelock period.
 error OfferInTimelockError();
 
+/// @notice TODO
+error OfferCancelledError();
+
 /**
  * @title TODO (as part of the "SwarmX.eth Protocol")
  * @notice It allows for depositing, withdrawing, and managing of assets in the course of trading.
@@ -47,6 +50,10 @@ library DotcOfferHelper {
 
         if (offer.offer.timelockPeriod >= block.timestamp) {
             revert OfferInTimelockError();
+        }
+
+        if (offer.validityType == ValidityType.Cancelled) {
+            revert OfferCancelledError();
         }
     }
 
