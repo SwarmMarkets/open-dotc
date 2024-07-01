@@ -3,7 +3,7 @@ pragma solidity 0.8.25;
 import { ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20, IERC721, IERC1155, SafeERC20, OwnableUpgradeable } from "./exports/Exports.sol";
 
 import { DotcV3 } from "./DotcV3.sol";
-import { AssetHelper } from "./helpers/AssetHelper.sol";
+
 import { Asset, AssetType, EscrowType, EscrowOffer } from "./structures/DotcStructuresV3.sol";
 
 /// @title Errors related to asset management in the Dotc Escrow contract
@@ -48,8 +48,6 @@ error OnlyDotc();
 contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, OwnableUpgradeable {
     ///@dev Used for Safe transfer tokens
     using SafeERC20 for IERC20;
-    ///@dev Used for Asset interaction
-    using AssetHelper for Asset;
 
     /**
      * @dev Emitted when an offer's assets are deposited into escrow.
@@ -184,12 +182,6 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
 
         if (offer.depositAsset.amount <= 0) {
             revert AssetAmountEqZero();
-        }
-
-        amountToWithdraw = offer.depositAsset.unstandardize(amountToWithdraw);
-
-        if (amountToWithdraw <= 0) {
-            revert AmountToWithdrawEqZero();
         }
 
         escrowOffers[offerId].depositAsset.amount -= amountToWithdraw;
