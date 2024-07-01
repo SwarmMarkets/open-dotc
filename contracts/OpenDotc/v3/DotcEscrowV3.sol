@@ -192,8 +192,13 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
             revert AmountToWithdrawEqZero();
         }
 
-        escrowOffers[offerId].escrowType = EscrowType.OfferPartiallyWithdrew;
         escrowOffers[offerId].depositAsset.amount -= amountToWithdraw;
+
+        if (escrowOffers[offerId].depositAsset.amount == 0) {
+            escrowOffers[offerId].escrowType = EscrowType.OfferFullyWithdrew;
+        } else {
+            escrowOffers[offerId].escrowType = EscrowType.OfferPartiallyWithdrew;
+        }
 
         _assetTransfer(offer.depositAsset, address(this), taker, amountToWithdraw);
 
