@@ -256,9 +256,8 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
             allOffers[offerId].withdrawalAsset.amount = 0;
             allOffers[offerId].depositAsset.amount = 0;
         } else {
-            depositAssetAmount =
-                (withdrawalAmountPaidStandardized * 10 ** OfferHelper.DECIMALS) /
-                offer.offer.price.unitPrice;
+            depositAssetAmount = (withdrawalAmountPaidStandardized * AssetHelper.BPS) / offer.offer.price.unitPrice;
+
             allOffers[offerId].withdrawalAsset.amount -= withdrawalAmountPaidStandardized;
             allOffers[offerId].depositAsset.amount -= depositAssetAmount;
         }

@@ -85,7 +85,7 @@ library OfferHelper {
                 withdrawalAmount = withdrawalAsset.standardize();
             }
 
-            offer.price.unitPrice = (withdrawalAmount * 10 ** DECIMALS) / depositAmount;
+            offer.price.unitPrice = (withdrawalAmount * AssetHelper.BPS) / depositAmount;
         }
     }
 
