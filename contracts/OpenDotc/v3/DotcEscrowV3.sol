@@ -219,6 +219,8 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
             revert AmountToCancelEqZero();
         }
 
+        amountToCancel = offer.depositAsset.amount;
+
         escrowOffers[offerId].escrowType = EscrowType.OfferCancelled;
         escrowOffers[offerId].depositAsset.amount = 0;
 
