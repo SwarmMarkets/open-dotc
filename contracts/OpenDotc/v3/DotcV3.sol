@@ -432,7 +432,7 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
             _assetTransfer(asset, msg.sender, feeReceiver, feesToFeeReceiver);
             _assetTransfer(asset, msg.sender, affiliate, feesToAffiliate);
         } else {
-            _assetTransfer(asset, msg.sender, feeReceiver, feesToFeeReceiver);
+            _assetTransfer(asset, msg.sender, feeReceiver, fees);
         }
 
         return fees;
