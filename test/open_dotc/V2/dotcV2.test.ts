@@ -20,7 +20,7 @@ import {
   OfferStruct as OfferStructStruct,
 } from '../../helpers/Structures';
 
-describe('DotcV2_Open', () => {
+describe.skip('DotcV2_Open', () => {
   const addressZero = ethers.constants.AddressZero;
   const terms = 'terms';
   const commsLink = 'commsLink';

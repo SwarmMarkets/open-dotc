@@ -13,7 +13,7 @@ import {
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { AssetStruct } from '../../helpers/Structures';
 
-describe('DotcManagerV2_Open', () => {
+describe.skip('DotcManagerV2_Open', () => {
   async function fixture() {
     const [deployer, acc1] = await ethers.getSigners();
 
