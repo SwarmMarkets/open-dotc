@@ -2,6 +2,12 @@
 //SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
+error OnlyManager();
+/// @notice Indicates that the operation was attempted by an unauthorized entity, not the Dotc contract
+error OnlyDotc();
+/// @notice Indicates usage of a zero address where an actual address is required
+error ZeroAddressPassed();
+
 /**
  * @title Structures for DOTC management (as part of the "SwarmX.eth Protocol")
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////

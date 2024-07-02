@@ -7,8 +7,9 @@ import { AssetHelper } from "./helpers/AssetHelper.sol";
 import { OfferHelper } from "./helpers/OfferHelper.sol";
 import { DotcOfferHelper } from "./helpers/DotcOfferHelper.sol";
 import { DotcEscrowV3 } from "./DotcEscrowV3.sol";
+import { DotcManagerV3 } from "./DotcManagerV3.sol";
 
-import { Asset, AssetType, OfferPricingType, TakingOfferType, ValidityType, OfferStruct, DotcOffer } from "./structures/DotcStructuresV3.sol";
+import { Asset, AssetType, OfferPricingType, TakingOfferType, ValidityType, OfferStruct, DotcOffer, OnlyManager } from "./structures/DotcStructuresV3.sol";
 
 /// @title Errors related to the Dotc contract
 /// @notice Provides error messages for various failure conditions related to Offers and Assets handling
@@ -136,17 +137,16 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
      * @param authAddresses The new auth addresses of the offer.
      */
     event OfferAuthAddressesUpdated(uint256 indexed offerId, address[] authAddresses);
-    /**
-     * @dev Emitted when the escrow address is changed.
-     * @param by Address of the user who changed the escrow address.
-     * @param escrow New escrow's address.
-     */
-    event EscrowAddressSet(address indexed by, DotcEscrowV3 escrow);
 
+    /**
+     * @dev Address of the manager contract.
+     */
+    DotcManagerV3 public manager;
     /**
      * @dev Address of the escrow contract.
      */
     DotcEscrowV3 public escrow;
+
     /**
      * @notice Stores all the offers ever created.
      * @dev Maps an offer ID to its corresponding DotcOffer structure.
@@ -163,17 +163,6 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
      */
     uint256 public currentOfferId;
 
-    /**
-     * @notice Ensures that the function is only callable by the Escrow contract.
-     * @dev Modifier that restricts function access to the address of the Escrow contract.
-     */
-    modifier onlyEscrow() {
-        if (msg.sender != address(escrow)) {
-            revert OnlyEscrow();
-        }
-        _;
-    }
-
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -182,13 +171,13 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
     /**
      * @notice Initializes the contract with a given escrow.
      * @dev Sets up the reentrancy guard and ERC token holder functionalities.
-     * @param _escrow The address of the escrow to be set for this contract.
+     * @param _manager The address of the manager to be set for this contract.
      */
-    function initialize(DotcEscrowV3 _escrow) public initializer {
+    function initialize(DotcManagerV3 _manager) public initializer {
         __ERC1155Holder_init();
         __ERC721Holder_init();
 
-        escrow = _escrow;
+        manager = _manager;
     }
 
     /**
@@ -226,7 +215,7 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
         emit CreatedOffer(msg.sender, _currentOfferId, depositAsset, withdrawalAsset, offer);
     }
 
-    function takeOffer(uint256 offerId, uint256 withdrawalAmountPaid) public {
+    function takeOffer(uint256 offerId, uint256 withdrawalAmountPaid, address affiliate) public {
         DotcOffer memory offer = allOffers[offerId];
         offer.checkDotcOfferParams();
 
@@ -284,19 +273,29 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
         allOffers[offerId].validityType = validityType;
 
         // Check if fees can be taken
-        if (escrow.feeAmount() != 0) {
+        if (manager.feeAmount() != 0) {
             // If WithdrawalAsset is not an ERC20 then fees will be taken from Maker
             if (offer.withdrawalAsset.assetType != AssetType.ERC20) {
                 // If DepositAsset is not an ERC20 then fees will not be taken
                 if (offer.depositAsset.assetType == AssetType.ERC20) {
-                    uint256 fees = AssetHelper.calculateFees(depositAssetAmount, escrow.feeAmount());
+                    (uint256 fees, uint256 feesToFeeReceiver, uint256 feesToAffiliate) = AssetHelper.calculateFees(
+                        depositAssetAmount,
+                        manager.feeAmount(),
+                        manager.revSharePercentage()
+                    );
+
                     depositAssetAmount -= fees;
 
-                    escrow.withdrawFees(offerId, fees);
+                    if (affiliate != address(0)) {
+                        escrow.withdrawFees(offerId, feesToFeeReceiver);
+                        escrow.withdrawFees(offerId, feesToAffiliate, affiliate);
+                    } else {
+                        escrow.withdrawFees(offerId, fees);
+                    }
                 }
             } else {
                 // If WithdrawalAsset is an ERC20 then fees will be taken from Taker
-                withdrawalAmountPaid -= _sendWithdrawalFees(offer.withdrawalAsset, withdrawalAmountPaid);
+                withdrawalAmountPaid -= _sendWithdrawalFees(offer.withdrawalAsset, withdrawalAmountPaid, affiliate);
             }
         }
 
@@ -307,6 +306,10 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
         escrow.withdrawDeposit(offerId, depositAssetAmount, msg.sender);
 
         emit TakenOffer(offerId, msg.sender, validityType, depositAssetAmount, fullWithdrawalAmountPaid);
+    }
+
+    function takeOffer(uint256 offerId, uint256 withdrawalAmountPaid) external {
+        takeOffer(offerId, withdrawalAmountPaid, address(0));
     }
 
     /**
@@ -381,10 +384,12 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
      * @param _escrow The new escrow's address.
      * @dev Ensures that only the current owner can perform this operation.
      */
-    function changeEscrow(DotcEscrowV3 _escrow) external onlyEscrow {
-        escrow = _escrow;
+    function changeEscrow(DotcEscrowV3 _escrow) external {
+        if (msg.sender != address(manager)) {
+            revert OnlyManager();
+        }
 
-        emit EscrowAddressSet(msg.sender, _escrow);
+        escrow = _escrow;
     }
 
     /**
@@ -414,9 +419,22 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
         }
     }
 
-    function _sendWithdrawalFees(Asset memory asset, uint256 assetAmount) private returns (uint256 fees) {
-        fees = AssetHelper.calculateFees(assetAmount, escrow.feeAmount());
+    function _sendWithdrawalFees(Asset memory asset, uint256 assetAmount, address affiliate) private returns (uint256) {
+        address feeReceiver = manager.feeReceiver();
 
-        _assetTransfer(asset, msg.sender, escrow.feeReceiver(), fees);
+        (uint256 fees, uint256 feesToFeeReceiver, uint256 feesToAffiliate) = AssetHelper.calculateFees(
+            assetAmount,
+            manager.feeAmount(),
+            manager.revSharePercentage()
+        );
+
+        if (affiliate != address(0)) {
+            _assetTransfer(asset, msg.sender, feeReceiver, feesToFeeReceiver);
+            _assetTransfer(asset, msg.sender, affiliate, feesToAffiliate);
+        } else {
+            _assetTransfer(asset, msg.sender, feeReceiver, feesToFeeReceiver);
+        }
+
+        return fees;
     }
 }

@@ -59,11 +59,6 @@ library OfferHelper {
     ///@dev Used for Asset interaction
     using AssetHelper for Asset;
 
-    /**
-     * @dev Standard decimal places used in Swarm.
-     */
-    uint256 public constant DECIMALS = 18;
-
     function buildOffer(
         OfferStruct memory offer,
         Asset calldata depositAsset,

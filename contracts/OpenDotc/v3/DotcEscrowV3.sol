@@ -1,16 +1,14 @@
 //SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
-import { ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20, IERC721, IERC1155, SafeERC20, OwnableUpgradeable } from "./exports/Exports.sol";
+import { ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20, IERC721, IERC1155, SafeERC20 } from "./exports/Exports.sol";
 
 import { DotcV3 } from "./DotcV3.sol";
+import { DotcManagerV3 } from "./DotcManagerV3.sol";
 
-import { Asset, AssetType, EscrowType, EscrowOffer } from "./structures/DotcStructuresV3.sol";
+import { Asset, AssetType, EscrowType, EscrowOffer, OnlyManager, OnlyDotc, ZeroAddressPassed } from "./structures/DotcStructuresV3.sol";
 
 /// @title Errors related to asset management in the Dotc Escrow contract
 /// @notice Provides error messages for various failure conditions related to asset handling
-
-/// @notice Indicates usage of a zero address where an actual address is required
-error ZeroAddressPassed();
 
 /// @notice Indicates no asset amount was specified where a non-zero value is required
 error AssetAmountEqZero();
@@ -23,9 +21,6 @@ error AmountToCancelEqZero();
 
 /// @notice Indicates no fee amount was specified where a non-zero value is required
 error FeesAmountEqZero();
-
-/// @notice Indicates that the operation was attempted by an unauthorized entity, not the Dotc contract
-error OnlyDotc();
 
 /**
  * @title Escrow Contract for Dotc (Decentralized Over-The-Counter) Trading (as part of the "SwarmX.eth Protocol")
@@ -45,7 +40,7 @@ error OnlyDotc();
  * @dev This contract handles the escrow of assets for DOTC trades, supporting ERC20, ERC721, and ERC1155 assets.
  * @author Swarm
  */
-contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, OwnableUpgradeable {
+contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
     ///@dev Used for Safe transfer tokens
     using SafeERC20 for IERC20;
 
@@ -77,19 +72,11 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
      * @param amountToWithdraw Amount of fees withdrawn.
      */
     event FeesWithdrew(uint256 indexed offerId, address indexed to, uint256 indexed amountToWithdraw);
-    /**
-     * @dev Emitted when the dotc address is changed.
-     * @param by Address of the user who changed the dotc address.
-     * @param dotc New dotc's address.
-     */
-    event DotcAddressSet(address indexed by, DotcV3 dotc);
 
     /**
-     * @dev
-     * @param by Address of the user who performed the update.
-     * @param feeAmount New fee amount.
+     * @dev Address of the manager contract.
      */
-    event FeesSet(address indexed by, address feeReceiver, uint256 feeAmount);
+    DotcManagerV3 public manager;
 
     /**
      * @dev Address of the dotc contract.
@@ -100,10 +87,6 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
      * @dev Mapping from offer IDs to their corresponding deposited assets.
      */
     mapping(uint256 offerId => EscrowOffer escrowOffer) public escrowOffers;
-
-    // Fees
-    address public feeReceiver;
-    uint256 public feeAmount;
 
     /**
      * @notice Ensures that the function is only callable by the DOTC contract.
@@ -124,15 +107,13 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
     /**
      * @notice Initializes the escrow contract with a fees parameters.
      * @dev Sets up the contract to handle ERC1155 and ERC721 tokens.
-     * @param _newFeeReceiver The address of the fee receiver.
+     * @param _manager The address of the manager contract.
      */
-    function initialize(address _newFeeReceiver) public initializer {
+    function initialize(DotcManagerV3 _manager) public initializer {
         __ERC1155Holder_init();
         __ERC721Holder_init();
-        __Ownable_init(msg.sender);
 
-        feeReceiver = _newFeeReceiver;
-        feeAmount = 25 * (10 ** 23);
+        manager = _manager;
     }
 
     /**
@@ -206,16 +187,18 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
      * @param feesAmountToWithdraw The amount of fees to withdraw.
      * @dev Ensures that the fee withdrawal is valid and transfers the fee to the designated receiver.
      */
-    function withdrawFees(uint256 offerId, uint256 feesAmountToWithdraw) external onlyDotc {
+    function withdrawFees(uint256 offerId, uint256 feesAmountToWithdraw, address to) public onlyDotc {
         EscrowOffer memory offer = escrowOffers[offerId];
-
-        address receiver = feeReceiver;
 
         escrowOffers[offerId].depositAsset.amount -= feesAmountToWithdraw;
 
-        _assetTransfer(offer.depositAsset, address(this), receiver, feesAmountToWithdraw);
+        _assetTransfer(offer.depositAsset, address(this), to, feesAmountToWithdraw);
 
-        emit FeesWithdrew(offerId, receiver, feesAmountToWithdraw);
+        emit FeesWithdrew(offerId, to, feesAmountToWithdraw);
+    }
+
+    function withdrawFees(uint256 offerId, uint256 feesAmountToWithdraw) public {
+        withdrawFees(offerId, feesAmountToWithdraw, manager.feeReceiver());
     }
 
     /**
@@ -223,46 +206,16 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, Owna
      * @param _dotc The new dotc's address.
      * @dev Ensures that only the current owner can perform this operation.
      */
-    function changeDotc(DotcV3 _dotc) external onlyOwner {
+    function changeDotc(DotcV3 _dotc) external {
+        if (msg.sender != address(manager)) {
+            revert OnlyManager();
+        }
+
         if (address(_dotc) == address(0)) {
             revert ZeroAddressPassed();
         }
 
         dotc = _dotc;
-
-        emit DotcAddressSet(msg.sender, _dotc);
-    }
-
-    /**
-     * @notice Changes the escrow address in the Dotc contract.
-     * @param _escrow The new escrow's address.
-     * @dev Ensures that only the current owner can perform this operation.
-     */
-    function changeEscrowInDotc(DotcEscrowV3 _escrow) external onlyOwner {
-        if (address(_escrow) == address(0)) {
-            revert ZeroAddressPassed();
-        }
-
-        dotc.changeEscrow(_escrow);
-    }
-
-    /**
-     * @notice
-     * @param _newFeeReceiver The new fee receiver address.
-     * @param _feeAmount The new fee amount.
-     * @dev Requires caller to be the owner of the contract.
-     */
-
-    function changeFees(address _newFeeReceiver, uint256 _feeAmount) external onlyOwner {
-        if (_newFeeReceiver != address(0)) {
-            feeReceiver = _newFeeReceiver;
-        }
-
-        if (_feeAmount != 0) {
-            feeAmount = _feeAmount;
-        }
-
-        emit FeesSet(msg.sender, _newFeeReceiver, _feeAmount);
     }
 
     /**
