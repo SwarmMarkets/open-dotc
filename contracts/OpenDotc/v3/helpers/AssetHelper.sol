@@ -80,6 +80,8 @@ library AssetHelper {
      */
     uint256 public constant BPS = 10 ** 27;
 
+    uint256 constant SCALING_FACTOR = 10000;
+
     /**
      * @notice Ensures that the given amount is greater than zero.
      * @param amount The amount to check.
@@ -194,8 +196,19 @@ library AssetHelper {
         return _unstandardize(amount, decimals);
     }
 
-    function calculateFees(uint256 amount, uint256 feeAmount) external pure returns (uint256 fees) {
+    function calculateFees(
+        uint256 amount,
+        uint256 feeAmount,
+        uint256 revSharePercentage
+    ) external pure returns (uint256 fees, uint256 feesToFeeReceiver, uint256 feesToAffiliate) {
         fees = (amount * feeAmount) / BPS;
+
+        feesToAffiliate = calculatePercentage(fees, revSharePercentage);
+        feesToFeeReceiver = fees - feesToAffiliate;
+    }
+
+    function calculatePercentage(uint256 value, uint256 percentage) public pure returns (uint256) {
+        return (value * percentage) / SCALING_FACTOR;
     }
 
     /**
