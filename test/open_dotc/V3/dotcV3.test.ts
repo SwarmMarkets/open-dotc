@@ -10,7 +10,8 @@ import {
   AssetHelper,
   DotcOfferHelper,
   OfferHelper,
-  DotcManagerV3
+  DotcManagerV3,
+  AuthorizationMock
 } from '../../../typechain';
 import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
 import {
@@ -83,9 +84,17 @@ describe('OpenDotcV3', () => {
     const ERC721: ContractFactory = await ethers.getContractFactory('ERC721MockV3');
     const erc721: ERC721MockV3 = (await ERC721.deploy()) as ERC721MockV3;
     await erc721.deployed();
+
     const ERC1155: ContractFactory = await ethers.getContractFactory('ERC1155MockV3');
     const erc1155: ERC1155MockV3 = (await ERC1155.deploy()) as ERC1155MockV3;
     await erc1155.deployed();
+
+    const AuthorizationMock: ContractFactory = await ethers.getContractFactory('AuthorizationMock');
+    const authorization_true: AuthorizationMock = (await AuthorizationMock.deploy(true)) as AuthorizationMock;
+    await authorization_true.deployed();
+
+    const authorization_false: AuthorizationMock = (await AuthorizationMock.deploy(false)) as AuthorizationMock;
+    await authorization_false.deployed();
 
     await dotcManager.changeEscrow(escrow.address);
     await dotcManager.changeDotc(dotc.address);
@@ -105,13 +114,15 @@ describe('OpenDotcV3', () => {
       dotc,
       escrow,
       dotcManager,
+      assetHelper,
+      offerHelper,
+      dotcOfferHelper,
       erc20_18,
       erc20_6,
       erc721,
       erc1155,
-      assetHelper,
-      offerHelper,
-      dotcOfferHelper
+      authorization_false,
+      authorization_true
     };
   }
 
@@ -1264,7 +1275,7 @@ describe('OpenDotcV3', () => {
 
   describe('Take Offer', () => {
     it('Should take full offer (erc20 => erc20)', async () => {
-      const { dotc, escrow, dotcManager, assetHelper, offerHelper, dotcOfferHelper, erc20_18, erc20_6, acc1, acc2, acc3, deployer, otherAcc } =
+      const { dotc, escrow, dotcManager, assetHelper, offerHelper, dotcOfferHelper, erc20_18, erc20_6, authorization_false, authorization_true, acc1, acc2, acc3, deployer, otherAcc } =
         await loadFixture(fixture);
 
       let offerId = 0;
@@ -1309,7 +1320,7 @@ describe('OpenDotcV3', () => {
         offerPricingType: OfferPricingType.FixedPricing,
         price: Price,
         specialAddresses: [await acc2.getAddress(), await deployer.getAddress()],
-        authorizationAddresses: [],
+        authorizationAddresses: [authorization_false.address],
         expiryTimestamp: now + 2000,
         timelockPeriod: 0,
         terms,
@@ -1333,12 +1344,16 @@ describe('OpenDotcV3', () => {
       await expect(dotc.connect(acc3)['takeOffer(uint256,uint256)'](offerId, 0)).to.be.revertedWithCustomError(
         offerHelper,
         'NotSpecialAddressError',
-      );
-      // Checks if threw another message (that is lower in hirarchy) than 'Dotc: Only Special addresses allowed to take offer' then special addresses works correctly
+      ).withArgs(await acc3.getAddress());
+
       await expect(dotc.connect(deployer)['takeOffer(uint256,uint256)'](offerId, 0)).to.be.revertedWithCustomError(
-        erc20_6,
-        'ERC20InsufficientAllowance',
-      );
+        offerHelper,
+        'NotAuthorizedAccountError',
+      ).withArgs(await deployer.getAddress());
+
+      Offer.authorizationAddresses = [authorization_true.address];
+
+      await dotc.connect(acc1).updateOffer(offerId, Offer);
 
       const take_offer = await dotc.connect(acc2)['takeOffer(uint256,uint256)'](offerId, 0);
 
@@ -1445,7 +1460,7 @@ describe('OpenDotcV3', () => {
         takingOfferType: TakingOfferType.FullyTaking,
         offerPricingType: OfferPricingType.FixedPricing,
         price: Price,
-        specialAddresses: [await acc2.getAddress(), await deployer.getAddress()],
+        specialAddresses: [],
         authorizationAddresses: [],
         expiryTimestamp: now + 2000,
         timelockPeriod: 0,
@@ -2805,7 +2820,7 @@ describe('OpenDotcV3', () => {
         takingOfferType: TakingOfferType.PartialTaking,
         offerPricingType: OfferPricingType.FixedPricing,
         price: Price,
-        specialAddresses: [await acc2.getAddress(), await deployer.getAddress()],
+        specialAddresses: [],
         authorizationAddresses: [],
         expiryTimestamp: now + 2000,
         timelockPeriod: 0,
