@@ -218,20 +218,22 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
     function takeOffer(uint256 offerId, uint256 withdrawalAmountPaid, address affiliate) public {
         DotcOffer memory offer = allOffers[offerId];
         offer.checkDotcOfferParams();
+        offer.offer.checkOfferParams();
+
+        TakingOfferType _type = offer.offer.takingOfferType;
 
         ValidityType validityType;
-        uint256 depositAssetAmount;
+        uint256 depositAssetAmount = offer.depositAsset.amount;
         uint256 fullWithdrawalAmountPaid;
 
         if (withdrawalAmountPaid == 0) {
             // Full offer case
-            if (offer.offer.checkOfferParams() != TakingOfferType.FullyTaking) {
+            if (_type != TakingOfferType.FullyTaking) {
                 revert OfferCanNotBeFullyTaken(offerId);
             }
 
             offer.withdrawalAsset.checkAssetOwner(msg.sender, offer.withdrawalAsset.amount);
 
-            depositAssetAmount = offer.depositAsset.amount;
             fullWithdrawalAmountPaid = offer.withdrawalAsset.amount;
 
             withdrawalAmountPaid = offer.withdrawalAsset.amount;
@@ -242,14 +244,13 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
             allOffers[offerId].depositAsset.amount = 0;
         } else {
             // Partial offer case
-            if (offer.offer.checkOfferParams() != TakingOfferType.PartialTaking) {
+            if (_type != TakingOfferType.PartialTaking) {
                 revert OfferCanNotBePartiallyTaken(offerId);
             }
 
             offer.withdrawalAsset.checkAssetOwner(msg.sender, withdrawalAmountPaid);
 
             fullWithdrawalAmountPaid = withdrawalAmountPaid;
-            depositAssetAmount = offer.depositAsset.amount;
 
             if (withdrawalAmountPaid == offer.withdrawalAsset.amount) {
                 allOffers[offerId].withdrawalAsset.amount = 0;
