@@ -46,10 +46,9 @@ contract DotcManagerV3 is OwnableUpgradeable {
     /**
      * @dev
      * @param by Address of the user who performed the update.
-     * @param feeAmount New fee amount.
      */
-    event FeesSet(address indexed by, address feeReceiver, uint256 feeAmount);
-
+    event FeesReceiverSet(address indexed by, address feeReceiver);
+    event FeesAmountSet(address indexed by, uint256 feeAmount);
     /**
      * @dev
      * @param by Address of the user who performed the update.
@@ -132,60 +131,45 @@ contract DotcManagerV3 is OwnableUpgradeable {
 
     /**
      * @notice Changes the escrow address in the Dotc contract.
-     * @param _dotc The new dotc's address.
      * @dev Ensures that only the current owner can perform this operation.
      */
-    function changeDotcInEscrow(DotcV3 _dotc) external onlyOwner {
-        if (address(_dotc) == address(0)) {
-            revert ZeroAddressPassed();
-        }
-
-        escrow.changeDotc(_dotc);
+    function changeDotcInEscrow() external onlyOwner {
+        escrow.changeDotc(dotc);
     }
 
     /**
      * @notice Changes the escrow address in the Dotc contract.
-     * @param _escrow The new escrow's address.
      * @dev Ensures that only the current owner can perform this operation.
      */
-    function changeEscrowInDotc(DotcEscrowV3 _escrow) external onlyOwner {
-        if (address(_escrow) == address(0)) {
-            revert ZeroAddressPassed();
-        }
-
-        dotc.changeEscrow(_escrow);
+    function changeEscrowInDotc() external onlyOwner {
+        dotc.changeEscrow(escrow);
     }
 
     /**
      * @notice
      * @param _newFeeReceiver The new fee receiver address.
      * @param _feeAmount The new fee amount.
+     * @param _revShare The new fee amount.
      * @dev Requires caller to be the owner of the contract.
      */
-    function changeFees(address _newFeeReceiver, uint256 _feeAmount) external onlyOwner {
+    function changeFees(address _newFeeReceiver, uint256 _feeAmount, uint256 _revShare) external onlyOwner {
         if (_newFeeReceiver != address(0)) {
             feeReceiver = _newFeeReceiver;
+            emit FeesReceiverSet(msg.sender, _newFeeReceiver);
         }
 
         if (_feeAmount != 0) {
             feeAmount = _feeAmount;
+            emit FeesAmountSet(msg.sender, _feeAmount);
         }
 
-        emit FeesSet(msg.sender, _newFeeReceiver, _feeAmount);
-    }
+        if (_revShare > 0) {
+            if (_revShare > AssetHelper.SCALING_FACTOR) {
+                revert IncorrectPercentage(_revShare);
+            }
 
-    /**
-     * @notice
-     * @param _revShare TODO
-     * @dev Requires caller to be the owner of the contract.
-     */
-    function changeRevShare(uint256 _revShare) external onlyOwner {
-        if (_revShare == 0 || _revShare > AssetHelper.SCALING_FACTOR) {
-            revert IncorrectPercentage(_revShare);
+            revSharePercentage = _revShare;
+            emit RevShareSet(msg.sender, _revShare);
         }
-
-        revSharePercentage = _revShare;
-
-        emit RevShareSet(msg.sender, _revShare);
     }
 }

@@ -13,9 +13,6 @@ import { Asset, AssetType, EscrowType, EscrowOffer, OnlyManager, OnlyDotc, ZeroA
 /// @notice Indicates no asset amount was specified where a non-zero value is required
 error AssetAmountEqZero();
 
-/// @notice Indicates no amount was specified for withdrawal where a non-zero value is required
-error AmountToWithdrawEqZero();
-
 /// @notice Indicates no amount was specified for cancelling where a non-zero value is required
 error AmountToCancelEqZero();
 
@@ -209,10 +206,6 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
     function changeDotc(DotcV3 _dotc) external {
         if (msg.sender != address(manager)) {
             revert OnlyManager();
-        }
-
-        if (address(_dotc) == address(0)) {
-            revert ZeroAddressPassed();
         }
 
         dotc = _dotc;
