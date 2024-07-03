@@ -12,10 +12,7 @@ error OfferValidityError(ValidityType validityType);
 error OnlyMakerAllowedError(address maker);
 
 /// @notice Thrown when an action is attempted on an offer that is still within its timelock period.
-error OfferInTimelockError();
-
-/// @notice TODO
-error OfferCancelledError();
+error OfferInTimelockError(uint256 currentUnixTime);
 
 /**
  * @title TODO (as part of the "SwarmX.eth Protocol")
@@ -44,16 +41,16 @@ library DotcOfferHelper {
      * @param offer The offer to be checked.
      */
     function checkDotcOfferParams(DotcOffer calldata offer) external view {
-        if (offer.maker == address(0) || offer.validityType == ValidityType.FullyTaken) {
+        if (
+            offer.maker == address(0) ||
+            offer.validityType == ValidityType.FullyTaken ||
+            offer.validityType == ValidityType.Cancelled
+        ) {
             revert OfferValidityError(offer.validityType);
         }
 
         if (offer.offer.timelockPeriod >= block.timestamp) {
-            revert OfferInTimelockError();
-        }
-
-        if (offer.validityType == ValidityType.Cancelled) {
-            revert OfferCancelledError();
+            revert OfferInTimelockError(block.timestamp);
         }
     }
 
