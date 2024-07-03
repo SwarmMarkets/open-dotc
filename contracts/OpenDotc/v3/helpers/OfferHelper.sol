@@ -3,7 +3,7 @@ pragma solidity 0.8.25;
 
 import { AssetHelper } from "./AssetHelper.sol";
 import { IDotcCompatibleAuthorization } from "../interfaces/IDotcCompatibleAuthorization.sol";
-import { Asset, AssetType, OfferStruct, DotcOffer, TakingOfferType, OfferPricingType } from "../structures/DotcStructuresV3.sol";
+import { Price, Asset, AssetType, OfferStruct, DotcOffer, TakingOfferType, OfferPricingType } from "../structures/DotcStructuresV3.sol";
 
 /// @notice Thrown when an action is attempted on an offer with an expired timestamp.
 /// @param timestamp The expired timestamp for the offer.
@@ -64,15 +64,13 @@ library OfferHelper {
         Asset calldata depositAsset,
         Asset calldata withdrawalAsset
     ) external view returns (DotcOffer memory dotcOffer) {
+        uint256 depositAmount = depositAsset.amount;
+        uint256 withdrawalAmount = withdrawalAsset.amount;
+
         dotcOffer.maker = msg.sender;
 
         dotcOffer.depositAsset = depositAsset;
         dotcOffer.withdrawalAsset = withdrawalAsset;
-
-        dotcOffer.offer = offer;
-
-        uint256 depositAmount = depositAsset.amount;
-        uint256 withdrawalAmount = withdrawalAsset.amount;
 
         if (offer.offerPricingType == OfferPricingType.FixedPricing) {
             if (offer.takingOfferType == TakingOfferType.PartialTaking) {
@@ -80,8 +78,15 @@ library OfferHelper {
                 withdrawalAmount = withdrawalAsset.standardize();
             }
 
-            offer.price.unitPrice = (withdrawalAmount * AssetHelper.BPS) / depositAmount;
+            offer.price = Price({
+                unitPrice: (withdrawalAmount * AssetHelper.BPS) / depositAmount,
+                max: 0,
+                min: 0,
+                percentage: 0
+            });
         }
+
+        dotcOffer.offer = offer;
     }
 
     /**
