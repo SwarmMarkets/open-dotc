@@ -309,10 +309,6 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
         emit TakenOffer(offerId, msg.sender, validityType, depositAssetAmount, fullWithdrawalAmountPaid);
     }
 
-    function takeOffer(uint256 offerId, uint256 withdrawalAmountPaid) external {
-        takeOffer(offerId, withdrawalAmountPaid, address(0));
-    }
-
     /**
      * @notice Updates an existing offer's details.
      * @param offerId The ID of the offer to update.
