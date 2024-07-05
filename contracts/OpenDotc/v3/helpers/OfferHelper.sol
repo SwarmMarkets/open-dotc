@@ -1,6 +1,7 @@
 //SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
+import { FixedPointMathLib } from "../exports/Exports.sol";
 import { AssetHelper } from "./AssetHelper.sol";
 import { IDotcCompatibleAuthorization } from "../interfaces/IDotcCompatibleAuthorization.sol";
 import { Price, Asset, AssetType, OfferStruct, DotcOffer, TakingOfferType, OfferPricingType, IncorrectPercentage } from "../structures/DotcStructuresV3.sol";
@@ -37,7 +38,9 @@ error OfferExpiredError(uint256 expiredTime);
 
 error TakingOfferTypeShouldBeSpecified();
 
-error DynamicPricingIsOnlyForERC20();
+error DynamicPricingForERC20Only();
+
+error BothMinAndMaxCanNotBeSpecified(uint256 min, uint256 max);
 
 /**
  * @title TODO (as part of the "SwarmX.eth Protocol")
@@ -58,6 +61,7 @@ error DynamicPricingIsOnlyForERC20();
  * @author Swarm
  */
 library OfferHelper {
+    using FixedPointMathLib for uint256;
     ///@dev Used for Asset interaction
     using AssetHelper for Asset;
 
@@ -87,15 +91,19 @@ library OfferHelper {
                 percentage: 0
             });
         } else {
-            if (depositAsset.assetType != AssetType.ERC20) {
-                revert DynamicPricingIsOnlyForERC20();
+            if (depositAsset.assetType != AssetType.ERC20 && withdrawalAsset.assetType != AssetType.ERC20) {
+                revert DynamicPricingForERC20Only();
             }
 
             if (offer.price.percentage > AssetHelper.SCALING_FACTOR) {
                 revert IncorrectPercentage(offer.price.percentage);
             }
 
-            offer.price.unitPrice = 0;
+            (uint256 depositToWithdrawalRate, ) = AssetHelper.calculatePrice(depositAsset, withdrawalAsset);
+
+            dotcOffer.withdrawalAsset.amount = depositAsset.findWithdrawalAmount(depositToWithdrawalRate, offer.price);
+
+            offer.price.unitPrice = depositToWithdrawalRate;
         }
 
         dotcOffer.offer = offer;
@@ -138,6 +146,10 @@ library OfferHelper {
             (depositAsset.assetType != AssetType.ERC20 || withdrawalAsset.assetType != AssetType.ERC20)
         ) {
             revert UnsupportedPartialOfferForNonERC20AssetsError();
+        }
+
+        if (offer.price.max > 0 && offer.price.min > 0) {
+            revert BothMinAndMaxCanNotBeSpecified(offer.price.min, offer.price.max);
         }
     }
 
