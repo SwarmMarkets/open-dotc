@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
-import { IERC20, IERC20Metadata, IERC721, IERC1155, IERC165 } from "../exports/Exports.sol";
-import { Asset, AssetType } from "../structures/DotcStructuresV3.sol";
+import { IERC20, IERC20Metadata, IERC721, IERC1155, IERC165, FixedPointMathLib } from "../exports/Exports.sol";
+import { Asset, AssetType, Price } from "../structures/DotcStructuresV3.sol";
 import { IDotcCompatiblePriceFeed } from "../interfaces/IDotcCompatiblePriceFeed.sol";
 
 /// @notice Indicates an operation with zero amount which is not allowed
@@ -78,7 +78,8 @@ error IncorrectPriceFeedPrice(address assetPriceFeedAddress);
  * @author Swarm
  */
 library AssetHelper {
-    event TakenPriceFeedByDefaultFor(Asset asset);
+    using FixedPointMathLib for uint256;
+
     /**
      * @dev Base points used to standardize decimals.
      */
@@ -156,7 +157,7 @@ library AssetHelper {
     function calculatePrice(
         Asset calldata depositAsset,
         Asset calldata withdrawalAsset
-    ) external view returns (uint256 withdrawalAmount, uint256 depositAmount) {
+    ) external view returns (uint256 depositToWithdrawalRate, uint256 withdrawalToDepositRate) {
         int256 depositPriceInUsd = IDotcCompatiblePriceFeed(depositAsset.assetPriceFeedAddress).latestAnswer();
         int256 withdrawalPriceInUsd = IDotcCompatiblePriceFeed(withdrawalAsset.assetPriceFeedAddress).latestAnswer();
 
@@ -182,20 +183,40 @@ library AssetHelper {
             revert IncorrectPriceFeedPrice(withdrawalAsset.assetPriceFeedAddress);
         }
 
-        uint256 standartizedDepositPrice = _standardize(uint256(depositPriceInUsd), depositAssetPriceFeedDecimals);
-        uint256 standartizedWithdrawalPrice = _standardize(
+        uint256 standardizedDepositPrice = _standardize(uint256(depositPriceInUsd), depositAssetPriceFeedDecimals);
+        uint256 standardizedWithdrawalPrice = _standardize(
             uint256(withdrawalPriceInUsd),
             withdrawalAssetPriceFeedDecimals
         );
 
-        uint256 depositToWithdrawalAssetPrice = (standartizedDepositPrice *
-            (10 ** IERC20Metadata(withdrawalAsset.assetAddress).decimals())) / standartizedWithdrawalPrice;
+        depositToWithdrawalRate = standardizedDepositPrice.fullMulDiv(
+            (10 ** IERC20Metadata(withdrawalAsset.assetAddress).decimals()),
+            standardizedWithdrawalPrice
+        );
 
-        uint256 withdrawalToDepositAssetPrice = (standartizedWithdrawalPrice *
-            (10 ** IERC20Metadata(depositAsset.assetAddress).decimals())) / standartizedDepositPrice;
+        withdrawalToDepositRate = standardizedWithdrawalPrice.fullMulDiv(
+            (10 ** IERC20Metadata(depositAsset.assetAddress).decimals()),
+            standardizedDepositPrice
+        );
+    }
 
-        withdrawalAmount = depositAsset.amount * depositToWithdrawalAssetPrice;
-        depositAmount = withdrawalAsset.amount * withdrawalToDepositAssetPrice;
+    function findWithdrawalAmount(
+        Asset calldata depositAsset,
+        uint256 withdrawalRate,
+        Price calldata price
+    ) external view returns (uint256 withdrawalAmount) {
+        withdrawalAmount = withdrawalRate.fullMulDiv(
+            depositAsset.amount,
+            (10 ** IERC20Metadata(depositAsset.assetAddress).decimals())
+        );
+
+        uint256 percentage = calculatePercentage(withdrawalAmount, price.percentage);
+
+        withdrawalAmount = price.max > 0
+            ? (withdrawalAmount + percentage).max(price.max)
+            : price.min > 0
+                ? (withdrawalAmount - percentage).min(price.max)
+                : withdrawalAmount;
     }
 
     function calculateFees(
@@ -203,7 +224,7 @@ library AssetHelper {
         uint256 feeAmount,
         uint256 revSharePercentage
     ) external pure returns (uint256 fees, uint256 feesToFeeReceiver, uint256 feesToAffiliate) {
-        fees = (amount * feeAmount) / BPS;
+        fees = amount.fullMulDiv(feeAmount, BPS);
 
         feesToAffiliate = calculatePercentage(fees, revSharePercentage);
         feesToFeeReceiver = fees - feesToAffiliate;
@@ -252,7 +273,7 @@ library AssetHelper {
     }
 
     function calculatePercentage(uint256 value, uint256 percentage) public pure returns (uint256) {
-        return (value * percentage) / SCALING_FACTOR;
+        return value.fullMulDiv(percentage, SCALING_FACTOR);
     }
 
     /**
@@ -262,7 +283,7 @@ library AssetHelper {
      * @return The standardized amount.
      */
     function _standardize(uint256 amount, uint8 decimals) private pure returns (uint256) {
-        return (amount * BPS) / 10 ** decimals;
+        return amount.fullMulDiv(BPS, 10 ** decimals);
     }
 
     /**
@@ -272,6 +293,6 @@ library AssetHelper {
      * @return The unstandardized amount.
      */
     function _unstandardize(uint256 amount, uint8 decimals) private pure returns (uint256) {
-        return (amount * 10 ** decimals) / BPS;
+        return amount.fullMulDiv(10 ** decimals, BPS);
     }
 }
