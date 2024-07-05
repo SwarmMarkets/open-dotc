@@ -7,9 +7,7 @@ import { AssetHelper } from "./helpers/AssetHelper.sol";
 import { DotcV3 } from "./DotcV3.sol";
 import { DotcEscrowV3 } from "./DotcEscrowV3.sol";
 
-import { OnlyDotc, ZeroAddressPassed } from "./structures/DotcStructuresV3.sol";
-
-error IncorrectPercentage(uint256 incorrectRevShare);
+import { OnlyDotc, ZeroAddressPassed, IncorrectPercentage } from "./structures/DotcStructuresV3.sol";
 
 /**
  * @title TODO (as part of the "SwarmX.eth Protocol")
