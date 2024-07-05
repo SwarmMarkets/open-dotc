@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
-import { AggregatorInterface } from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorInterface.sol";
+import { AggregatorV2V3Interface } from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV2V3Interface.sol";
 
 /**
  * @title DOTC Price Feeds Interface (as part of the "SwarmX.eth Protocol")
@@ -21,6 +21,4 @@ import { AggregatorInterface } from "@chainlink/contracts/src/v0.8/shared/interf
  * @dev Specifies the interface for the Dotc-compatible price feeds contracts.
  * @author Swarm
  */
-interface IDotcCompatiblePriceFeed is AggregatorInterface {
-
-}
+interface IDotcCompatiblePriceFeed is AggregatorV2V3Interface {}
