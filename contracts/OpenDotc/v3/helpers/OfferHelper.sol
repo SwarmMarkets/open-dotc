@@ -3,7 +3,7 @@ pragma solidity 0.8.25;
 
 import { AssetHelper } from "./AssetHelper.sol";
 import { IDotcCompatibleAuthorization } from "../interfaces/IDotcCompatibleAuthorization.sol";
-import { Price, Asset, AssetType, OfferStruct, DotcOffer, TakingOfferType, OfferPricingType } from "../structures/DotcStructuresV3.sol";
+import { Price, Asset, AssetType, OfferStruct, DotcOffer, TakingOfferType, OfferPricingType, IncorrectPercentage } from "../structures/DotcStructuresV3.sol";
 
 /// @notice Thrown when an action is attempted on an offer with an expired timestamp.
 /// @param timestamp The expired timestamp for the offer.
@@ -33,9 +33,11 @@ error UnsupportedPartialOfferForNonERC20AssetsError();
 error IncorrectTimelockPeriodError(uint256 timelock);
 
 /// @notice Thrown when an action is attempted on an offer that has already expired.
-error OfferExpiredError();
+error OfferExpiredError(uint256 expiredTime);
 
 error TakingOfferTypeShouldBeSpecified();
+
+error DynamicPricingIsOnlyForERC20();
 
 /**
  * @title TODO (as part of the "SwarmX.eth Protocol")
@@ -84,6 +86,16 @@ library OfferHelper {
                 min: 0,
                 percentage: 0
             });
+        } else {
+            if (depositAsset.assetType != AssetType.ERC20) {
+                revert DynamicPricingIsOnlyForERC20();
+            }
+
+            if (offer.price.percentage > AssetHelper.SCALING_FACTOR) {
+                revert IncorrectPercentage(offer.price.percentage);
+            }
+
+            offer.price.unitPrice = 0;
         }
 
         dotcOffer.offer = offer;
@@ -131,7 +143,7 @@ library OfferHelper {
 
     function checkOfferParams(OfferStruct calldata offer) external view returns (TakingOfferType) {
         if (offer.expiryTimestamp <= block.timestamp) {
-            revert OfferExpiredError();
+            revert OfferExpiredError(offer.expiryTimestamp);
         }
 
         if (offer.specialAddresses.length > 0) {
