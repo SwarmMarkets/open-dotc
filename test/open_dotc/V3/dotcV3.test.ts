@@ -1359,7 +1359,7 @@ describe('OpenDotcV3', () => {
 
       await expect(take_offer)
         .to.emit(dotc, 'TakenOffer')
-        .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.validityType, DepositAssetERC20.amount, WithdrawalAssetERC20.amount);
+        .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.validityType, DepositAssetERC20.amount, WithdrawalAssetERC20.amount, addressZero);
       await expect(take_offer)
         .to.emit(escrow, 'OfferWithdrawn')
         .withArgs(offerId, await acc2.getAddress(), DepositAssetERC20.amount);
@@ -1592,7 +1592,7 @@ describe('OpenDotcV3', () => {
 
       await expect(take_offer)
         .to.emit(dotc, 'TakenOffer')
-        .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.validityType, realAmount, amountOut_to_take);
+        .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.validityType, realAmount, amountOut_to_take, addressZero);
       await expect(take_offer).to.emit(escrow, 'OfferWithdrawn').withArgs(offerId, await acc2.getAddress(), realAmount);
 
       expect((await escrow.escrowOffers(offerId)).depositAsset.amount).to.be.eq(balance.sub(realAmount));
@@ -1790,7 +1790,7 @@ describe('OpenDotcV3', () => {
 
       await expect(take_offer)
         .to.emit(dotc, 'TakenOffer')
-        .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.validityType, DepositAssetERC20.amount, WithdrawalAssetERC20.amount);
+        .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.validityType, DepositAssetERC20.amount, WithdrawalAssetERC20.amount, addressZero);
 
       await expect(take_offer)
         .to.emit(escrow, 'OfferWithdrawn')
@@ -1884,7 +1884,7 @@ describe('OpenDotcV3', () => {
 
       await expect(take_offer)
         .to.emit(dotc, 'TakenOffer')
-        .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.validityType, outAmount, 1);
+        .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.validityType, outAmount, 1, addressZero);
       await expect(take_offer).to.emit(escrow, 'OfferWithdrawn').withArgs(offerId, await acc2.getAddress(), outAmount);
 
       expect(await erc20_18.balanceOf(escrow.address)).to.eq(0);
@@ -2046,7 +2046,7 @@ describe('OpenDotcV3', () => {
 
       await expect(take_offer)
         .to.emit(dotc, 'TakenOffer')
-        .withArgs(offerId, await acc1.getAddress(), AwaitingOffer.validityType, 1, DepositAssetERC20.amount);
+        .withArgs(offerId, await acc1.getAddress(), AwaitingOffer.validityType, 1, DepositAssetERC20.amount, addressZero);
       await expect(take_offer).to.emit(escrow, 'OfferWithdrawn').withArgs(offerId, await acc1.getAddress(), 1);
 
       expect(await erc721.balanceOf(escrow.address)).to.eq(0);
@@ -2209,7 +2209,7 @@ describe('OpenDotcV3', () => {
 
       await expect(take_offer)
         .to.emit(dotc, 'TakenOffer')
-        .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.validityType, outAmount, WithdrawalAssetERC1155.amount);
+        .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.validityType, outAmount, WithdrawalAssetERC1155.amount, addressZero);
       await expect(take_offer).to.emit(escrow, 'OfferWithdrawn').withArgs(offerId, await acc2.getAddress(), outAmount);
 
       expect(await erc20_18.balanceOf(escrow.address)).to.eq(0);
@@ -2374,7 +2374,7 @@ describe('OpenDotcV3', () => {
 
       await expect(take_offer)
         .to.emit(dotc, 'TakenOffer')
-        .withArgs(offerId, await acc1.getAddress(), AwaitingOffer.validityType, WithdrawalAssetERC1155.amount, DepositAssetERC20.amount);
+        .withArgs(offerId, await acc1.getAddress(), AwaitingOffer.validityType, WithdrawalAssetERC1155.amount, DepositAssetERC20.amount, addressZero);
       await expect(take_offer)
         .to.emit(escrow, 'OfferWithdrawn')
         .withArgs(offerId, await acc1.getAddress(), WithdrawalAssetERC1155.amount);
@@ -2458,7 +2458,7 @@ describe('OpenDotcV3', () => {
 
       await expect(take_offer)
         .to.emit(dotc, 'TakenOffer')
-        .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.validityType, AwaitingOffer.depositAsset.amount, 1);
+        .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.validityType, AwaitingOffer.depositAsset.amount, 1, addressZero);
       await expect(take_offer).to.emit(escrow, 'OfferWithdrawn').withArgs(offerId, await acc2.getAddress(), 1);
 
       expect(await erc721.balanceOf(escrow.address)).to.eq(0);
@@ -2535,7 +2535,7 @@ describe('OpenDotcV3', () => {
 
       await expect(take_offer)
         .to.emit(dotc, 'TakenOffer')
-        .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.validityType, AwaitingOffer.depositAsset.amount, AwaitingOffer.withdrawalAsset.amount);
+        .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.validityType, AwaitingOffer.depositAsset.amount, AwaitingOffer.withdrawalAsset.amount, addressZero);
       await expect(take_offer)
         .to.emit(escrow, 'OfferWithdrawn')
         .withArgs(offerId, await acc2.getAddress(), DepositAssetERC1155.amount);
