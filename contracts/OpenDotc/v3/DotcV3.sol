@@ -30,8 +30,7 @@ error ERC721OfferAmountChangeError();
 /// @notice Indicates that the operation was attempted by an unauthorized entity, not the Escrow contract
 error OnlyEscrow();
 
-error OfferCanNotBeFullyTaken(uint256 offerId);
-error OfferCanNotBePartiallyTaken(uint256 offerId);
+error IncorrectOfferType(uint256 offerId, TakingOfferType takingOfferType);
 
 /**
  * @title Open Dotc smart contract (as part of the "SwarmX.eth Protocol")
@@ -89,9 +88,8 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
         address indexed takenBy,
         ValidityType indexed validityType,
         uint256 amountToReceive,
-        uint256 amountPaid
-        // TODO: rev share amount
-        // TODO: Affiliate address
+        uint256 amountPaid,
+        address affiliate
     );
     /**
      * @notice Emitted when an offer is canceled.
@@ -417,11 +415,17 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
     }
 
     function _sendWithdrawalFees(Asset memory asset, uint256 assetAmount, address affiliate) private returns (uint256) {
+        uint256 feeAmount = manager.feeAmount();
+
+        if (feeAmount == 0) {
+            return 0;
+        }
+
         address feeReceiver = manager.feeReceiver();
 
         (uint256 fees, uint256 feesToFeeReceiver, uint256 feesToAffiliate) = AssetHelper.calculateFees(
             assetAmount,
-            manager.feeAmount(),
+            feeAmount,
             manager.revSharePercentage()
         );
 
