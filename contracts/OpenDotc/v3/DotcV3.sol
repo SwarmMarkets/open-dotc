@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
-import { ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20, IERC721, IERC1155, IERC165, SafeERC20 } from "./exports/Exports.sol";
+import { ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20, IERC721, IERC1155, IERC165, SafeERC20, FixedPointMathLib } from "./exports/Exports.sol";
 
 import { AssetHelper } from "./helpers/AssetHelper.sol";
 import { OfferHelper } from "./helpers/OfferHelper.sol";
@@ -53,6 +53,7 @@ error IncorrectOfferType(uint256 offerId, TakingOfferType takingOfferType);
 contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
     ///@dev Used for Safe transfer tokens
     using SafeERC20 for IERC20;
+    using FixedPointMathLib for uint256;
     ///@dev Used for Asset interaction
     using AssetHelper for Asset;
     ///@dev Used for Offer interaction
@@ -213,7 +214,7 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
         emit CreatedOffer(msg.sender, _currentOfferId, depositAsset, withdrawalAsset, offer);
     }
 
-    function takeOffer(uint256 offerId, uint256 withdrawalAmountPaid, address affiliate) public {
+    function takeOfferFixed(uint256 offerId, uint256 withdrawalAmountPaid, address affiliate) public {
         DotcOffer memory offer = allOffers[offerId];
         offer.checkDotcOfferParams();
         offer.offer.checkOfferParams();
@@ -257,6 +258,54 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
             // If WithdrawalAsset is an ERC20 then fees will be taken from Taker
             withdrawalAmountPaid -= _sendWithdrawalFees(offer.withdrawalAsset, withdrawalAmountPaid, affiliate);
         }
+
+        //Transfer WithdrawalAsset from Taker to Maker
+        _assetTransfer(offer.withdrawalAsset, msg.sender, offer.maker, withdrawalAmountPaid);
+
+        //Transfer DepositAsset from Maker to Taker
+        escrow.withdrawDeposit(offerId, depositAssetAmount, msg.sender);
+
+        emit TakenOffer(offerId, msg.sender, validityType, depositAssetAmount, withdrawalAssetAmount, affiliate);
+    }
+
+    function takeOfferDynamic(uint256 offerId, uint256 withdrawalAmountPaid, address affiliate) public {
+        DotcOffer memory offer = allOffers[offerId];
+        offer.checkDotcOfferParams();
+        offer.offer.checkOfferParams();
+
+        if (
+            (withdrawalAmountPaid == 0 && offer.offer.takingOfferType != TakingOfferType.FullyTaking) ||
+            (withdrawalAmountPaid > 0 && offer.offer.takingOfferType != TakingOfferType.PartialTaking)
+        ) {
+            revert IncorrectOfferType(offerId, offer.offer.takingOfferType);
+        }
+
+        offer.withdrawalAsset.checkAssetOwner(msg.sender, withdrawalAmountPaid);
+
+        (uint256 depositToWithdrawalRate, uint256 withdrawalToDepositRate) = AssetHelper.calculatePrice(
+            offer.depositAsset,
+            offer.withdrawalAsset
+        );
+
+        uint256 withdrawalAmount = offer.depositAsset.findWithdrawalAmount(depositToWithdrawalRate, offer.offer.price);
+
+        if (withdrawalAmountPaid > withdrawalAmount) {
+            withdrawalAmountPaid = withdrawalAmount;
+        }
+
+        uint256 withdrawalAssetAmount = withdrawalAmountPaid;
+
+        uint256 depositAssetAmount = (withdrawalAssetAmount / withdrawalToDepositRate);
+
+        withdrawalAmountPaid -= _sendWithdrawalFees(offer.withdrawalAsset, withdrawalAmountPaid, affiliate);
+
+        allOffers[offerId].depositAsset.amount -= depositAssetAmount;
+
+        ValidityType validityType = allOffers[offerId].depositAsset.amount == 0
+            ? ValidityType.FullyTaken
+            : ValidityType.PartiallyTaken;
+
+        allOffers[offerId].validityType = validityType;
 
         //Transfer WithdrawalAsset from Taker to Maker
         _assetTransfer(offer.withdrawalAsset, msg.sender, offer.maker, withdrawalAmountPaid);
