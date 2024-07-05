@@ -7,6 +7,7 @@ error OnlyManager();
 error OnlyDotc();
 /// @notice Indicates usage of a zero address where an actual address is required
 error ZeroAddressPassed();
+error IncorrectPercentage(uint256 incorrectRevShare);
 
 /**
  * @title Structures for DOTC management (as part of the "SwarmX.eth Protocol")
