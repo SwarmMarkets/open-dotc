@@ -3,6 +3,7 @@ pragma solidity 0.8.25;
 
 import { IERC20, IERC20Metadata, IERC721, IERC1155, IERC165 } from "../exports/Exports.sol";
 import { Asset, AssetType } from "../structures/DotcStructuresV3.sol";
+import { IDotcCompatiblePriceFeed } from "../interfaces/IDotcCompatiblePriceFeed.sol";
 
 /// @notice Indicates an operation with zero amount which is not allowed
 error ZeroAmountPassed();
@@ -56,6 +57,8 @@ error IncorrectAssetTypeForAddress(address token, AssetType incorrectType);
 /// @param unsupportedType The unsupported asset type provided
 error UnsupportedAssetType(AssetType unsupportedType);
 
+error IncorrectPriceFeedPrice(address assetPriceFeedAddress);
+
 /**
  * @title TODO (as part of the "SwarmX.eth Protocol")
  * @notice It allows for depositing, withdrawing, and managing of assets in the course of trading.
@@ -75,12 +78,15 @@ error UnsupportedAssetType(AssetType unsupportedType);
  * @author Swarm
  */
 library AssetHelper {
+    event TakenPriceFeedByDefaultFor(Asset asset);
     /**
      * @dev Base points used to standardize decimals.
      */
     uint256 public constant BPS = 10 ** 27;
 
     uint256 constant SCALING_FACTOR = 10000;
+
+    uint8 constant DECIMALS_BY_DEFAULT = 8;
 
     /**
      * @notice Ensures that the given amount is greater than zero.
@@ -98,39 +104,32 @@ library AssetHelper {
      * @param asset The asset to check.
      * @param account The account to verify ownership.
      * @param amount The amount of the asset.
-     * @return assetType The type of the asset if the account owns it.
      */
-    function checkAssetOwner(
-        Asset calldata asset,
-        address account,
-        uint256 amount
-    ) external view returns (AssetType assetType) {
-        assetType = asset.assetType;
-
-        if (assetType == AssetType.ERC20) {
+    function checkAssetOwner(Asset calldata asset, address account, uint256 amount) external view {
+        if (asset.assetType == AssetType.ERC20) {
             uint256 balance = IERC20(asset.assetAddress).balanceOf(account);
 
             if (balance < amount) {
                 revert AddressHaveNoERC20(account, asset.assetAddress, balance, amount);
             }
-        } else if (assetType == AssetType.ERC721) {
+        } else if (asset.assetType == AssetType.ERC721) {
             if (!IERC165(asset.assetAddress).supportsInterface(type(IERC721).interfaceId)) {
-                revert IncorrectAssetTypeForAddress(asset.assetAddress, assetType);
+                revert IncorrectAssetTypeForAddress(asset.assetAddress, asset.assetType);
             }
             if (IERC721(asset.assetAddress).ownerOf(asset.tokenId) != account) {
                 revert AddressHaveNoERC721(account, asset.assetAddress, asset.tokenId);
             }
-        } else if (assetType == AssetType.ERC1155) {
+        } else if (asset.assetType == AssetType.ERC1155) {
             uint256 balance = IERC1155(asset.assetAddress).balanceOf(account, asset.tokenId);
 
             if (!IERC165(asset.assetAddress).supportsInterface(type(IERC1155).interfaceId)) {
-                revert IncorrectAssetTypeForAddress(asset.assetAddress, assetType);
+                revert IncorrectAssetTypeForAddress(asset.assetAddress, asset.assetType);
             }
             if (balance < asset.amount) {
                 revert AddressHaveNoERC1155(account, asset.assetAddress, asset.tokenId, balance, asset.amount);
             }
         } else {
-            revert UnsupportedAssetType(assetType);
+            revert UnsupportedAssetType(asset.assetType);
         }
     }
 
@@ -152,6 +151,62 @@ library AssetHelper {
         if (asset.assetType == AssetType.ERC721 && asset.amount > 1) {
             revert ERC721AmountExceedsOneError();
         }
+    }
+
+    function calculatePrice(
+        Asset calldata depositAsset,
+        Asset calldata withdrawalAsset
+    ) external view returns (uint256 withdrawalAmount, uint256 depositAmount) {
+        int256 depositPriceInUsd = IDotcCompatiblePriceFeed(depositAsset.assetPriceFeedAddress).latestAnswer();
+        int256 withdrawalPriceInUsd = IDotcCompatiblePriceFeed(withdrawalAsset.assetPriceFeedAddress).latestAnswer();
+
+        uint8 depositAssetPriceFeedDecimals = DECIMALS_BY_DEFAULT;
+        uint8 withdrawalAssetPriceFeedDecimals = DECIMALS_BY_DEFAULT;
+
+        // Checks if Aggregator V3 Interface used for the price feeds, if not then using 8 decimals by default
+        try IDotcCompatiblePriceFeed(depositAsset.assetPriceFeedAddress).decimals() returns (
+            uint8 _depositAssetPriceFeedDecimals
+        ) {
+            depositAssetPriceFeedDecimals = _depositAssetPriceFeedDecimals;
+        } catch (bytes memory) {}
+        try IDotcCompatiblePriceFeed(withdrawalAsset.assetPriceFeedAddress).decimals() returns (
+            uint8 _withdrawalAssetPriceFeedDecimals
+        ) {
+            withdrawalAssetPriceFeedDecimals = _withdrawalAssetPriceFeedDecimals;
+        } catch (bytes memory) {}
+
+        if (depositPriceInUsd <= 0) {
+            revert IncorrectPriceFeedPrice(depositAsset.assetPriceFeedAddress);
+        }
+        if (withdrawalPriceInUsd <= 0) {
+            revert IncorrectPriceFeedPrice(withdrawalAsset.assetPriceFeedAddress);
+        }
+
+        uint256 standartizedDepositPrice = _standardize(uint256(depositPriceInUsd), depositAssetPriceFeedDecimals);
+        uint256 standartizedWithdrawalPrice = _standardize(
+            uint256(withdrawalPriceInUsd),
+            withdrawalAssetPriceFeedDecimals
+        );
+
+        uint256 depositToWithdrawalAssetPrice = (standartizedDepositPrice *
+            (10 ** IERC20Metadata(withdrawalAsset.assetAddress).decimals())) / standartizedWithdrawalPrice;
+
+        uint256 withdrawalToDepositAssetPrice = (standartizedWithdrawalPrice *
+            (10 ** IERC20Metadata(depositAsset.assetAddress).decimals())) / standartizedDepositPrice;
+
+        withdrawalAmount = depositAsset.amount * depositToWithdrawalAssetPrice;
+        depositAmount = withdrawalAsset.amount * withdrawalToDepositAssetPrice;
+    }
+
+    function calculateFees(
+        uint256 amount,
+        uint256 feeAmount,
+        uint256 revSharePercentage
+    ) external pure returns (uint256 fees, uint256 feesToFeeReceiver, uint256 feesToAffiliate) {
+        fees = (amount * feeAmount) / BPS;
+
+        feesToAffiliate = calculatePercentage(fees, revSharePercentage);
+        feesToFeeReceiver = fees - feesToAffiliate;
     }
 
     /**
@@ -194,17 +249,6 @@ library AssetHelper {
     function unstandardize(Asset calldata asset, uint256 amount) public view zeroAmountCheck(amount) returns (uint256) {
         uint8 decimals = IERC20Metadata(asset.assetAddress).decimals();
         return _unstandardize(amount, decimals);
-    }
-
-    function calculateFees(
-        uint256 amount,
-        uint256 feeAmount,
-        uint256 revSharePercentage
-    ) external pure returns (uint256 fees, uint256 feesToFeeReceiver, uint256 feesToAffiliate) {
-        fees = (amount * feeAmount) / BPS;
-
-        feesToAffiliate = calculatePercentage(fees, revSharePercentage);
-        feesToFeeReceiver = fees - feesToAffiliate;
     }
 
     function calculatePercentage(uint256 value, uint256 percentage) public pure returns (uint256) {
