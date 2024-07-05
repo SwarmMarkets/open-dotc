@@ -434,4 +434,27 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
 
         return fees;
     }
+
+    function _sendDepositFees(uint256 offerId, uint256 assetAmount, address affiliate) private returns (uint256) {
+        uint256 feeAmount = manager.feeAmount();
+
+        if (feeAmount == 0) {
+            return 0;
+        }
+
+        (uint256 fees, uint256 feesToFeeReceiver, uint256 feesToAffiliate) = AssetHelper.calculateFees(
+            assetAmount,
+            feeAmount,
+            manager.revSharePercentage()
+        );
+
+        if (affiliate != address(0)) {
+            escrow.withdrawFees(offerId, feesToFeeReceiver);
+            escrow.withdrawFees(offerId, feesToAffiliate, affiliate);
+        } else {
+            escrow.withdrawFees(offerId, fees);
+        }
+
+        return fees;
+    }
 }
