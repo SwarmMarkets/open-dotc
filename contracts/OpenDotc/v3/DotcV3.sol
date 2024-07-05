@@ -218,37 +218,30 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
         offer.checkDotcOfferParams();
         offer.offer.checkOfferParams();
 
-        TakingOfferType _type = offer.offer.takingOfferType;
-
-        uint256 depositAssetAmount = offer.depositAsset.amount;
-
         if (
-            (withdrawalAmountPaid == 0 && _type != TakingOfferType.FullyTaking) ||
-            (withdrawalAmountPaid > 0 && _type != TakingOfferType.PartialTaking)
+            (withdrawalAmountPaid == 0 && offer.offer.takingOfferType != TakingOfferType.FullyTaking) ||
+            (withdrawalAmountPaid > 0 && offer.offer.takingOfferType != TakingOfferType.PartialTaking)
         ) {
-            revert IncorrectOfferType(offerId, _type);
+            revert IncorrectOfferType(offerId, offer.offer.takingOfferType);
         }
 
         if (withdrawalAmountPaid == 0) {
             withdrawalAmountPaid = offer.withdrawalAsset.amount;
         }
 
-        uint256 fullWithdrawalAmountPaid = withdrawalAmountPaid;
-
         offer.withdrawalAsset.checkAssetOwner(msg.sender, withdrawalAmountPaid);
 
-        if (withdrawalAmountPaid == offer.withdrawalAsset.amount) {
-            allOffers[offerId].withdrawalAsset.amount = 0;
-            allOffers[offerId].depositAsset.amount = 0;
-        } else {
-            depositAssetAmount = offer.depositAsset.unstandardize(
+        uint256 withdrawalAssetAmount = withdrawalAmountPaid;
+
+        uint256 depositAssetAmount = withdrawalAmountPaid != offer.withdrawalAsset.amount
+            ? offer.depositAsset.unstandardize(
                 (offer.withdrawalAsset.standardize(withdrawalAmountPaid) * AssetHelper.BPS) /
                     offer.offer.price.unitPrice
-            );
+            )
+            : offer.depositAsset.amount;
 
-            allOffers[offerId].withdrawalAsset.amount -= withdrawalAmountPaid;
-            allOffers[offerId].depositAsset.amount -= depositAssetAmount;
-        }
+        allOffers[offerId].withdrawalAsset.amount -= withdrawalAmountPaid;
+        allOffers[offerId].depositAsset.amount -= depositAssetAmount;
 
         ValidityType validityType = (allOffers[offerId].withdrawalAsset.amount == 0 ||
             allOffers[offerId].depositAsset.amount == 0)
@@ -258,12 +251,9 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
         allOffers[offerId].validityType = validityType;
 
         // If WithdrawalAsset is not an ERC20 then fees will be taken from Maker
-        if (offer.withdrawalAsset.assetType != AssetType.ERC20) {
-            // If DepositAsset is not an ERC20 then fees will not be taken
-            if (offer.depositAsset.assetType == AssetType.ERC20) {
-                depositAssetAmount -= _sendDepositFees(offerId, depositAssetAmount, affiliate);
-            }
-        } else {
+        if (offer.withdrawalAsset.assetType != AssetType.ERC20 && offer.depositAsset.assetType == AssetType.ERC20) {
+            depositAssetAmount -= _sendDepositFees(offerId, depositAssetAmount, affiliate);
+        } else if (offer.withdrawalAsset.assetType == AssetType.ERC20) {
             // If WithdrawalAsset is an ERC20 then fees will be taken from Taker
             withdrawalAmountPaid -= _sendWithdrawalFees(offer.withdrawalAsset, withdrawalAmountPaid, affiliate);
         }
@@ -274,7 +264,7 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
         //Transfer DepositAsset from Maker to Taker
         escrow.withdrawDeposit(offerId, depositAssetAmount, msg.sender);
 
-        emit TakenOffer(offerId, msg.sender, validityType, depositAssetAmount, fullWithdrawalAmountPaid, affiliate);
+        emit TakenOffer(offerId, msg.sender, validityType, depositAssetAmount, withdrawalAssetAmount, affiliate);
     }
 
     /**
