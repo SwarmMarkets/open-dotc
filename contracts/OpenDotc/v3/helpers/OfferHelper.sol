@@ -42,6 +42,8 @@ error DynamicPricingForERC20Only();
 
 error BothMinAndMaxCanNotBeSpecified(uint256 min, uint256 max);
 
+error MinOrMaxCanNotBeSpecifiedForFixedPricing(uint256 min, uint256 max);
+
 /**
  * @title TODO (as part of the "SwarmX.eth Protocol")
  * @notice It allows for depositing, withdrawing, and managing of assets in the course of trading.
@@ -91,7 +93,7 @@ library OfferHelper {
                 percentage: 0
             });
         } else {
-            if (depositAsset.assetType != AssetType.ERC20 && withdrawalAsset.assetType != AssetType.ERC20) {
+            if (depositAsset.assetType != AssetType.ERC20 || withdrawalAsset.assetType != AssetType.ERC20) {
                 revert DynamicPricingForERC20Only();
             }
 
@@ -99,7 +101,7 @@ library OfferHelper {
                 revert IncorrectPercentage(offer.price.percentage);
             }
 
-            (uint256 depositToWithdrawalRate, ) = AssetHelper.calculatePrice(depositAsset, withdrawalAsset);
+            (uint256 depositToWithdrawalRate, ) = depositAsset.calculatePrice(withdrawalAsset);
 
             dotcOffer.withdrawalAsset.amount = depositAsset.findWithdrawalAmount(depositToWithdrawalRate, offer.price);
 
@@ -148,8 +150,12 @@ library OfferHelper {
             revert UnsupportedPartialOfferForNonERC20AssetsError();
         }
 
-        if (offer.price.max > 0 && offer.price.min > 0) {
+        if ((offer.price.max > 0 && offer.price.min > 0) && offer.offerPricingType == OfferPricingType.DynamicPricing) {
             revert BothMinAndMaxCanNotBeSpecified(offer.price.min, offer.price.max);
+        } else if (
+            offer.offerPricingType == OfferPricingType.FixedPricing && (offer.price.max > 0 || offer.price.min > 0)
+        ) {
+            revert MinOrMaxCanNotBeSpecifiedForFixedPricing(offer.price.min, offer.price.max);
         }
     }
 
