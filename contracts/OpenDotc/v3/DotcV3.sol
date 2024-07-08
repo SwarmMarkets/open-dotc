@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
-import { ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20, IERC721, IERC1155, IERC165, SafeERC20, FixedPointMathLib } from "./exports/Exports.sol";
+import { IERC20Metadata, ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20, IERC721, IERC1155, IERC165, SafeERC20, FixedPointMathLib } from "./exports/Exports.sol";
 
 import { AssetHelper } from "./helpers/AssetHelper.sol";
 import { OfferHelper } from "./helpers/OfferHelper.sol";
@@ -30,7 +30,7 @@ error ERC721OfferAmountChangeError();
 /// @notice Indicates that the operation was attempted by an unauthorized entity, not the Escrow contract
 error OnlyEscrow();
 
-error IncorrectOfferType(uint256 offerId, TakingOfferType takingOfferType);
+error OnlyDynamicPricing();
 
 /**
  * @title Open Dotc smart contract (as part of the "SwarmX.eth Protocol")
@@ -217,14 +217,7 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
     function takeOfferFixed(uint256 offerId, uint256 withdrawalAmountPaid, address affiliate) public {
         DotcOffer memory offer = allOffers[offerId];
         offer.checkDotcOfferParams();
-        offer.offer.checkOfferParams();
-
-        if (
-            (withdrawalAmountPaid == 0 && offer.offer.takingOfferType != TakingOfferType.FullyTaking) ||
-            (withdrawalAmountPaid > 0 && offer.offer.takingOfferType != TakingOfferType.PartialTaking)
-        ) {
-            revert IncorrectOfferType(offerId, offer.offer.takingOfferType);
-        }
+        offer.offer.checkOfferParams(withdrawalAmountPaid);
 
         if (withdrawalAmountPaid == 0) {
             withdrawalAmountPaid = offer.withdrawalAsset.amount;
@@ -271,49 +264,42 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
     function takeOfferDynamic(uint256 offerId, uint256 withdrawalAmountPaid, address affiliate) public {
         DotcOffer memory offer = allOffers[offerId];
         offer.checkDotcOfferParams();
-        offer.offer.checkOfferParams();
 
-        if (
-            (withdrawalAmountPaid == 0 && offer.offer.takingOfferType != TakingOfferType.FullyTaking) ||
-            (withdrawalAmountPaid > 0 && offer.offer.takingOfferType != TakingOfferType.PartialTaking)
-        ) {
-            revert IncorrectOfferType(offerId, offer.offer.takingOfferType);
+        (uint256 depositToWithdrawalRate, ) = offer.depositAsset.calculateRate(offer.withdrawalAsset);
+
+        uint256 withdrawalPrice = offer.depositAsset.findWithdrawalAmount(depositToWithdrawalRate, offer.offer.price);
+
+        if (withdrawalAmountPaid == 0 || withdrawalAmountPaid > withdrawalPrice) {
+            withdrawalAmountPaid = withdrawalPrice;
         }
 
+        offer.offer.checkOfferParams(withdrawalAmountPaid);
         offer.withdrawalAsset.checkAssetOwner(msg.sender, withdrawalAmountPaid);
 
-        (uint256 depositToWithdrawalRate, uint256 withdrawalToDepositRate) = AssetHelper.calculatePrice(
-            offer.depositAsset,
-            offer.withdrawalAsset
-        );
+        uint256 partPercentage = AssetHelper.calculatePartPercentage(withdrawalAmountPaid, withdrawalPrice);
+        uint256 depositAssetAmount = AssetHelper.calculatePercentage(offer.depositAsset.amount, partPercentage);
+        uint256 leftToWithdraw = withdrawalPrice - withdrawalAmountPaid;
 
-        uint256 withdrawalAmount = offer.depositAsset.findWithdrawalAmount(depositToWithdrawalRate, offer.offer.price);
-
-        if (withdrawalAmountPaid > withdrawalAmount) {
-            withdrawalAmountPaid = withdrawalAmount;
-        }
-
-        uint256 withdrawalAssetAmount = withdrawalAmountPaid;
-
-        uint256 depositAssetAmount = (withdrawalAssetAmount / withdrawalToDepositRate);
-
-        withdrawalAmountPaid -= _sendWithdrawalFees(offer.withdrawalAsset, withdrawalAmountPaid, affiliate);
+        uint256 withdrawalAmountPaidWithoutFees = withdrawalAmountPaid -
+            _sendWithdrawalFees(offer.withdrawalAsset, withdrawalAmountPaid, affiliate);
 
         allOffers[offerId].depositAsset.amount -= depositAssetAmount;
+        allOffers[offerId].withdrawalAsset.amount = leftToWithdraw;
 
-        ValidityType validityType = allOffers[offerId].depositAsset.amount == 0
+        ValidityType validityType = allOffers[offerId].depositAsset.amount == 0 ||
+            allOffers[offerId].withdrawalAsset.amount == 0
             ? ValidityType.FullyTaken
             : ValidityType.PartiallyTaken;
 
         allOffers[offerId].validityType = validityType;
 
         //Transfer WithdrawalAsset from Taker to Maker
-        _assetTransfer(offer.withdrawalAsset, msg.sender, offer.maker, withdrawalAmountPaid);
+        _assetTransfer(offer.withdrawalAsset, msg.sender, offer.maker, withdrawalAmountPaidWithoutFees);
 
         //Transfer DepositAsset from Maker to Taker
         escrow.withdrawDeposit(offerId, depositAssetAmount, msg.sender);
 
-        emit TakenOffer(offerId, msg.sender, validityType, depositAssetAmount, withdrawalAssetAmount, affiliate);
+        emit TakenOffer(offerId, msg.sender, validityType, depositAssetAmount, withdrawalAmountPaid, affiliate);
     }
 
     /**
