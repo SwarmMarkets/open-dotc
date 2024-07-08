@@ -154,7 +154,7 @@ library AssetHelper {
         }
     }
 
-    function calculatePrice(
+    function calculateRate(
         Asset calldata depositAsset,
         Asset calldata withdrawalAsset
     ) external view returns (uint256 depositToWithdrawalRate, uint256 withdrawalToDepositRate) {
@@ -197,20 +197,20 @@ library AssetHelper {
     function findWithdrawalAmount(
         Asset calldata depositAsset,
         uint256 withdrawalRate,
-        Price calldata price
-    ) external view returns (uint256 withdrawalAmount, uint256 withdrawalAmountFull) {
-        withdrawalAmount = withdrawalRate.fullMulDiv(
+        Price calldata priceStruct
+    ) external view returns (uint256 fullPrice) {
+        uint256 withdrawalPrice = withdrawalRate.fullMulDiv(
             depositAsset.amount,
             (10 ** IERC20Metadata(depositAsset.assetAddress).decimals())
         );
 
-        uint256 percentage = calculatePercentage(withdrawalAmount, price.percentage);
+        uint256 percentage = calculatePercentage(withdrawalPrice, priceStruct.percentage);
 
-        withdrawalAmountFull = price.max > 0
-            ? (withdrawalAmount + percentage).max(price.max)
-            : price.min > 0
-                ? (withdrawalAmount - percentage).min(price.max)
-                : withdrawalAmount;
+        fullPrice = priceStruct.max > 0
+            ? (withdrawalPrice + percentage).max(priceStruct.max)
+            : priceStruct.min > 0
+                ? (withdrawalPrice - percentage).min(priceStruct.max)
+                : withdrawalPrice;
     }
 
     function calculateFees(
@@ -267,7 +267,11 @@ library AssetHelper {
     }
 
     function calculatePercentage(uint256 value, uint256 percentage) public pure returns (uint256) {
-        return value.fullMulDiv(percentage, SCALING_FACTOR);
+        return value.fullMulDivUp(percentage, SCALING_FACTOR);
+    }
+
+    function calculatePartPercentage(uint256 part, uint256 whole) public pure returns (uint256) {
+        return part.fullMulDivUp(SCALING_FACTOR, whole);
     }
 
     function findRate(Asset calldata asset, uint256 a, uint256 b) public view returns (uint256 rate) {

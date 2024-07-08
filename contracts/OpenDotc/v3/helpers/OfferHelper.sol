@@ -44,8 +44,6 @@ error BothMinAndMaxCanNotBeSpecified(uint256 min, uint256 max);
 
 error MinOrMaxCanNotBeSpecifiedForFixedPricing(uint256 min, uint256 max);
 
-error IncorrectOfferType(TakingOfferType takingOfferType);
-
 /**
  * @title TODO (as part of the "SwarmX.eth Protocol")
  * @notice It allows for depositing, withdrawing, and managing of assets in the course of trading.
@@ -103,11 +101,9 @@ library OfferHelper {
                 revert IncorrectPercentage(offer.price.percentage);
             }
 
-            (uint256 depositToWithdrawalRate, ) = depositAsset.calculatePrice(withdrawalAsset);
+            (uint256 depositToWithdrawalRate, ) = depositAsset.calculateRate(withdrawalAsset);
 
-            (, uint256 withdrawalAmountFull) = depositAsset.findWithdrawalAmount(depositToWithdrawalRate, offer.price);
-
-            dotcOffer.withdrawalAsset.amount = withdrawalAmountFull;
+            dotcOffer.withdrawalAsset.amount = depositAsset.findWithdrawalAmount(depositToWithdrawalRate, offer.price);
 
             offer.price.unitPrice = depositToWithdrawalRate;
         }
@@ -169,13 +165,6 @@ library OfferHelper {
     ) external view returns (TakingOfferType) {
         if (offer.expiryTimestamp <= block.timestamp) {
             revert OfferExpiredError(offer.expiryTimestamp);
-        }
-
-        if (
-            (withdrawalAmountPaid == 0 && offer.takingOfferType != TakingOfferType.FullyTaking) ||
-            (withdrawalAmountPaid > 0 && offer.takingOfferType != TakingOfferType.PartialTaking)
-        ) {
-            revert IncorrectOfferType(offer.takingOfferType);
         }
 
         if (offer.specialAddresses.length > 0) {
