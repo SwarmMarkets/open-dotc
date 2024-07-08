@@ -189,22 +189,16 @@ library AssetHelper {
             withdrawalAssetPriceFeedDecimals
         );
 
-        depositToWithdrawalRate = standardizedDepositPrice.fullMulDiv(
-            (10 ** IERC20Metadata(withdrawalAsset.assetAddress).decimals()),
-            standardizedWithdrawalPrice
-        );
+        depositToWithdrawalRate = findRate(withdrawalAsset, standardizedDepositPrice, standardizedWithdrawalPrice);
 
-        withdrawalToDepositRate = standardizedWithdrawalPrice.fullMulDiv(
-            (10 ** IERC20Metadata(depositAsset.assetAddress).decimals()),
-            standardizedDepositPrice
-        );
+        withdrawalToDepositRate = findRate(depositAsset, standardizedWithdrawalPrice, standardizedDepositPrice);
     }
 
     function findWithdrawalAmount(
         Asset calldata depositAsset,
         uint256 withdrawalRate,
         Price calldata price
-    ) external view returns (uint256 withdrawalAmount) {
+    ) external view returns (uint256 withdrawalAmount, uint256 withdrawalAmountFull) {
         withdrawalAmount = withdrawalRate.fullMulDiv(
             depositAsset.amount,
             (10 ** IERC20Metadata(depositAsset.assetAddress).decimals())
@@ -212,7 +206,7 @@ library AssetHelper {
 
         uint256 percentage = calculatePercentage(withdrawalAmount, price.percentage);
 
-        withdrawalAmount = price.max > 0
+        withdrawalAmountFull = price.max > 0
             ? (withdrawalAmount + percentage).max(price.max)
             : price.min > 0
                 ? (withdrawalAmount - percentage).min(price.max)
@@ -274,6 +268,10 @@ library AssetHelper {
 
     function calculatePercentage(uint256 value, uint256 percentage) public pure returns (uint256) {
         return value.fullMulDiv(percentage, SCALING_FACTOR);
+    }
+
+    function findRate(Asset calldata asset, uint256 a, uint256 b) public view returns (uint256 rate) {
+        return a.fullMulDiv((10 ** IERC20Metadata(asset.assetAddress).decimals()), b);
     }
 
     /**
