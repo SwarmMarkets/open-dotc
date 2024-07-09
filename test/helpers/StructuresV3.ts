@@ -35,7 +35,7 @@ export enum EscrowType {
 }
 
 export interface PriceStruct {
-	unitPrice: BigNumberish;
+	priceFeedAddress: string;
 	min: BigNumberish;
 	max: BigNumberish;
 	percentage: BigNumberish;
@@ -44,17 +44,17 @@ export interface PriceStruct {
 export interface AssetStruct {
 	assetType: AssetType;
 	assetAddress: string;
-	assetPriceFeedAddress: string;
 	amount: BigNumberish;
 	tokenId: BigNumberish;
+	price: PriceStruct;
 }
 
 export interface OfferStruct {
 	takingOfferType: TakingOfferType;
 	offerPricingType: OfferPricingType;
-	price: PriceStruct;
 	specialAddresses: string[];
 	authorizationAddresses: string[];
+	unitPrice: BigNumberish;
 	expiryTimestamp: BigNumberish;
 	timelockPeriod: BigNumberish;
 	terms: string;

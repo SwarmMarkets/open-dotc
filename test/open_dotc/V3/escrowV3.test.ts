@@ -9,7 +9,7 @@ import {
   ERC1155Mock,
 } from '../../../typechain';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
-import { AssetStruct, EscrowType } from '../../helpers/StructuresV3';
+import { AssetStruct, EscrowType, PriceStruct } from '../../helpers/StructuresV3';
 
 describe('OpenDotcEscrowV3', () => {
   async function fixture() {
@@ -72,10 +72,17 @@ describe('OpenDotcEscrowV3', () => {
 
       const offerId = 55;
 
+      const Price: PriceStruct = {
+        priceFeedAddress: await otherAcc.getAddress(),
+        min: 0,
+        max: 0,
+        percentage: 0
+      }
+
       const AssetERC20: AssetStruct = {
         assetType: 1,
         assetAddress: erc20.address,
-        assetPriceFeedAddress: await otherAcc.getAddress(),
+        price: Price,
         amount: BigNumber.from('500000000000000000000'),
         tokenId: 0,
       };
@@ -96,10 +103,17 @@ describe('OpenDotcEscrowV3', () => {
 
       let offerId = 55;
 
+      const Price: PriceStruct = {
+        priceFeedAddress: await otherAcc.getAddress(),
+        min: 0,
+        max: 0,
+        percentage: 0
+      }
+
       let AssetERC20: AssetStruct = {
         assetType: 1,
         assetAddress: erc20.address,
-        assetPriceFeedAddress: await otherAcc.getAddress(),
+        price: Price,
         amount: BigNumber.from('500000000000000000000'),
         tokenId: 0,
       };
@@ -107,7 +121,7 @@ describe('OpenDotcEscrowV3', () => {
       const AssetERC721: AssetStruct = {
         assetType: 2,
         assetAddress: erc721.address,
-        assetPriceFeedAddress: await otherAcc.getAddress(),
+        price: Price,
         amount: 1,
         tokenId: 4,
       };
@@ -115,7 +129,7 @@ describe('OpenDotcEscrowV3', () => {
       const AssetERC1155: AssetStruct = {
         assetType: 3,
         assetAddress: erc1155.address,
-        assetPriceFeedAddress: await otherAcc.getAddress(),
+        price: Price,
         amount: 202,
         tokenId: 3,
       };
@@ -152,7 +166,7 @@ describe('OpenDotcEscrowV3', () => {
       AssetERC20 = {
         assetType: 1,
         assetAddress: erc20.address,
-        assetPriceFeedAddress: await otherAcc.getAddress(),
+        price: Price,
         amount: 0,
         tokenId: 0,
       };
@@ -168,7 +182,7 @@ describe('OpenDotcEscrowV3', () => {
       AssetERC20 = {
         assetType: 1,
         assetAddress: erc20.address,
-        assetPriceFeedAddress: await otherAcc.getAddress(),
+        price: Price,
         amount: 1,
         tokenId: 0,
       };
@@ -179,10 +193,17 @@ describe('OpenDotcEscrowV3', () => {
 
       let offerId = 55;
 
+      const Price: PriceStruct = {
+        priceFeedAddress: await otherAcc.getAddress(),
+        min: 0,
+        max: 0,
+        percentage: 0
+      }
+
       const AssetERC20: AssetStruct = {
         assetType: 1,
         assetAddress: erc20.address,
-        assetPriceFeedAddress: await otherAcc.getAddress(),
+        price: Price,
         amount: BigNumber.from('500000000000000000000'),
         tokenId: 0,
       };
@@ -190,7 +211,7 @@ describe('OpenDotcEscrowV3', () => {
       const AssetERC721: AssetStruct = {
         assetType: 2,
         assetAddress: erc721.address,
-        assetPriceFeedAddress: await otherAcc.getAddress(),
+        price: Price,
         amount: 1,
         tokenId: 4,
       };
@@ -198,7 +219,7 @@ describe('OpenDotcEscrowV3', () => {
       const AssetERC1155: AssetStruct = {
         assetType: 3,
         assetAddress: erc1155.address,
-        assetPriceFeedAddress: await otherAcc.getAddress(),
+        price: Price,
         amount: 202,
         tokenId: 3,
       };
@@ -263,10 +284,17 @@ describe('OpenDotcEscrowV3', () => {
 
       let offerId = 55;
 
+      const Price: PriceStruct = {
+        priceFeedAddress: await otherAcc.getAddress(),
+        min: 0,
+        max: 0,
+        percentage: 0
+      }
+
       let AssetERC20: AssetStruct = {
         assetType: 1,
         assetAddress: erc20.address,
-        assetPriceFeedAddress: await otherAcc.getAddress(),
+        price: Price,
         amount: BigNumber.from('500000000000000000000'),
         tokenId: 0,
       };
@@ -274,7 +302,7 @@ describe('OpenDotcEscrowV3', () => {
       const AssetERC721: AssetStruct = {
         assetType: 2,
         assetAddress: erc721.address,
-        assetPriceFeedAddress: await otherAcc.getAddress(),
+        price: Price,
         amount: 1,
         tokenId: 4,
       };
@@ -282,7 +310,7 @@ describe('OpenDotcEscrowV3', () => {
       const AssetERC1155: AssetStruct = {
         assetType: 3,
         assetAddress: erc1155.address,
-        assetPriceFeedAddress: await otherAcc.getAddress(),
+        price: Price,
         amount: 202,
         tokenId: 3,
       };
@@ -318,7 +346,7 @@ describe('OpenDotcEscrowV3', () => {
       AssetERC20 = {
         assetType: 1,
         assetAddress: erc20.address,
-        assetPriceFeedAddress: await otherAcc.getAddress(),
+        price: Price,
         amount: 0,
         tokenId: 0,
       };
@@ -371,10 +399,17 @@ describe('OpenDotcEscrowV3', () => {
 
       const offerId = 55;
 
+      const Price: PriceStruct = {
+        priceFeedAddress: await otherAcc.getAddress(),
+        min: 0,
+        max: 0,
+        percentage: 0
+      }
+
       const AssetERC20: AssetStruct = {
         assetType: 1,
         assetAddress: erc20.address,
-        assetPriceFeedAddress: await otherAcc.getAddress(),
+        price: Price,
         amount: BigNumber.from('500000000000000000000'),
         tokenId: 0,
       };
@@ -404,10 +439,17 @@ describe('OpenDotcEscrowV3', () => {
 
       const errorMsg = 'OnlyDotc';
 
+      const Price: PriceStruct = {
+        priceFeedAddress: await otherAcc.getAddress(),
+        min: 0,
+        max: 0,
+        percentage: 0
+      }
+
       const AssetERC20: AssetStruct = {
         assetType: 1,
         assetAddress: await otherAcc.getAddress(),
-        assetPriceFeedAddress: await otherAcc.getAddress(),
+        price: Price,
         amount: BigNumber.from('500000000000000000000'),
         tokenId: 0,
       };
