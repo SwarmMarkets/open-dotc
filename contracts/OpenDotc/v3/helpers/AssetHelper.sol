@@ -57,7 +57,7 @@ error IncorrectAssetTypeForAddress(address token, AssetType incorrectType);
 /// @param unsupportedType The unsupported asset type provided
 error UnsupportedAssetType(AssetType unsupportedType);
 
-error IncorrectPriceFeedPrice(address assetPriceFeedAddress);
+error IncorrectPriceFeed(address assetPriceFeedAddress);
 
 /**
  * @title TODO (as part of the "SwarmX.eth Protocol")
@@ -158,29 +158,64 @@ library AssetHelper {
         Asset calldata depositAsset,
         Asset calldata withdrawalAsset
     ) external view returns (uint256 depositToWithdrawalRate, uint256 withdrawalToDepositRate) {
-        int256 depositPriceInUsd = IDotcCompatiblePriceFeed(depositAsset.assetPriceFeedAddress).latestAnswer();
-        int256 withdrawalPriceInUsd = IDotcCompatiblePriceFeed(withdrawalAsset.assetPriceFeedAddress).latestAnswer();
+        int256 depositPriceInUsd;
+        int256 withdrawalPriceInUsd;
 
-        uint8 depositAssetPriceFeedDecimals = DECIMALS_BY_DEFAULT;
-        uint8 withdrawalAssetPriceFeedDecimals = DECIMALS_BY_DEFAULT;
+        try IDotcCompatiblePriceFeed(depositAsset.assetPriceFeedAddress).latestRoundData() returns (
+            uint80,
+            int256 answer,
+            uint256,
+            uint256,
+            uint80
+        ) {
+            depositPriceInUsd = answer;
+        } catch {
+            try IDotcCompatiblePriceFeed(depositAsset.assetPriceFeedAddress).latestAnswer() returns (int256 answer) {
+                depositPriceInUsd = answer;
+            } catch {
+                revert IncorrectPriceFeed(depositAsset.assetPriceFeedAddress);
+            }
+        }
+        try IDotcCompatiblePriceFeed(withdrawalAsset.assetPriceFeedAddress).latestRoundData() returns (
+            uint80,
+            int256 answer,
+            uint256,
+            uint256,
+            uint80
+        ) {
+            withdrawalPriceInUsd = answer;
+        } catch {
+            try IDotcCompatiblePriceFeed(withdrawalAsset.assetPriceFeedAddress).latestAnswer() returns (int256 answer) {
+                withdrawalPriceInUsd = answer;
+            } catch {
+                revert IncorrectPriceFeed(depositAsset.assetPriceFeedAddress);
+            }
+        }
+
+        if (depositPriceInUsd <= 0) {
+            revert IncorrectPriceFeed(depositAsset.assetPriceFeedAddress);
+        }
+        if (withdrawalPriceInUsd <= 0) {
+            revert IncorrectPriceFeed(withdrawalAsset.assetPriceFeedAddress);
+        }
+
+        uint8 depositAssetPriceFeedDecimals;
+        uint8 withdrawalAssetPriceFeedDecimals;
 
         // Checks if Aggregator V3 Interface used for the price feeds, if not then using 8 decimals by default
         try IDotcCompatiblePriceFeed(depositAsset.assetPriceFeedAddress).decimals() returns (
             uint8 _depositAssetPriceFeedDecimals
         ) {
             depositAssetPriceFeedDecimals = _depositAssetPriceFeedDecimals;
-        } catch (bytes memory) {}
+        } catch {
+            depositAssetPriceFeedDecimals = DECIMALS_BY_DEFAULT;
+        }
         try IDotcCompatiblePriceFeed(withdrawalAsset.assetPriceFeedAddress).decimals() returns (
             uint8 _withdrawalAssetPriceFeedDecimals
         ) {
             withdrawalAssetPriceFeedDecimals = _withdrawalAssetPriceFeedDecimals;
-        } catch (bytes memory) {}
-
-        if (depositPriceInUsd <= 0) {
-            revert IncorrectPriceFeedPrice(depositAsset.assetPriceFeedAddress);
-        }
-        if (withdrawalPriceInUsd <= 0) {
-            revert IncorrectPriceFeedPrice(withdrawalAsset.assetPriceFeedAddress);
+        } catch {
+            withdrawalAssetPriceFeedDecimals = DECIMALS_BY_DEFAULT;
         }
 
         uint256 standardizedDepositPrice = _standardize(uint256(depositPriceInUsd), depositAssetPriceFeedDecimals);
