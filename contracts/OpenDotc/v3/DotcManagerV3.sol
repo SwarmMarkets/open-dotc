@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
-import { OwnableUpgradeable } from "./exports/Exports.sol";
+import { OwnableUpgradeable } from "./exports/ExternalExports.sol";
 
 import { AssetHelper } from "./helpers/AssetHelper.sol";
 import { DotcV3 } from "./DotcV3.sol";

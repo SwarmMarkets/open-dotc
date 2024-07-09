@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
-import { Initializable, Receiver, SafeTransferLib, FixedPointMathLib, IERC721, IERC1155, IERC165 } from "./exports/Exports.sol";
+import { Initializable, Receiver, SafeTransferLib, FixedPointMathLib, IERC721, IERC1155, IERC165 } from "./exports/ExternalExports.sol";
 
 import { AssetHelper } from "./helpers/AssetHelper.sol";
 import { OfferHelper } from "./helpers/OfferHelper.sol";

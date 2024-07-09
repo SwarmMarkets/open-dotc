@@ -1,8 +1,6 @@
 //SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
-import { AggregatorV2V3Interface } from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV2V3Interface.sol";
-
 /**
  * @title Interface for DOTC Authorizations cotracts (as part of the "SwarmX.eth Protocol")
  * @notice This interface is implemented by the Dotc contract to interact with the DotcManager.

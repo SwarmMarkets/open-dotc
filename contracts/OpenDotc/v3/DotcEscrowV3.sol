@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
-import { Initializable, Receiver, SafeTransferLib, IERC721, IERC1155 } from "./exports/Exports.sol";
+import { Initializable, Receiver, SafeTransferLib, IERC721, IERC1155 } from "./exports/ExternalExports.sol";
 
 import { DotcV3 } from "./DotcV3.sol";
 import { DotcManagerV3 } from "./DotcManagerV3.sol";

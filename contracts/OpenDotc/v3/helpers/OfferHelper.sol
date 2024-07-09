@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
-import { FixedPointMathLib } from "../exports/Exports.sol";
+import { FixedPointMathLib } from "../exports/ExternalExports.sol";
 import { AssetHelper } from "./AssetHelper.sol";
 import { IDotcCompatibleAuthorization } from "../interfaces/IDotcCompatibleAuthorization.sol";
 import { Price, Asset, AssetType, OfferStruct, DotcOffer, TakingOfferType, OfferPricingType, IncorrectPercentage } from "../structures/DotcStructuresV3.sol";
