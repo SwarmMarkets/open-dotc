@@ -12,7 +12,8 @@ import {
   OfferHelper,
   DotcManagerV3,
   AuthorizationMock,
-  PriceFeedMock
+  PriceFeedV1Mock,
+  PriceFeedV3Mock
 } from '../../../typechain';
 import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
 import {
@@ -32,7 +33,7 @@ describe('OpenDotcV3', () => {
   const terms = 'terms';
   const commsLink = 'commsLink';
 
-  let decimals_18: number, decimals_6: number;
+  let decimals_18: number, decimals_6: number, priceFeed_decimals: number;
 
   let now: number;
 
@@ -96,12 +97,13 @@ describe('OpenDotcV3', () => {
     const authorization_false: AuthorizationMock = (await AuthorizationMock.deploy(false)) as AuthorizationMock;
     await authorization_false.deployed();
 
-    const PriceFeedMock: ContractFactory = await ethers.getContractFactory('PriceFeedMock');
-    const priceFeed_18: PriceFeedMock = (await PriceFeedMock.deploy(304097411980)) as PriceFeedMock;
+    const PriceFeedV1Mock: ContractFactory = await ethers.getContractFactory('PriceFeedV1Mock');
+    const PriceFeedV3Mock: ContractFactory = await ethers.getContractFactory('PriceFeedV3Mock');
+    const priceFeed_18: PriceFeedV1Mock = (await PriceFeedV1Mock.deploy(304097411980)) as PriceFeedV1Mock;
     await priceFeed_18.deployed();
-    const priceFeed_6: PriceFeedMock = (await PriceFeedMock.deploy(99999257)) as PriceFeedMock;
+    const priceFeed_6: PriceFeedV3Mock = (await PriceFeedV3Mock.deploy(99999257)) as PriceFeedV3Mock;
     await priceFeed_6.deployed();
-    const priceFeed_fake: PriceFeedMock = (await PriceFeedMock.deploy(-1)) as PriceFeedMock;
+    const priceFeed_fake: PriceFeedMock = (await PriceFeedV1Mock.deploy(-1)) as PriceFeedMock;
     await priceFeed_fake.deployed();
 
     await dotcManager.changeEscrow(escrow.address);
@@ -111,6 +113,7 @@ describe('OpenDotcV3', () => {
 
     decimals_18 = await erc20_18.decimals();
     decimals_6 = await erc20_6.decimals();
+    priceFeed_decimals = 8;
     now = await time.latest();
 
     return {
@@ -597,8 +600,9 @@ describe('OpenDotcV3', () => {
         .connect(acc1)
         .makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
 
-      const standardizedDepositPrice = standardizeNumber(await priceFeed_18.latestAnswer(), await priceFeed_18.decimals());
-      const standardizedWithdrawalPrice = standardizeNumber(await priceFeed_6.latestAnswer(), await priceFeed_6.decimals());
+      const standardizedDepositPrice = standardizeNumber(await priceFeed_18.latestAnswer(), priceFeed_decimals);
+      const [, answer,] = await priceFeed_6.latestRoundData();
+      const standardizedWithdrawalPrice = standardizeNumber(answer, priceFeed_decimals);
       const depositToWithdrawalRate = standardizedDepositPrice.mul(BigNumber.from(10).pow(decimals_6)).div(standardizedWithdrawalPrice);
 
       let withdrawalAmount = depositToWithdrawalRate.mul(DepositAssetERC20.amount).div(BigNumber.from(10).pow(decimals_18));
@@ -650,14 +654,14 @@ describe('OpenDotcV3', () => {
       DepositAssetERC20.assetPriceFeedAddress = priceFeed_fake.address;
       await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer)).to.be.revertedWithCustomError(
         assetHelper,
-        'IncorrectPriceFeedPrice',
+        'IncorrectPriceFeed',
       ).withArgs(DepositAssetERC20.assetPriceFeedAddress);
       DepositAssetERC20.assetPriceFeedAddress = priceFeed_18.address;
 
       WithdrawalAssetERC20.assetPriceFeedAddress = priceFeed_fake.address;
       await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer)).to.be.revertedWithCustomError(
         assetHelper,
-        'IncorrectPriceFeedPrice',
+        'IncorrectPriceFeed',
       ).withArgs(WithdrawalAssetERC20.assetPriceFeedAddress);
       WithdrawalAssetERC20.assetPriceFeedAddress = priceFeed_6.address;
 
@@ -1819,8 +1823,9 @@ describe('OpenDotcV3', () => {
         .connect(acc1)
         .makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
 
-      const standardizedDepositPrice = standardizeNumber(await priceFeed_18.latestAnswer(), await priceFeed_18.decimals());
-      const standardizedWithdrawalPrice = standardizeNumber(await priceFeed_6.latestAnswer(), await priceFeed_6.decimals());
+      const standardizedDepositPrice = standardizeNumber(await priceFeed_18.latestAnswer(), priceFeed_decimals);
+      const [, answer,] = await priceFeed_6.latestRoundData();
+      const standardizedWithdrawalPrice = standardizeNumber(answer, priceFeed_decimals);
       const depositToWithdrawalRate = standardizedDepositPrice.mul(BigNumber.from(10).pow(decimals_6)).div(standardizedWithdrawalPrice);
       // const withdrawalToDepositRate = standardizedWithdrawalPrice.mul(BigNumber.from(10).pow(decimals_18)).div(standardizedDepositPrice);
 
@@ -1919,8 +1924,9 @@ describe('OpenDotcV3', () => {
         .connect(acc1)
         .makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
 
-      const standardizedDepositPrice = standardizeNumber(await priceFeed_18.latestAnswer(), await priceFeed_18.decimals());
-      const standardizedWithdrawalPrice = standardizeNumber(await priceFeed_6.latestAnswer(), await priceFeed_6.decimals());
+      const standardizedDepositPrice = standardizeNumber(await priceFeed_18.latestAnswer(), priceFeed_decimals);
+      const [, answer,] = await priceFeed_6.latestRoundData();
+      const standardizedWithdrawalPrice = standardizeNumber(answer, priceFeed_decimals);
       const depositToWithdrawalRate = standardizedDepositPrice.mul(BigNumber.from(10).pow(decimals_6)).div(standardizedWithdrawalPrice);
       // const withdrawalToDepositRate = standardizedWithdrawalPrice.mul(BigNumber.from(10).pow(decimals_18)).div(standardizedDepositPrice);
 
@@ -2017,8 +2023,9 @@ describe('OpenDotcV3', () => {
         .connect(acc1)
         .makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
 
-      const standardizedDepositPrice = standardizeNumber(await priceFeed_18.latestAnswer(), await priceFeed_18.decimals());
-      const standardizedWithdrawalPrice = standardizeNumber(await priceFeed_6.latestAnswer(), await priceFeed_6.decimals());
+      const standardizedDepositPrice = standardizeNumber(await priceFeed_18.latestAnswer(), priceFeed_decimals);
+      const [, answer,] = await priceFeed_6.latestRoundData();
+      const standardizedWithdrawalPrice = standardizeNumber(answer, priceFeed_decimals);
       const depositToWithdrawalRate = standardizedDepositPrice.mul(BigNumber.from(10).pow(decimals_6)).div(standardizedWithdrawalPrice);
 
       const withdrawalAmount = depositToWithdrawalRate.mul(DepositAssetERC20.amount).div(BigNumber.from(10).pow(decimals_18));
@@ -2119,8 +2126,9 @@ describe('OpenDotcV3', () => {
         .connect(acc1)
         .makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
 
-      const standardizedDepositPrice = standardizeNumber(await priceFeed_6.latestAnswer(), await priceFeed_6.decimals());
-      const standardizedWithdrawalPrice = standardizeNumber(await priceFeed_18.latestAnswer(), await priceFeed_18.decimals());
+      const [, answer,] = await priceFeed_6.latestRoundData();
+      const standardizedDepositPrice = standardizeNumber(answer, priceFeed_decimals);
+      const standardizedWithdrawalPrice = standardizeNumber(await priceFeed_18.latestAnswer(), priceFeed_decimals);
       const depositToWithdrawalRate = standardizedDepositPrice.mul(BigNumber.from(10).pow(decimals_18)).div(standardizedWithdrawalPrice);
 
       const withdrawalAmount = depositToWithdrawalRate.mul(DepositAssetERC20.amount).div(BigNumber.from(10).pow(decimals_6));
@@ -2216,8 +2224,9 @@ describe('OpenDotcV3', () => {
         .connect(acc1)
         .makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
 
-      const standardizedDepositPrice = standardizeNumber(await priceFeed_6.latestAnswer(), await priceFeed_6.decimals());
-      const standardizedWithdrawalPrice = standardizeNumber(await priceFeed_18.latestAnswer(), await priceFeed_18.decimals());
+      const [, answer,] = await priceFeed_6.latestRoundData();
+      const standardizedDepositPrice = standardizeNumber(answer, priceFeed_decimals);
+      const standardizedWithdrawalPrice = standardizeNumber(await priceFeed_18.latestAnswer(), priceFeed_decimals);
       const depositToWithdrawalRate = standardizedDepositPrice.mul(BigNumber.from(10).pow(decimals_18)).div(standardizedWithdrawalPrice);
 
       const withdrawalAmount = depositToWithdrawalRate.mul(DepositAssetERC20.amount).div(BigNumber.from(10).pow(decimals_6));
@@ -2313,8 +2322,9 @@ describe('OpenDotcV3', () => {
         .connect(acc1)
         .makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
 
-      const standardizedDepositPrice = standardizeNumber(await priceFeed_6.latestAnswer(), await priceFeed_6.decimals());
-      const standardizedWithdrawalPrice = standardizeNumber(await priceFeed_18.latestAnswer(), await priceFeed_18.decimals());
+      const [, answer,] = await priceFeed_6.latestRoundData();
+      const standardizedDepositPrice = standardizeNumber(answer, priceFeed_decimals);
+      const standardizedWithdrawalPrice = standardizeNumber(await priceFeed_18.latestAnswer(), priceFeed_decimals);
       const depositToWithdrawalRate = standardizedDepositPrice.mul(BigNumber.from(10).pow(decimals_18)).div(standardizedWithdrawalPrice);
 
       const withdrawalAmount = depositToWithdrawalRate.mul(DepositAssetERC20.amount).div(BigNumber.from(10).pow(decimals_6));
@@ -2415,8 +2425,9 @@ describe('OpenDotcV3', () => {
         .connect(acc1)
         .makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
 
-      const standardizedDepositPrice = standardizeNumber(await priceFeed_18.latestAnswer(), await priceFeed_18.decimals());
-      const standardizedWithdrawalPrice = standardizeNumber(await priceFeed_6.latestAnswer(), await priceFeed_6.decimals());
+      const standardizedDepositPrice = standardizeNumber(await priceFeed_18.latestAnswer(), priceFeed_decimals);
+      const [, answer,] = await priceFeed_6.latestRoundData();
+      const standardizedWithdrawalPrice = standardizeNumber(answer, priceFeed_decimals);
       const depositToWithdrawalRate = standardizedDepositPrice.mul(BigNumber.from(10).pow(decimals_6)).div(standardizedWithdrawalPrice);
       // const withdrawalToDepositRate = standardizedWithdrawalPrice.mul(BigNumber.from(10).pow(decimals_18)).div(standardizedDepositPrice);
 
