@@ -158,65 +158,13 @@ library AssetHelper {
         Asset calldata depositAsset,
         Asset calldata withdrawalAsset
     ) external view returns (uint256 depositToWithdrawalRate, uint256 withdrawalToDepositRate) {
-        int256 depositPriceInUsd;
-        int256 withdrawalPriceInUsd;
+        (int256 depositPriceInUsd, uint8 depositAssetPriceFeedDecimals) = _checkPriceFeedData(
+            depositAsset.assetPriceFeedAddress
+        );
 
-        try IDotcCompatiblePriceFeed(depositAsset.assetPriceFeedAddress).latestRoundData() returns (
-            uint80,
-            int256 answer,
-            uint256,
-            uint256,
-            uint80
-        ) {
-            depositPriceInUsd = answer;
-        } catch {
-            try IDotcCompatiblePriceFeed(depositAsset.assetPriceFeedAddress).latestAnswer() returns (int256 answer) {
-                depositPriceInUsd = answer;
-            } catch {
-                revert IncorrectPriceFeed(depositAsset.assetPriceFeedAddress);
-            }
-        }
-        try IDotcCompatiblePriceFeed(withdrawalAsset.assetPriceFeedAddress).latestRoundData() returns (
-            uint80,
-            int256 answer,
-            uint256,
-            uint256,
-            uint80
-        ) {
-            withdrawalPriceInUsd = answer;
-        } catch {
-            try IDotcCompatiblePriceFeed(withdrawalAsset.assetPriceFeedAddress).latestAnswer() returns (int256 answer) {
-                withdrawalPriceInUsd = answer;
-            } catch {
-                revert IncorrectPriceFeed(depositAsset.assetPriceFeedAddress);
-            }
-        }
-
-        if (depositPriceInUsd <= 0) {
-            revert IncorrectPriceFeed(depositAsset.assetPriceFeedAddress);
-        }
-        if (withdrawalPriceInUsd <= 0) {
-            revert IncorrectPriceFeed(withdrawalAsset.assetPriceFeedAddress);
-        }
-
-        uint8 depositAssetPriceFeedDecimals;
-        uint8 withdrawalAssetPriceFeedDecimals;
-
-        // Checks if Aggregator V3 Interface used for the price feeds, if not then using 8 decimals by default
-        try IDotcCompatiblePriceFeed(depositAsset.assetPriceFeedAddress).decimals() returns (
-            uint8 _depositAssetPriceFeedDecimals
-        ) {
-            depositAssetPriceFeedDecimals = _depositAssetPriceFeedDecimals;
-        } catch {
-            depositAssetPriceFeedDecimals = DECIMALS_BY_DEFAULT;
-        }
-        try IDotcCompatiblePriceFeed(withdrawalAsset.assetPriceFeedAddress).decimals() returns (
-            uint8 _withdrawalAssetPriceFeedDecimals
-        ) {
-            withdrawalAssetPriceFeedDecimals = _withdrawalAssetPriceFeedDecimals;
-        } catch {
-            withdrawalAssetPriceFeedDecimals = DECIMALS_BY_DEFAULT;
-        }
+        (int256 withdrawalPriceInUsd, uint8 withdrawalAssetPriceFeedDecimals) = _checkPriceFeedData(
+            withdrawalAsset.assetPriceFeedAddress
+        );
 
         uint256 standardizedDepositPrice = _standardize(uint256(depositPriceInUsd), depositAssetPriceFeedDecimals);
         uint256 standardizedWithdrawalPrice = _standardize(
@@ -224,9 +172,9 @@ library AssetHelper {
             withdrawalAssetPriceFeedDecimals
         );
 
-        depositToWithdrawalRate = findRate(withdrawalAsset, standardizedDepositPrice, standardizedWithdrawalPrice);
+        depositToWithdrawalRate = _findRate(withdrawalAsset, standardizedDepositPrice, standardizedWithdrawalPrice);
 
-        withdrawalToDepositRate = findRate(depositAsset, standardizedWithdrawalPrice, standardizedDepositPrice);
+        withdrawalToDepositRate = _findRate(depositAsset, standardizedWithdrawalPrice, standardizedDepositPrice);
     }
 
     function findWithdrawalAmount(
@@ -309,10 +257,6 @@ library AssetHelper {
         return part.fullMulDivUp(SCALING_FACTOR, whole);
     }
 
-    function findRate(Asset calldata asset, uint256 a, uint256 b) public view returns (uint256 rate) {
-        return a.fullMulDiv((10 ** IERC20Metadata(asset.assetAddress).decimals()), b);
-    }
-
     /**
      * @dev Internal function to standardize an amount based on decimals.
      * @param amount The amount to be standardized.
@@ -331,5 +275,37 @@ library AssetHelper {
      */
     function _unstandardize(uint256 amount, uint8 decimals) private pure returns (uint256) {
         return amount.fullMulDiv(10 ** decimals, BPS);
+    }
+
+    function _findRate(Asset calldata asset, uint256 a, uint256 b) private view returns (uint256 rate) {
+        return a.fullMulDiv((10 ** IERC20Metadata(asset.assetAddress).decimals()), b);
+    }
+
+    function _checkPriceFeedData(address priceFeedAddress) private view returns (int256 answer, uint8 decimals) {
+        try IDotcCompatiblePriceFeed(priceFeedAddress).latestRoundData() returns (
+            uint80,
+            int256 _answer,
+            uint256,
+            uint256,
+            uint80
+        ) {
+            answer = _answer;
+        } catch {
+            try IDotcCompatiblePriceFeed(priceFeedAddress).latestAnswer() returns (int256 _answer) {
+                answer = _answer;
+            } catch {
+                revert IncorrectPriceFeed(priceFeedAddress);
+            }
+        }
+
+        if (answer <= 0) {
+            revert IncorrectPriceFeed(priceFeedAddress);
+        }
+
+        try IDotcCompatiblePriceFeed(priceFeedAddress).decimals() returns (uint8 _decimals) {
+            decimals = _decimals;
+        } catch {
+            decimals = DECIMALS_BY_DEFAULT;
+        }
     }
 }
