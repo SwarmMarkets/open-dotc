@@ -157,16 +157,6 @@ describe('OpenDotcV3', () => {
       );
       await expect(dotc.initialize(escrow.address)).to.be.revertedWithCustomError(dotc, 'InvalidInitialization');
     });
-
-    it('Should support interface', async () => {
-      const { dotc, escrow } = await loadFixture(fixture);
-
-      const IERC165_interface = '0x01ffc9a7';
-
-      expect(await dotc.supportsInterface(IERC165_interface)).to.be.true;
-
-      expect(await escrow.supportsInterface(IERC165_interface)).to.be.true;
-    });
   });
 
   describe('Make offer', () => {

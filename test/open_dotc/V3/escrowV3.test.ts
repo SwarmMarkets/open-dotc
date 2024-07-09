@@ -64,14 +64,6 @@ describe('OpenDotcEscrowV3', () => {
 
       await expect(escrow.initialize(escrow.address)).to.be.revertedWithCustomError(escrow, 'InvalidInitialization');
     });
-
-    it('Should support interface', async () => {
-      const { escrow } = await loadFixture(fixture);
-
-      const IERC165_interface = '0x01ffc9a7';
-
-      expect(await escrow.supportsInterface(IERC165_interface)).to.be.true;
-    });
   });
 
   describe('Write functions', () => {

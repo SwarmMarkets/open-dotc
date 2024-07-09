@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
-import { IERC20Metadata, ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20, IERC721, IERC1155, IERC165, SafeERC20, FixedPointMathLib } from "./exports/Exports.sol";
+import { Initializable, Receiver, SafeTransferLib, FixedPointMathLib, IERC721, IERC1155, IERC165 } from "./exports/Exports.sol";
 
 import { AssetHelper } from "./helpers/AssetHelper.sol";
 import { OfferHelper } from "./helpers/OfferHelper.sol";
@@ -50,9 +50,9 @@ error OnlyDynamicPricing();
  * @dev It uses ERC1155 and ERC721 token standards for asset management and trade settlement.
  * @author Swarm
  */
-contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
+contract DotcV3 is Initializable, Receiver {
     ///@dev Used for Safe transfer tokens
-    using SafeERC20 for IERC20;
+    using SafeTransferLib for address;
     using FixedPointMathLib for uint256;
     ///@dev Used for Asset interaction
     using AssetHelper for Asset;
@@ -173,9 +173,6 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
      * @param _manager The address of the manager to be set for this contract.
      */
     function initialize(DotcManagerV3 _manager) public initializer {
-        __ERC1155Holder_init();
-        __ERC721Holder_init();
-
         manager = _manager;
     }
 
@@ -383,16 +380,6 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
     }
 
     /**
-     * @notice Checks if the contract supports a specific interface.
-     * @param interfaceId The interface identifier to check.
-     * @return True if the interface is supported.
-     * @dev Overridden to support ERC1155Receiver interfaces.
-     */
-    function supportsInterface(bytes4 interfaceId) public view override returns (bool) {
-        return super.supportsInterface(interfaceId);
-    }
-
-    /**
      * @dev Internal function to handle the transfer of different types of assets (ERC20, ERC721, ERC1155).
      * @param asset The asset to be transferred.
      * @param from The address sending the asset.
@@ -401,7 +388,7 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
      */
     function _assetTransfer(Asset memory asset, address from, address to, uint256 amount) private {
         if (asset.assetType == AssetType.ERC20) {
-            IERC20(asset.assetAddress).safeTransferFrom(from, to, amount);
+            asset.assetAddress.safeTransferFrom(from, to, amount);
         } else if (asset.assetType == AssetType.ERC721) {
             IERC721(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId);
         } else if (asset.assetType == AssetType.ERC1155) {

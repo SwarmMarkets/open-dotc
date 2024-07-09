@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
-import { ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20, IERC721, IERC1155, SafeERC20 } from "./exports/Exports.sol";
+import { Initializable, Receiver, SafeTransferLib, IERC721, IERC1155 } from "./exports/Exports.sol";
 
 import { DotcV3 } from "./DotcV3.sol";
 import { DotcManagerV3 } from "./DotcManagerV3.sol";
@@ -37,9 +37,9 @@ error FeesAmountEqZero();
  * @dev This contract handles the escrow of assets for DOTC trades, supporting ERC20, ERC721, and ERC1155 assets.
  * @author Swarm
  */
-contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
+contract DotcEscrowV3 is Initializable, Receiver {
     ///@dev Used for Safe transfer tokens
-    using SafeERC20 for IERC20;
+    using SafeTransferLib for address;
 
     /**
      * @dev Emitted when an offer's assets are deposited into escrow.
@@ -107,9 +107,6 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
      * @param _manager The address of the manager contract.
      */
     function initialize(DotcManagerV3 _manager) public initializer {
-        __ERC1155Holder_init();
-        __ERC721Holder_init();
-
         manager = _manager;
     }
 
@@ -212,17 +209,6 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
     }
 
     /**
-     * @notice Checks if the contract supports a specific interface.
-     * @param interfaceId The interface identifier to check.
-     * @return True if the interface is supported.
-     * @dev Overridden to support AccessControl and ERC1155Receiver interfaces.
-     */
-
-    function supportsInterface(bytes4 interfaceId) public view override returns (bool) {
-        return super.supportsInterface(interfaceId);
-    }
-
-    /**
      * @dev Internal function to handle the transfer of different types of assets (ERC20, ERC721, ERC1155).
      * @param asset The asset to be transferred.
      * @param from The address sending the asset.
@@ -231,7 +217,7 @@ contract DotcEscrowV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
      */
     function _assetTransfer(Asset memory asset, address from, address to, uint256 amount) private {
         if (asset.assetType == AssetType.ERC20) {
-            IERC20(asset.assetAddress).safeTransfer(to, amount);
+            asset.assetAddress.safeTransfer(to, amount);
         } else if (asset.assetType == AssetType.ERC721) {
             IERC721(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId);
         } else if (asset.assetType == AssetType.ERC1155) {

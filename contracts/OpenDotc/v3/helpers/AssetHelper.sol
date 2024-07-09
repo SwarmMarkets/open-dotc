@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
-import { IERC20, IERC20Metadata, IERC721, IERC1155, IERC165, FixedPointMathLib } from "../exports/Exports.sol";
+import { FixedPointMathLib, MetadataReaderLib, IERC20, IERC721, IERC1155, IERC165 } from "../exports/Exports.sol";
 import { Asset, AssetType, Price } from "../structures/DotcStructuresV3.sol";
 import { IDotcCompatiblePriceFeed } from "../interfaces/IDotcCompatiblePriceFeed.sol";
 
@@ -79,6 +79,7 @@ error IncorrectPriceFeed(address assetPriceFeedAddress);
  */
 library AssetHelper {
     using FixedPointMathLib for uint256;
+    using MetadataReaderLib for address;
 
     /**
      * @dev Base points used to standardize decimals.
@@ -184,7 +185,7 @@ library AssetHelper {
     ) external view returns (uint256 fullPrice) {
         uint256 withdrawalPrice = withdrawalRate.fullMulDiv(
             depositAsset.amount,
-            (10 ** IERC20Metadata(depositAsset.assetAddress).decimals())
+            (10 ** depositAsset.assetAddress.readDecimals())
         );
 
         uint256 percentage = calculatePercentage(withdrawalPrice, priceStruct.percentage);
@@ -213,7 +214,7 @@ library AssetHelper {
      * @return The standardized numerical amount.
      */
     function standardize(Asset calldata asset) public view returns (uint256) {
-        uint8 decimals = IERC20Metadata(asset.assetAddress).decimals();
+        uint8 decimals = asset.assetAddress.readDecimals();
         return _standardize(asset.amount, decimals);
     }
 
@@ -223,7 +224,7 @@ library AssetHelper {
      * @return The unstandardized numerical amount.
      */
     function unstandardize(Asset calldata asset) public view returns (uint256) {
-        uint8 decimals = IERC20Metadata(asset.assetAddress).decimals();
+        uint8 decimals = asset.assetAddress.readDecimals();
         return _unstandardize(asset.amount, decimals);
     }
 
@@ -234,7 +235,7 @@ library AssetHelper {
      * @return The standardized numerical amount.
      */
     function standardize(Asset calldata asset, uint256 amount) public view zeroAmountCheck(amount) returns (uint256) {
-        uint8 decimals = IERC20Metadata(asset.assetAddress).decimals();
+        uint8 decimals = asset.assetAddress.readDecimals();
         return _standardize(amount, decimals);
     }
 
@@ -245,7 +246,7 @@ library AssetHelper {
      * @return The unstandardized numerical amount.
      */
     function unstandardize(Asset calldata asset, uint256 amount) public view zeroAmountCheck(amount) returns (uint256) {
-        uint8 decimals = IERC20Metadata(asset.assetAddress).decimals();
+        uint8 decimals = asset.assetAddress.readDecimals();
         return _unstandardize(amount, decimals);
     }
 
@@ -278,7 +279,7 @@ library AssetHelper {
     }
 
     function _findRate(Asset calldata asset, uint256 a, uint256 b) private view returns (uint256 rate) {
-        return a.fullMulDiv((10 ** IERC20Metadata(asset.assetAddress).decimals()), b);
+        return a.fullMulDiv((10 ** asset.assetAddress.readDecimals()), b);
     }
 
     function _checkPriceFeedData(address priceFeedAddress) private view returns (int256 answer, uint8 decimals) {
