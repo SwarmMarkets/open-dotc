@@ -226,8 +226,12 @@ contract DotcV3 is Initializable, Receiver {
 
         uint256 depositAssetAmount = withdrawalAmountPaid != offer.withdrawalAsset.amount
             ? offer.depositAsset.unstandardize(
-                (offer.withdrawalAsset.standardize(withdrawalAmountPaid) * AssetHelper.BPS) /
+                (
+                    offer.withdrawalAsset.standardize(withdrawalAmountPaid).fullMulDiv(
+                        AssetHelper.BPS,
                     offer.offer.price.unitPrice
+                    )
+                )
             )
             : offer.depositAsset.amount;
 
