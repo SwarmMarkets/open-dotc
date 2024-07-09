@@ -209,7 +209,7 @@ library AssetHelper {
         fullPrice = priceStruct.max > 0
             ? (withdrawalPrice + percentage).max(priceStruct.max)
             : priceStruct.min > 0
-                ? (withdrawalPrice - percentage).min(priceStruct.max)
+                ? (withdrawalPrice - percentage).min(priceStruct.min)
                 : withdrawalPrice;
     }
 
