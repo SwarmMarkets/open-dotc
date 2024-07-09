@@ -273,15 +273,13 @@ contract DotcV3 is Initializable, Receiver {
 
         offer.withdrawalAsset.checkAssetOwner(msg.sender, withdrawalAmountPaid);
 
-        uint256 partPercentage = AssetHelper.calculatePartPercentage(withdrawalAmountPaid, withdrawalPrice);
-        uint256 depositAssetAmount = AssetHelper.calculatePercentage(offer.depositAsset.amount, partPercentage);
-        uint256 leftToWithdraw = withdrawalPrice - withdrawalAmountPaid;
-
-        uint256 withdrawalAmountPaidWithoutFees = withdrawalAmountPaid -
-            _sendWithdrawalFees(offer.withdrawalAsset, withdrawalAmountPaid, affiliate);
+        uint256 depositAssetAmount = AssetHelper.calculatePercentage(
+            offer.depositAsset.amount,
+            AssetHelper.calculatePartPercentage(withdrawalAmountPaid, withdrawalPrice)
+        );
 
         allOffers[offerId].depositAsset.amount -= depositAssetAmount;
-        allOffers[offerId].withdrawalAsset.amount = leftToWithdraw;
+        allOffers[offerId].withdrawalAsset.amount = withdrawalPrice - withdrawalAmountPaid;
 
         ValidityType validityType = allOffers[offerId].depositAsset.amount == 0 ||
             allOffers[offerId].withdrawalAsset.amount == 0
@@ -291,7 +289,12 @@ contract DotcV3 is Initializable, Receiver {
         allOffers[offerId].validityType = validityType;
 
         //Transfer WithdrawalAsset from Taker to Maker
-        _assetTransfer(offer.withdrawalAsset, msg.sender, offer.maker, withdrawalAmountPaidWithoutFees);
+        _assetTransfer(
+            offer.withdrawalAsset,
+            msg.sender,
+            offer.maker,
+            withdrawalAmountPaid - _sendWithdrawalFees(offer.withdrawalAsset, withdrawalAmountPaid, affiliate)
+        );
 
         //Transfer DepositAsset from Maker to Taker
         escrow.withdrawDeposit(offerId, depositAssetAmount, msg.sender);
