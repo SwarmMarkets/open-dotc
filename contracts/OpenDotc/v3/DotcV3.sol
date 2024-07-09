@@ -315,14 +315,14 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
         offer.checkDotcOfferParams();
 
         if (updatedOffer.specialAddresses.length > 0) {
-            updatedOffer.checkZeroAddressForSpecialAddresses();
+            OfferHelper.checkAddressesArrayForZeroAddresses(updatedOffer.specialAddresses);
 
             allOffers[offerId].offer.specialAddresses = updatedOffer.specialAddresses;
             emit OfferSpecialAddressesUpdated(offerId, updatedOffer.specialAddresses);
         }
 
         if (updatedOffer.authorizationAddresses.length > 0) {
-            updatedOffer.checkZeroAddressForAuthAddresses();
+            OfferHelper.checkAddressesArrayForZeroAddresses(updatedOffer.authorizationAddresses);
 
             allOffers[offerId].offer.authorizationAddresses = updatedOffer.authorizationAddresses;
             emit OfferAuthAddressesUpdated(offerId, updatedOffer.authorizationAddresses);

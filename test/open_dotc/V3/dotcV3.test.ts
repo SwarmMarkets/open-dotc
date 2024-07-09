@@ -103,7 +103,7 @@ describe('OpenDotcV3', () => {
     await priceFeed_18.deployed();
     const priceFeed_6: PriceFeedV3Mock = (await PriceFeedV3Mock.deploy(99999257)) as PriceFeedV3Mock;
     await priceFeed_6.deployed();
-    const priceFeed_fake: PriceFeedMock = (await PriceFeedV1Mock.deploy(-1)) as PriceFeedMock;
+    const priceFeed_fake: PriceFeedV1Mock = (await PriceFeedV1Mock.deploy(-1)) as PriceFeedV1Mock;
     await priceFeed_fake.deployed();
 
     await dotcManager.changeEscrow(escrow.address);
@@ -402,12 +402,12 @@ describe('OpenDotcV3', () => {
       Offer.specialAddresses = [addressZero];
       await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer)).to.be.revertedWithCustomError(
         offerHelper,
-        'SpecialAddressIsZeroError',
+        'AddressIsZeroError',
       );
       Offer.specialAddresses = [await acc1.getAddress(), addressZero, await acc2.getAddress()];
       await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer)).to.be.revertedWithCustomError(
         offerHelper,
-        'SpecialAddressIsZeroError',
+        'AddressIsZeroError',
       );
 
       Offer.specialAddresses = [];
@@ -415,12 +415,12 @@ describe('OpenDotcV3', () => {
       Offer.authorizationAddresses = [addressZero];
       await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer)).to.be.revertedWithCustomError(
         offerHelper,
-        'AuthAddressIsZeroError',
+        'AddressIsZeroError',
       );
       Offer.authorizationAddresses = [await acc1.getAddress(), addressZero, await acc2.getAddress()];
       await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer)).to.be.revertedWithCustomError(
         offerHelper,
-        'AuthAddressIsZeroError',
+        'AddressIsZeroError',
       );
     });
 
@@ -4337,14 +4337,14 @@ describe('OpenDotcV3', () => {
       Offer.specialAddresses = [addressZero];
       await expect(dotc.connect(acc1).updateOffer(offerId, Offer)).to.be.revertedWithCustomError(
         offerHelper,
-        'SpecialAddressIsZeroError',
+        'AddressIsZeroError',
       ).withArgs(offerId);
 
       Offer.specialAddresses = [];
       Offer.authorizationAddresses = [addressZero];
       await expect(dotc.connect(acc1).updateOffer(offerId, Offer)).to.be.revertedWithCustomError(
         offerHelper,
-        'AuthAddressIsZeroError',
+        'AddressIsZeroError',
       ).withArgs(offerId);
 
       Offer.authorizationAddresses = [];

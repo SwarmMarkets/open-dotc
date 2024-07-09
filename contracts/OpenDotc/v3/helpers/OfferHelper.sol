@@ -18,13 +18,9 @@ error NotSpecialAddressError(address sender);
 /// @param sender The address that attempts to take a special offer.
 error NotAuthorizedAccountError(address sender);
 
-/// @notice Thrown when the special address is set to the zero address.
-/// @param arrayIndex The index in the array where the zero address was encountered.
-error SpecialAddressIsZeroError(uint256 arrayIndex);
-
 /// @notice Thrown when the authoriaztion address is set to the zero address.
 /// @param arrayIndex The index in the array where the zero address was encountered.
-error AuthAddressIsZeroError(uint256 arrayIndex);
+error AddressIsZeroError(uint256 arrayIndex);
 
 /// @notice Thrown when a partial offer type is attempted with ERC721 or ERC1155 assets, which is unsupported.
 error UnsupportedPartialOfferForNonERC20AssetsError();
@@ -132,11 +128,11 @@ library OfferHelper {
         }
 
         if (offer.specialAddresses.length > 0) {
-            checkZeroAddressForSpecialAddresses(offer);
+            checkAddressesArrayForZeroAddresses(offer.specialAddresses);
         }
 
         if (offer.authorizationAddresses.length > 0) {
-            checkZeroAddressForAuthAddresses(offer);
+            checkAddressesArrayForZeroAddresses(offer.authorizationAddresses);
         }
 
         if (offer.takingOfferType == TakingOfferType.NoType) {
@@ -201,21 +197,10 @@ library OfferHelper {
         return offer.takingOfferType;
     }
 
-    function checkZeroAddressForSpecialAddresses(OfferStruct calldata offer) public pure {
-        for (uint256 i = 0; i < offer.specialAddresses.length; ) {
-            if (offer.specialAddresses[i] == address(0)) {
-                revert SpecialAddressIsZeroError(i);
-            }
-            unchecked {
-                ++i;
-            }
-        }
-    }
-
-    function checkZeroAddressForAuthAddresses(OfferStruct calldata offer) public pure {
-        for (uint256 i = 0; i < offer.authorizationAddresses.length; ) {
-            if (offer.authorizationAddresses[i] == address(0)) {
-                revert AuthAddressIsZeroError(i);
+    function checkAddressesArrayForZeroAddresses(address[] calldata addressesArray) public pure {
+        for (uint256 i = 0; i < addressesArray.length; ) {
+            if (addressesArray[i] == address(0)) {
+                revert AddressIsZeroError(i);
             }
             unchecked {
                 ++i;
