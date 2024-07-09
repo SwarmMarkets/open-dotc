@@ -188,8 +188,8 @@ contract DotcV3 is Initializable, Receiver {
         Asset calldata withdrawalAsset,
         OfferStruct calldata offer
     ) external {
-        depositAsset.checkAssetStructure();
-        withdrawalAsset.checkAssetStructure();
+        depositAsset.checkAssetStructure(offer.offerPricingType);
+        withdrawalAsset.checkAssetStructure(offer.offerPricingType);
 
         depositAsset.checkAssetOwner(msg.sender, depositAsset.amount);
 
@@ -229,7 +229,7 @@ contract DotcV3 is Initializable, Receiver {
                 (
                     offer.withdrawalAsset.standardize(withdrawalAmountPaid).fullMulDiv(
                         AssetHelper.BPS,
-                    offer.offer.price.unitPrice
+                        offer.offer.unitPrice
                     )
                 )
             )
@@ -267,20 +267,26 @@ contract DotcV3 is Initializable, Receiver {
         offer.checkDotcOfferParams();
         offer.offer.checkOfferParams();
 
-        (uint256 depositToWithdrawalRate, ) = offer.depositAsset.calculateRate(offer.withdrawalAsset);
-
-        uint256 withdrawalPrice = offer.depositAsset.findWithdrawalAmount(depositToWithdrawalRate, offer.offer.price);
+        (, uint256 withdrawalPrice) = offer.depositAsset.calculateRate(offer.withdrawalAsset);
 
         if (withdrawalAmountPaid == 0 || withdrawalAmountPaid > withdrawalPrice) {
             withdrawalAmountPaid = withdrawalPrice;
         }
 
+        uint256 fullWithdrawalAmountPaid = withdrawalAmountPaid;
+
         offer.withdrawalAsset.checkAssetOwner(msg.sender, withdrawalAmountPaid);
 
-        uint256 depositAssetAmount = AssetHelper.calculatePercentage(
-            offer.depositAsset.amount,
-            AssetHelper.calculatePartPercentage(withdrawalAmountPaid, withdrawalPrice)
-        );
+        uint256 depositAssetAmount;
+        if (offer.depositAsset.assetType != AssetType.ERC20) {
+            depositAssetAmount = withdrawalAmountPaid.fullMulDiv(offer.depositAsset.amount, withdrawalPrice);
+        } else {
+            depositAssetAmount = AssetHelper.calculatePercentage(
+                offer.depositAsset.amount,
+                AssetHelper.calculatePartPercentage(withdrawalAmountPaid, withdrawalPrice)
+            );
+        }
+        uint256 fullDepositAssetAmount = depositAssetAmount;
 
         allOffers[offerId].depositAsset.amount -= depositAssetAmount;
         allOffers[offerId].withdrawalAsset.amount = withdrawalPrice - withdrawalAmountPaid;
@@ -292,18 +298,21 @@ contract DotcV3 is Initializable, Receiver {
 
         allOffers[offerId].validityType = validityType;
 
+        // If WithdrawalAsset is not an ERC20 then fees will be taken from Maker
+        if (offer.withdrawalAsset.assetType != AssetType.ERC20 && offer.depositAsset.assetType == AssetType.ERC20) {
+            depositAssetAmount -= _sendDepositFees(offerId, depositAssetAmount, affiliate);
+        } else if (offer.withdrawalAsset.assetType == AssetType.ERC20) {
+            // If WithdrawalAsset is an ERC20 then fees will be taken from Taker
+            withdrawalAmountPaid -= _sendWithdrawalFees(offer.withdrawalAsset, withdrawalAmountPaid, affiliate);
+        }
+
         //Transfer WithdrawalAsset from Taker to Maker
-        _assetTransfer(
-            offer.withdrawalAsset,
-            msg.sender,
-            offer.maker,
-            withdrawalAmountPaid - _sendWithdrawalFees(offer.withdrawalAsset, withdrawalAmountPaid, affiliate)
-        );
+        _assetTransfer(offer.withdrawalAsset, msg.sender, offer.maker, withdrawalAmountPaid);
 
         //Transfer DepositAsset from Maker to Taker
         escrow.withdrawDeposit(offerId, depositAssetAmount, msg.sender);
 
-        emit TakenOffer(offerId, msg.sender, validityType, depositAssetAmount, withdrawalAmountPaid, affiliate);
+        emit TakenOffer(offerId, msg.sender, validityType, fullDepositAssetAmount, fullWithdrawalAmountPaid, affiliate);
     }
 
     /**

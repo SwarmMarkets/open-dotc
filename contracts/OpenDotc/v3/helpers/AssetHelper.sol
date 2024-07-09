@@ -2,7 +2,7 @@
 pragma solidity 0.8.25;
 
 import { FixedPointMathLib, MetadataReaderLib, IERC20, IERC721, IERC1155, IERC165 } from "../exports/ExternalExports.sol";
-import { Asset, AssetType, Price } from "../structures/DotcStructuresV3.sol";
+import { Asset, AssetType, Price, OfferPricingType, IncorrectPercentage } from "../structures/DotcStructuresV3.sol";
 import { IDotcCompatiblePriceFeed } from "../interfaces/IDotcCompatiblePriceFeed.sol";
 
 /// @notice Indicates an operation with zero amount which is not allowed
@@ -58,6 +58,9 @@ error IncorrectAssetTypeForAddress(address token, AssetType incorrectType);
 error UnsupportedAssetType(AssetType unsupportedType);
 
 error IncorrectPriceFeed(address assetPriceFeedAddress);
+
+error PriceShouldNotBeSpecifiedFor(OfferPricingType offerPricingType);
+error BothMinMaxCanNotBeSpecifiedFor(OfferPricingType offerPricingType);
 
 /**
  * @title TODO (as part of the "SwarmX.eth Protocol")
@@ -140,7 +143,7 @@ library AssetHelper {
      * @dev Checks for asset type, asset address, and amount validity.
      * @param asset The asset to be checked.
      */
-    function checkAssetStructure(Asset calldata asset) external pure {
+    function checkAssetStructure(Asset calldata asset, OfferPricingType offerPricingType) external pure {
         if (asset.assetType == AssetType.NoType) {
             revert AssetTypeUndefinedError();
         }
@@ -153,48 +156,41 @@ library AssetHelper {
         if (asset.assetType == AssetType.ERC721 && asset.amount > 1) {
             revert ERC721AmountExceedsOneError();
         }
+
+        _checkPriceStructure(asset.price, offerPricingType);
     }
 
     function calculateRate(
         Asset calldata depositAsset,
         Asset calldata withdrawalAsset
-    ) external view returns (uint256 depositToWithdrawalRate, uint256 withdrawalToDepositRate) {
-        (int256 depositPriceInUsd, uint8 depositAssetPriceFeedDecimals) = _checkPriceFeedData(
-            depositAsset.assetPriceFeedAddress
-        );
+    ) external view returns (uint256 depositToWithdrawalRate, uint256 withdrawalPrice) {
+        (uint256 depositPriceInUsd, uint8 depositAssetPriceFeedDecimals) = _checkPrice(depositAsset);
+        (uint256 withdrawalPriceInUsd, uint8 withdrawalAssetPriceFeedDecimals) = _checkPrice(withdrawalAsset);
 
-        (int256 withdrawalPriceInUsd, uint8 withdrawalAssetPriceFeedDecimals) = _checkPriceFeedData(
-            withdrawalAsset.assetPriceFeedAddress
-        );
+        uint256 standardizedDepositPrice = _standardize(depositPriceInUsd, depositAssetPriceFeedDecimals);
+        uint256 standardizedWithdrawalPrice = _standardize(withdrawalPriceInUsd, withdrawalAssetPriceFeedDecimals);
 
-        uint256 standardizedDepositPrice = _standardize(uint256(depositPriceInUsd), depositAssetPriceFeedDecimals);
-        uint256 standardizedWithdrawalPrice = _standardize(
-            uint256(withdrawalPriceInUsd),
-            withdrawalAssetPriceFeedDecimals
-        );
+        if (withdrawalAsset.assetType == AssetType.ERC20) {
+            depositToWithdrawalRate = standardizedDepositPrice.fullMulDiv(
+                (10 ** withdrawalAsset.assetAddress.readDecimals()),
+                standardizedWithdrawalPrice
+            );
+        } else {
+            depositToWithdrawalRate = standardizedDepositPrice.fullMulDiv(BPS, standardizedWithdrawalPrice);
+        }
 
-        depositToWithdrawalRate = _findRate(withdrawalAsset, standardizedDepositPrice, standardizedWithdrawalPrice);
+        if (depositAsset.assetType != AssetType.ERC20) {
+            withdrawalPrice = depositToWithdrawalRate * depositAsset.amount;
+        } else {
+            withdrawalPrice = depositToWithdrawalRate.fullMulDiv(
+                depositAsset.amount,
+                (10 ** depositAsset.assetAddress.readDecimals())
+            );
+        }
 
-        withdrawalToDepositRate = _findRate(depositAsset, standardizedWithdrawalPrice, standardizedDepositPrice);
-    }
-
-    function findWithdrawalAmount(
-        Asset calldata depositAsset,
-        uint256 withdrawalRate,
-        Price calldata priceStruct
-    ) external view returns (uint256 fullPrice) {
-        uint256 withdrawalPrice = withdrawalRate.fullMulDiv(
-            depositAsset.amount,
-            (10 ** depositAsset.assetAddress.readDecimals())
-        );
-
-        uint256 percentage = calculatePercentage(withdrawalPrice, priceStruct.percentage);
-
-        fullPrice = priceStruct.max > 0
-            ? (withdrawalPrice + percentage).max(priceStruct.max)
-            : priceStruct.min > 0
-                ? (withdrawalPrice - percentage).min(priceStruct.min)
-                : withdrawalPrice;
+        if (withdrawalAsset.assetType != AssetType.ERC20) {
+            withdrawalPrice /= BPS;
+        }
     }
 
     function calculateFees(
@@ -251,11 +247,67 @@ library AssetHelper {
     }
 
     function calculatePercentage(uint256 value, uint256 percentage) public pure returns (uint256) {
-        return value.fullMulDivUp(percentage, SCALING_FACTOR);
+        return value.fullMulDiv(percentage, SCALING_FACTOR);
     }
 
     function calculatePartPercentage(uint256 part, uint256 whole) public pure returns (uint256) {
-        return part.fullMulDivUp(SCALING_FACTOR, whole);
+        return part.fullMulDiv(SCALING_FACTOR, whole);
+    }
+
+    function _checkPrice(Asset calldata asset) private view returns (uint256 price, uint8 decimals) {
+        int256 intAnswer;
+        try IDotcCompatiblePriceFeed(asset.price.priceFeedAddress).latestRoundData() returns (
+            uint80,
+            int256 _answer,
+            uint256,
+            uint256,
+            uint80
+        ) {
+            intAnswer = _answer;
+        } catch {
+            try IDotcCompatiblePriceFeed(asset.price.priceFeedAddress).latestAnswer() returns (int256 _answer) {
+                intAnswer = _answer;
+            } catch {
+                revert IncorrectPriceFeed(asset.price.priceFeedAddress);
+            }
+        }
+        if (intAnswer <= 0) {
+            revert IncorrectPriceFeed(asset.price.priceFeedAddress);
+        }
+
+        uint256 uintAnswer = uint256(intAnswer);
+        uint256 percentage = calculatePercentage(uintAnswer, asset.price.percentage);
+
+        price = asset.price.max > 0
+            ? (uintAnswer + percentage).max(asset.price.max)
+            : asset.price.min > 0
+                ? (uintAnswer - percentage).min(asset.price.min)
+                : uintAnswer;
+
+        try IDotcCompatiblePriceFeed(asset.price.priceFeedAddress).decimals() returns (uint8 _decimals) {
+            decimals = _decimals;
+        } catch {
+            decimals = DECIMALS_BY_DEFAULT;
+        }
+    }
+
+    function _checkPriceStructure(Price calldata price, OfferPricingType offerPricingType) private pure {
+        if (
+            offerPricingType == OfferPricingType.FixedPricing &&
+            (price.max > 0 || price.min > 0 || price.percentage > 0)
+        ) {
+            revert PriceShouldNotBeSpecifiedFor(offerPricingType);
+        }
+
+        if (offerPricingType == OfferPricingType.DynamicPricing) {
+            if (price.max > 0 && price.min > 0) {
+                revert BothMinMaxCanNotBeSpecifiedFor(offerPricingType);
+            }
+
+            if (price.percentage > SCALING_FACTOR) {
+                revert IncorrectPercentage(price.percentage);
+            }
+        }
     }
 
     /**
@@ -276,37 +328,5 @@ library AssetHelper {
      */
     function _unstandardize(uint256 amount, uint8 decimals) private pure returns (uint256) {
         return amount.fullMulDiv(10 ** decimals, BPS);
-    }
-
-    function _findRate(Asset calldata asset, uint256 a, uint256 b) private view returns (uint256 rate) {
-        return a.fullMulDiv((10 ** asset.assetAddress.readDecimals()), b);
-    }
-
-    function _checkPriceFeedData(address priceFeedAddress) private view returns (int256 answer, uint8 decimals) {
-        try IDotcCompatiblePriceFeed(priceFeedAddress).latestRoundData() returns (
-            uint80,
-            int256 _answer,
-            uint256,
-            uint256,
-            uint80
-        ) {
-            answer = _answer;
-        } catch {
-            try IDotcCompatiblePriceFeed(priceFeedAddress).latestAnswer() returns (int256 _answer) {
-                answer = _answer;
-            } catch {
-                revert IncorrectPriceFeed(priceFeedAddress);
-            }
-        }
-
-        if (answer <= 0) {
-            revert IncorrectPriceFeed(priceFeedAddress);
-        }
-
-        try IDotcCompatiblePriceFeed(priceFeedAddress).decimals() returns (uint8 _decimals) {
-            decimals = _decimals;
-        } catch {
-            decimals = DECIMALS_BY_DEFAULT;
-        }
     }
 }

@@ -98,7 +98,7 @@ enum EscrowType {
 }
 
 struct Price {
-    uint256 unitPrice;
+    address priceFeedAddress;
     uint256 min;
     uint256 max;
     uint256 percentage;
@@ -118,9 +118,9 @@ struct Price {
 struct Asset {
     AssetType assetType;
     address assetAddress;
-    address assetPriceFeedAddress;
     uint256 amount;
     uint256 tokenId;
+    Price price;
 }
 
 /**
@@ -140,9 +140,9 @@ struct Asset {
 struct OfferStruct {
     TakingOfferType takingOfferType;
     OfferPricingType offerPricingType;
-    Price price;
     address[] specialAddresses;
     address[] authorizationAddresses;
+    uint256 unitPrice;
     uint256 expiryTimestamp;
     uint256 timelockPeriod;
     string terms;

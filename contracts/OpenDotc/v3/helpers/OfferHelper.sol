@@ -4,7 +4,7 @@ pragma solidity 0.8.25;
 import { FixedPointMathLib } from "../exports/ExternalExports.sol";
 import { AssetHelper } from "./AssetHelper.sol";
 import { IDotcCompatibleAuthorization } from "../interfaces/IDotcCompatibleAuthorization.sol";
-import { Price, Asset, AssetType, OfferStruct, DotcOffer, TakingOfferType, OfferPricingType, IncorrectPercentage } from "../structures/DotcStructuresV3.sol";
+import { Price, Asset, AssetType, OfferStruct, DotcOffer, TakingOfferType, OfferPricingType } from "../structures/DotcStructuresV3.sol";
 
 /// @notice Thrown when an action is attempted on an offer with an expired timestamp.
 /// @param timestamp The expired timestamp for the offer.
@@ -33,12 +33,6 @@ error IncorrectTimelockPeriodError(uint256 timelock);
 error OfferExpiredError(uint256 expiredTime);
 
 error TakingOfferTypeShouldBeSpecified();
-
-error DynamicPricingForERC20Only();
-
-error BothMinAndMaxCanNotBeSpecified(uint256 min, uint256 max);
-
-error MinOrMaxCanNotBeSpecifiedForFixedPricing(uint256 min, uint256 max);
 
 /**
  * @title TODO (as part of the "SwarmX.eth Protocol")
@@ -82,26 +76,13 @@ library OfferHelper {
                 withdrawalAmount = withdrawalAsset.standardize();
             }
 
-            offer.price = Price({
-                unitPrice: (withdrawalAmount * AssetHelper.BPS) / depositAmount,
-                max: 0,
-                min: 0,
-                percentage: 0
-            });
+            offer.unitPrice = withdrawalAmount.fullMulDiv(AssetHelper.BPS, depositAmount);
         } else {
-            if (depositAsset.assetType != AssetType.ERC20 || withdrawalAsset.assetType != AssetType.ERC20) {
-                revert DynamicPricingForERC20Only();
-            }
+            (uint256 depositToWithdrawalRate, uint256 price) = depositAsset.calculateRate(withdrawalAsset);
 
-            if (offer.price.percentage > AssetHelper.SCALING_FACTOR) {
-                revert IncorrectPercentage(offer.price.percentage);
-            }
+            dotcOffer.withdrawalAsset.amount = price;
 
-            (uint256 depositToWithdrawalRate, ) = depositAsset.calculateRate(withdrawalAsset);
-
-            dotcOffer.withdrawalAsset.amount = depositAsset.findWithdrawalAmount(depositToWithdrawalRate, offer.price);
-
-            offer.price.unitPrice = depositToWithdrawalRate;
+            offer.unitPrice = depositToWithdrawalRate;
         }
 
         dotcOffer.offer = offer;
@@ -145,17 +126,9 @@ library OfferHelper {
         ) {
             revert UnsupportedPartialOfferForNonERC20AssetsError();
         }
-
-        if ((offer.price.max > 0 && offer.price.min > 0) && offer.offerPricingType == OfferPricingType.DynamicPricing) {
-            revert BothMinAndMaxCanNotBeSpecified(offer.price.min, offer.price.max);
-        } else if (
-            offer.offerPricingType == OfferPricingType.FixedPricing && (offer.price.max > 0 || offer.price.min > 0)
-        ) {
-            revert MinOrMaxCanNotBeSpecifiedForFixedPricing(offer.price.min, offer.price.max);
-        }
     }
 
-    function checkOfferParams(OfferStruct calldata offer) external view returns (TakingOfferType) {
+    function checkOfferParams(OfferStruct calldata offer) external view {
         if (offer.expiryTimestamp <= block.timestamp) {
             revert OfferExpiredError(offer.expiryTimestamp);
         }
@@ -193,8 +166,6 @@ library OfferHelper {
                 revert NotAuthorizedAccountError(msg.sender);
             }
         }
-
-        return offer.takingOfferType;
     }
 
     function checkAddressesArrayForZeroAddresses(address[] calldata addressesArray) public pure {
