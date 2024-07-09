@@ -217,7 +217,7 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
     function takeOfferFixed(uint256 offerId, uint256 withdrawalAmountPaid, address affiliate) public {
         DotcOffer memory offer = allOffers[offerId];
         offer.checkDotcOfferParams();
-        offer.offer.checkOfferParams(withdrawalAmountPaid);
+        offer.offer.checkOfferParams();
 
         if (withdrawalAmountPaid == 0) {
             withdrawalAmountPaid = offer.withdrawalAsset.amount;
@@ -264,6 +264,7 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
     function takeOfferDynamic(uint256 offerId, uint256 withdrawalAmountPaid, address affiliate) public {
         DotcOffer memory offer = allOffers[offerId];
         offer.checkDotcOfferParams();
+        offer.offer.checkOfferParams();
 
         (uint256 depositToWithdrawalRate, ) = offer.depositAsset.calculateRate(offer.withdrawalAsset);
 
@@ -273,7 +274,6 @@ contract DotcV3 is ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
             withdrawalAmountPaid = withdrawalPrice;
         }
 
-        offer.offer.checkOfferParams(withdrawalAmountPaid);
         offer.withdrawalAsset.checkAssetOwner(msg.sender, withdrawalAmountPaid);
 
         uint256 partPercentage = AssetHelper.calculatePartPercentage(withdrawalAmountPaid, withdrawalPrice);

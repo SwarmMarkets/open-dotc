@@ -159,10 +159,7 @@ library OfferHelper {
         }
     }
 
-    function checkOfferParams(
-        OfferStruct calldata offer,
-        uint256 withdrawalAmountPaid
-    ) external view returns (TakingOfferType) {
+    function checkOfferParams(OfferStruct calldata offer) external view returns (TakingOfferType) {
         if (offer.expiryTimestamp <= block.timestamp) {
             revert OfferExpiredError(offer.expiryTimestamp);
         }
