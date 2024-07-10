@@ -47,7 +47,7 @@ const dotc_address = '0x51D628cD031DdC3305f730b3eb0765Ff12a26186';
 const escrow_address = '0xC618800af6d1b08771407Fb0d072E28f8D9E0700';
 
 async function main() {
-  const dotcManager: DotcManager = await ethers.getContractAt('DotcManager', dotcManager_address);
+  const dotcManager: DotcManager = await ethers.getContractAt('DotcManager', dotcManager_address) as DotcManager;
 
   await (await dotcManager.changeEscrowAddress(escrow_address)).wait(1);
   await (await dotcManager.changeDotcAddress(dotc_address)).wait(1);

@@ -24,7 +24,7 @@ async function main() {
 
   if (DEPLOY_DOTC) {
     if (dotcManager_address == undefined || dotcManager_address == '') {
-      throw Error('Dotc address not set');
+      throw Error('Dotc manager address not set');
     }
 
     const Dotc = await ethers.getContractFactory('Dotc');
@@ -36,6 +36,10 @@ async function main() {
   }
 
   if (DEPLOY_ESCROW) {
+    if (dotcManager_address == undefined || dotcManager_address == '') {
+      throw Error('Dotc manager address not set');
+    }
+
     const DotcEscrow = await ethers.getContractFactory('DotcEscrow');
     const dotcEscrow = (await upgrades.deployProxy(DotcEscrow, [dotcManager_address])) as DotcEscrow;
     await dotcEscrow.deployed();
