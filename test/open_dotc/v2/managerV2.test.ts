@@ -2,16 +2,16 @@ import { ethers, upgrades } from 'hardhat';
 import { BigNumber, ContractFactory, Signer } from 'ethers';
 import { expect } from 'chai';
 import {
-  DotcManagerV3,
+  DotcManagerV2,
 } from '../../../typechain';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 
-describe('DotcManagerV3', () => {
+describe('DotcManagerV2', () => {
   async function fixture() {
     const [deployer, acc1]: Signer[] = await ethers.getSigners();
 
-    const DotcManager: ContractFactory = await ethers.getContractFactory('DotcManagerV3');
-    const dotcManager = (await upgrades.deployProxy(DotcManager, [await deployer.getAddress()])) as DotcManagerV3;
+    const DotcManager: ContractFactory = await ethers.getContractFactory('DotcManagerV2');
+    const dotcManager = (await upgrades.deployProxy(DotcManager, [await deployer.getAddress()])) as DotcManagerV2;
     await dotcManager.deployed();
 
     return {

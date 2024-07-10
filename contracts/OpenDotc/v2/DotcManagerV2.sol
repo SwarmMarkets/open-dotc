@@ -4,10 +4,10 @@ pragma solidity 0.8.25;
 import { OwnableUpgradeable } from "./exports/ExternalExports.sol";
 
 import { AssetHelper } from "./helpers/AssetHelper.sol";
-import { DotcV3 } from "./DotcV3.sol";
-import { DotcEscrowV3 } from "./DotcEscrowV3.sol";
+import { DotcV2 } from "./DotcV2.sol";
+import { DotcEscrowV2 } from "./DotcEscrowV2.sol";
 
-import { OnlyDotc, ZeroAddressPassed, IncorrectPercentage } from "./structures/DotcStructuresV3.sol";
+import { OnlyDotc, ZeroAddressPassed, IncorrectPercentage } from "./structures/DotcStructuresV2.sol";
 
 /**
  * @title TODO (as part of the "SwarmX.eth Protocol")
@@ -27,19 +27,19 @@ import { OnlyDotc, ZeroAddressPassed, IncorrectPercentage } from "./structures/D
  * @dev TODO
  * @author Swarm
  */
-contract DotcManagerV3 is OwnableUpgradeable {
+contract DotcManagerV2 is OwnableUpgradeable {
     /**
      * @dev Emitted when the dotc address is changed.
      * @param by Address of the user who changed the dotc address.
      * @param dotc New dotc's address.
      */
-    event DotcAddressSet(address indexed by, DotcV3 dotc);
+    event DotcAddressSet(address indexed by, DotcV2 dotc);
     /**
      * @dev Emitted when the escrow address is changed.
      * @param by Address of the user who changed the escrow address.
      * @param escrow New escrow's address.
      */
-    event EscrowAddressSet(address indexed by, DotcEscrowV3 escrow);
+    event EscrowAddressSet(address indexed by, DotcEscrowV2 escrow);
 
     /**
      * @dev
@@ -57,9 +57,9 @@ contract DotcManagerV3 is OwnableUpgradeable {
     /**
      * @dev Address of the dotc contract.
      */
-    DotcV3 public dotc;
+    DotcV2 public dotc;
 
-    DotcEscrowV3 public escrow;
+    DotcEscrowV2 public escrow;
 
     // Fees
     address public feeReceiver;
@@ -102,7 +102,7 @@ contract DotcManagerV3 is OwnableUpgradeable {
      * @param _dotc The new dotc's address.
      * @dev Ensures that only the current owner can perform this operation.
      */
-    function changeDotc(DotcV3 _dotc) external onlyOwner {
+    function changeDotc(DotcV2 _dotc) external onlyOwner {
         if (address(_dotc) == address(0)) {
             revert ZeroAddressPassed();
         }
@@ -117,7 +117,7 @@ contract DotcManagerV3 is OwnableUpgradeable {
      * @param _escrow The new escrow's address.
      * @dev Ensures that only the current owner can perform this operation.
      */
-    function changeEscrow(DotcEscrowV3 _escrow) external onlyOwner {
+    function changeEscrow(DotcEscrowV2 _escrow) external onlyOwner {
         if (address(_escrow) == address(0)) {
             revert ZeroAddressPassed();
         }

@@ -2,7 +2,7 @@
 pragma solidity 0.8.25;
 
 import { FixedPointMathLib, MetadataReaderLib, IERC20, IERC721, IERC1155, IERC165 } from "../exports/ExternalExports.sol";
-import { Asset, AssetType, Price, OfferPricingType, IncorrectPercentage } from "../structures/DotcStructuresV3.sol";
+import { Asset, AssetType, Price, OfferPricingType, IncorrectPercentage } from "../structures/DotcStructuresV2.sol";
 import { IDotcCompatiblePriceFeed } from "../interfaces/IDotcCompatiblePriceFeed.sol";
 
 /// @notice Indicates an operation with zero amount which is not allowed

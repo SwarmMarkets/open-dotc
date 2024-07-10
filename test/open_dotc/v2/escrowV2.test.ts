@@ -2,38 +2,38 @@ import { ethers, upgrades } from 'hardhat';
 import { BigNumber, ContractFactory, Signer } from 'ethers';
 import { expect } from 'chai';
 import {
-  DotcEscrowV3 as DotcEscrow,
-  DotcManagerV3,
-  ERC20MockV3,
-  ERC721Mock,
-  ERC1155Mock,
+  DotcEscrowV2 as DotcEscrow,
+  DotcManagerV2,
+  ERC20MockV2,
+  ERC721MockV2,
+  ERC1155MockV2,
 } from '../../../typechain';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
-import { AssetStruct, EscrowType, PriceStruct } from '../../helpers/StructuresV3';
+import { AssetStruct, EscrowType, PriceStruct } from '../../helpers/StructuresV2';
 
-describe('OpenDotcEscrowV3', () => {
+describe('OpenDotcEscrowV2', () => {
   async function fixture() {
     const [deployer, otherAcc]: Signer[] = await ethers.getSigners();
 
-    const DotcManager: ContractFactory = await ethers.getContractFactory('DotcManagerV3');
-    const dotcManager = (await upgrades.deployProxy(DotcManager, [await deployer.getAddress()])) as DotcManagerV3;
+    const DotcManager: ContractFactory = await ethers.getContractFactory('DotcManagerV2');
+    const dotcManager = (await upgrades.deployProxy(DotcManager, [await deployer.getAddress()])) as DotcManagerV2;
     await dotcManager.deployed();
 
-    const DotcEscrow: ContractFactory = await ethers.getContractFactory('DotcEscrowV3');
+    const DotcEscrow: ContractFactory = await ethers.getContractFactory('DotcEscrowV2');
     const escrow = await upgrades.deployProxy(DotcEscrow, [dotcManager.address], { unsafeAllowLinkedLibraries: true }) as DotcEscrow;
     await escrow.deployed();
 
     // Deploy mock tokens
-    const ERC20: ContractFactory = await ethers.getContractFactory('ERC20MockV3');
-    const erc20 = await ERC20.deploy(18) as ERC20MockV3;
+    const ERC20: ContractFactory = await ethers.getContractFactory('ERC20MockV2');
+    const erc20 = await ERC20.deploy(18) as ERC20MockV2;
     await erc20.deployed();
 
-    const ERC721: ContractFactory = await ethers.getContractFactory('ERC721Mock');
-    const erc721 = await ERC721.deploy() as ERC721Mock;
+    const ERC721: ContractFactory = await ethers.getContractFactory('ERC721MockV2');
+    const erc721 = await ERC721.deploy() as ERC721MockV2;
     await erc721.deployed();
 
-    const ERC1155: ContractFactory = await ethers.getContractFactory('ERC1155Mock');
-    const erc1155 = await ERC1155.deploy() as ERC1155Mock;
+    const ERC1155: ContractFactory = await ethers.getContractFactory('ERC1155MockV2');
+    const erc1155 = await ERC1155.deploy() as ERC1155MockV2;
     await erc1155.deployed();
 
     await dotcManager.changeEscrow(escrow.address);

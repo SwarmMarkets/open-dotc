@@ -2,10 +2,10 @@
 pragma solidity 0.8.25;
 import { Initializable, Receiver, SafeTransferLib, IERC721, IERC1155 } from "./exports/ExternalExports.sol";
 
-import { DotcV3 } from "./DotcV3.sol";
-import { DotcManagerV3 } from "./DotcManagerV3.sol";
+import { DotcV2 } from "./DotcV2.sol";
+import { DotcManagerV2 } from "./DotcManagerV2.sol";
 
-import { Asset, AssetType, EscrowType, EscrowOffer, OnlyManager, OnlyDotc, ZeroAddressPassed } from "./structures/DotcStructuresV3.sol";
+import { Asset, AssetType, EscrowType, EscrowOffer, OnlyManager, OnlyDotc, ZeroAddressPassed } from "./structures/DotcStructuresV2.sol";
 
 /// @title Errors related to asset management in the Dotc Escrow contract
 /// @notice Provides error messages for various failure conditions related to asset handling
@@ -37,7 +37,7 @@ error FeesAmountEqZero();
  * @dev This contract handles the escrow of assets for DOTC trades, supporting ERC20, ERC721, and ERC1155 assets.
  * @author Swarm
  */
-contract DotcEscrowV3 is Initializable, Receiver {
+contract DotcEscrowV2 is Initializable, Receiver {
     ///@dev Used for Safe transfer tokens
     using SafeTransferLib for address;
 
@@ -73,12 +73,12 @@ contract DotcEscrowV3 is Initializable, Receiver {
     /**
      * @dev Address of the manager contract.
      */
-    DotcManagerV3 public manager;
+    DotcManagerV2 public manager;
 
     /**
      * @dev Address of the dotc contract.
      */
-    DotcV3 public dotc;
+    DotcV2 public dotc;
 
     /**
      * @dev Mapping from offer IDs to their corresponding deposited assets.
@@ -106,7 +106,7 @@ contract DotcEscrowV3 is Initializable, Receiver {
      * @dev Sets up the contract to handle ERC1155 and ERC721 tokens.
      * @param _manager The address of the manager contract.
      */
-    function initialize(DotcManagerV3 _manager) public initializer {
+    function initialize(DotcManagerV2 _manager) public initializer {
         manager = _manager;
     }
 
@@ -200,7 +200,7 @@ contract DotcEscrowV3 is Initializable, Receiver {
      * @param _dotc The new dotc's address.
      * @dev Ensures that only the current owner can perform this operation.
      */
-    function changeDotc(DotcV3 _dotc) external {
+    function changeDotc(DotcV2 _dotc) external {
         if (msg.sender != address(manager)) {
             revert OnlyManager();
         }

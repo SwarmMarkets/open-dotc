@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
-import { DotcOffer, ValidityType } from "../structures/DotcStructuresV3.sol";
+import { DotcOffer, ValidityType } from "../structures/DotcStructuresV2.sol";
 
 /// @notice Thrown when an offer encounters a validity-related issue.
 /// @param validityType The type of validity error encountered, represented as an enum of `ValidityType`.

@@ -5,7 +5,7 @@ import "@openzeppelin-v5/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin-v5/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin-v5/contracts/token/ERC1155/ERC1155.sol";
 
-contract ERC20MockV3 is ERC20 {
+contract ERC20MockV2 is ERC20 {
     uint8 private immutable _decimals;
     constructor(uint8 decimals_) ERC20("ERC20", "20") {
         _decimals = decimals_;
@@ -21,7 +21,7 @@ contract ERC20MockV3 is ERC20 {
     }
 }
 
-contract ERC721MockV3 is ERC721 {
+contract ERC721MockV2 is ERC721 {
     constructor() ERC721("ERC721", "721") {
         for (uint256 i = 0; i < 100; ) {
             _mint(msg.sender, i);
@@ -36,7 +36,7 @@ contract ERC721MockV3 is ERC721 {
     }
 }
 
-contract ERC1155MockV3 is ERC1155 {
+contract ERC1155MockV2 is ERC1155 {
     constructor() ERC1155("tbd") {
         for (uint256 i = 0; i < 100; ) {
             _mint(msg.sender, i, 1000, "");

@@ -6,10 +6,10 @@ import { Initializable, Receiver, SafeTransferLib, FixedPointMathLib, IERC721, I
 import { AssetHelper } from "./helpers/AssetHelper.sol";
 import { OfferHelper } from "./helpers/OfferHelper.sol";
 import { DotcOfferHelper } from "./helpers/DotcOfferHelper.sol";
-import { DotcEscrowV3 } from "./DotcEscrowV3.sol";
-import { DotcManagerV3 } from "./DotcManagerV3.sol";
+import { DotcEscrowV2 } from "./DotcEscrowV2.sol";
+import { DotcManagerV2 } from "./DotcManagerV2.sol";
 
-import { Asset, AssetType, OfferPricingType, TakingOfferType, ValidityType, OfferStruct, DotcOffer, OnlyManager } from "./structures/DotcStructuresV3.sol";
+import { Asset, AssetType, OfferPricingType, TakingOfferType, ValidityType, OfferStruct, DotcOffer, OnlyManager } from "./structures/DotcStructuresV2.sol";
 
 /// @title Errors related to the Dotc contract
 /// @notice Provides error messages for various failure conditions related to Offers and Assets handling
@@ -50,7 +50,7 @@ error OnlyDynamicPricing();
  * @dev It uses ERC1155 and ERC721 token standards for asset management and trade settlement.
  * @author Swarm
  */
-contract DotcV3 is Initializable, Receiver {
+contract DotcV2 is Initializable, Receiver {
     ///@dev Used for Safe transfer tokens
     using SafeTransferLib for address;
     using FixedPointMathLib for uint256;
@@ -140,11 +140,11 @@ contract DotcV3 is Initializable, Receiver {
     /**
      * @dev Address of the manager contract.
      */
-    DotcManagerV3 public manager;
+    DotcManagerV2 public manager;
     /**
      * @dev Address of the escrow contract.
      */
-    DotcEscrowV3 public escrow;
+    DotcEscrowV2 public escrow;
 
     /**
      * @notice Stores all the offers ever created.
@@ -172,7 +172,7 @@ contract DotcV3 is Initializable, Receiver {
      * @dev Sets up the reentrancy guard and ERC token holder functionalities.
      * @param _manager The address of the manager to be set for this contract.
      */
-    function initialize(DotcManagerV3 _manager) public initializer {
+    function initialize(DotcManagerV2 _manager) public initializer {
         manager = _manager;
     }
 
@@ -387,7 +387,7 @@ contract DotcV3 is Initializable, Receiver {
      * @param _escrow The new escrow's address.
      * @dev Ensures that only the current owner can perform this operation.
      */
-    function changeEscrow(DotcEscrowV3 _escrow) external {
+    function changeEscrow(DotcEscrowV2 _escrow) external {
         if (msg.sender != address(manager)) {
             revert OnlyManager();
         }
