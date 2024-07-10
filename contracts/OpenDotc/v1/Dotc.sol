@@ -1,13 +1,87 @@
 //SPDX-License-Identifier: GPL-3.0-only
-pragma solidity ^0.8.19;
+pragma solidity 0.8.25;
 
-import { ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20Upgradeable, IERC721Upgradeable, IERC1155Upgradeable, SafeERC20Upgradeable } from "./exports/Exports.sol";
+import { ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20, IERC721, IERC1155, SafeERC20 } from "./exports/Exports.sol";
 
 import { IDotcManager } from "./interfaces/IDotcManager.sol";
-import { Asset, DotcOffer, AssetType } from "./structures/DotcStructures.sol";
+import { Asset, AssetType, EscrowCallType, ValidityType, OfferStruct, DotcOffer, UnsupportedAssetType } from "./structures/DotcStructures.sol";
+
+/// @title Errors related to the Dotc contract
+/// @notice Provides error messages for various failure conditions related to Offers and Assets handling
+
+/// @notice Thrown when an asset type is not defined.
+error AssetTypeUndefinedError();
+
+/// @notice Thrown when the asset address is set to the zero address.
+error AssetAddressIsZeroError();
+
+/// @notice Thrown when the asset amount is set to zero, indicating no asset.
+error AssetAmountIsZeroError();
+
+/// @notice Thrown when the asset amount for an ERC721 asset exceeds one.
+/// ERC721 tokens should have an amount of exactly one.
+error ERC721AmountExceedsOneError();
+
+/// @notice Thrown when an offer encounters a validity-related issue.
+/// @param offerId The ID of the offer associated with the error.
+/// @param _type The type of validity error encountered, represented as an enum of `ValidityType`.
+error OfferValidityError(uint256 offerId, ValidityType _type);
+
+/// @notice Thrown when an action is attempted on an offer that has already expired.
+/// @param offerId The ID of the offer associated with the error.
+error OfferExpiredError(uint256 offerId);
+
+/// @notice Thrown when an action is attempted on an offer that is still within its timelock period.
+/// @param offerId The ID of the offer associated with the error.
+error OfferInTimelockError(uint256 offerId);
+
+/// @notice Thrown when an action is attempted on an offer with an expired timestamp.
+/// @param timestamp The expired timestamp for the offer.
+error OfferExpiredTimestampError(uint256 timestamp);
+
+/// @notice Thrown when the timelock period of an offer is set incorrectly.
+/// @param timelock The incorrect timelock period for the offer.
+error IncorrectTimelockPeriodError(uint256 timelock);
+
+/// @notice Thrown when a partial offer type is attempted with ERC721 or ERC1155 assets, which is unsupported.
+error UnsupportedPartialOfferForNonERC20AssetsError();
+
+/// @notice Thrown when the call to escrow fails.
+/// @param _type The type of escrow call that failed.
+error EscrowCallFailedError(EscrowCallType _type);
+
+/// @notice Thrown when the offer address is set to the zero address.
+/// @param arrayIndex The index in the array where the zero address was encountered.
+error OfferAddressIsZeroError(uint256 arrayIndex);
+
+/// @notice Thrown when a non-special address attempts to take a special offer.
+error NotSpecialAddressError();
+
+/// @notice Thrown when the calculated fee amount is zero or less.
+error FeeAmountIsZeroError();
+
+/// @notice Thrown when the amount to pay, excluding fees, is zero or less.
+error AmountWithoutFeesIsZeroError();
+
+/// @notice Thrown when the amount to send does not match the required amount for a full offer.
+/// @param providedAmount The incorrect amount provided for the full offer.
+error IncorrectFullOfferAmountError(uint256 providedAmount);
+
+/// @notice Thrown when withdrawal of deposit assets from the escrow fails.
+error EscrowDepositWithdrawalFailedError();
+
+/// @notice Thrown when a non-maker tries to perform an action on their own offer.
+/// @param maker The address of the offer's maker.
+error OnlyMakerAllowedError(address maker);
+
+/// @notice Thrown when there's an attempt to change the amount of an ERC721 offer.
+error ERC721OfferAmountChangeError();
+
+/// @notice Thrown when a non-manager tries to call a manager-only function.
+error ManagerOnlyFunctionError();
 
 /**
- * @title Open DOTCManager smart contract (as part of the "SwarmX.eth Protocol")
+ * @title Open Dotc smart contract (as part of the "SwarmX.eth Protocol")
  * @notice This contract handles decentralized over-the-counter trading.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
  * Please read the Disclaimer featured on the SwarmX.eth website ("Terms") carefully before accessing,
@@ -26,7 +100,7 @@ import { Asset, DotcOffer, AssetType } from "./structures/DotcStructures.sol";
  */
 contract Dotc is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721HolderUpgradeable {
     ///@dev Used for Safe transfer tokens
-    using SafeERC20Upgradeable for IERC20Upgradeable;
+    using SafeERC20 for IERC20;
 
     /**
      * @notice Emitted when a new trading offer is created.
@@ -35,8 +109,8 @@ contract Dotc is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721Hol
      * @param isFullType Indicates if the offer is of a full type.
      * @param depositAsset Asset to be deposited by the maker.
      * @param withdrawalAsset Asset to be withdrawn by the maker.
-     * @param specialAddress Special address involved in the trade, if any.
-     * @param expiryTime Expiry time of the offer.
+     * @param specialAddresses Special addresses involved in the trade, if any.
+     * @param expiryTimestamp Expiry time of the offer.
      * @param timelockPeriod Timelock period for the offer.
      */
     event CreatedOffer(
@@ -45,8 +119,8 @@ contract Dotc is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721Hol
         bool isFullType,
         Asset depositAsset,
         Asset withdrawalAsset,
-        address specialAddress,
-        uint256 expiryTime,
+        address[] specialAddresses,
+        uint256 expiryTimestamp,
         uint256 timelockPeriod
     );
     /**
@@ -76,7 +150,7 @@ contract Dotc is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721Hol
      * @param offerId Unique identifier of the updated offer.
      * @param newOffer Details of the new offer.
      */
-    event OfferUpdated(uint256 indexed offerId, uint256 newOffer);
+    event OfferAmountUpdated(uint256 indexed offerId, uint256 newOffer);
     /**
      * @notice Emitted when the expiry time of an offer is updated.
      * @param offerId Unique identifier of the offer with updated expiry.
@@ -89,6 +163,19 @@ contract Dotc is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721Hol
      * @param newTimelockPeriod The new timelock period of the offer.
      */
     event UpdatedTimeLockPeriod(uint256 indexed offerId, uint256 newTimelockPeriod);
+    /**
+     * @notice Emitted when the Term and Comms links for an offer is updated.
+     * @param offerId Unique identifier of the offer with updated links.
+     * @param newTerms The new terms for the offer.
+     * @param newCommsLink The new comms link for the offer.
+     */
+    event OfferLinksUpdated(uint256 indexed offerId, string newTerms, string newCommsLink);
+    /**
+     * @notice Emitted when the array of special addresses of an offer is udpated.
+     * @param offerId Unique identifier of the offer with updated links.
+     * @param specialAddresses The new special addresses of the offer.
+     */
+    event OfferSpecialAddressesUpdated(uint256 indexed offerId, address[] specialAddresses);
     /**
      * @notice Emitted when the manager address is changed.
      * @param by Address of the user who changed the manager address.
@@ -123,17 +210,65 @@ contract Dotc is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721Hol
     uint256 public currentOfferId;
 
     /**
+     * @notice Ensures that the caller to the offer is maker of this offer.
+     * @dev Checks if the offer exists and has not been fully taken.
+     * @param offerId The ID of the offer to be checked.
+     */
+    modifier onlyMaker(uint256 offerId) {
+        DotcOffer memory offer = allOffers[offerId];
+
+        if (offer.maker != msg.sender) {
+            revert OnlyMakerAllowedError(offer.maker);
+        }
+
+        _;
+    }
+
+    /**
      * @notice Ensures that the asset structure is valid.
      * @dev Checks for asset type, asset address, and amount validity.
      * @param asset The asset to be checked.
      */
-    modifier checkAssetStructure(Asset memory asset) {
-        require(asset.assetType != AssetType.NoType, "Dotc: Asset type should be defined");
-        require(asset.assetAddress != address(0), "Dotc: Asset address should not be address zero");
-        require(asset.amount > 0, "Dotc: Asset amount should be > 0");
+    modifier checkAssetStructure(Asset calldata asset) {
+        if (asset.assetType == AssetType.NoType) {
+            revert AssetTypeUndefinedError();
+        }
+        if (asset.assetAddress == address(0)) {
+            revert AssetAddressIsZeroError();
+        }
+        if (asset.amount == 0) {
+            revert AssetAmountIsZeroError();
+        }
+        if (asset.assetType == AssetType.ERC721 && asset.amount > 1) {
+            revert ERC721AmountExceedsOneError();
+        }
 
-        if (asset.assetType == AssetType.ERC721) {
-            require(asset.amount == 1, "Dotc: ERC721 amount can not be > 0");
+        _;
+    }
+
+    /**
+     * @notice Ensures that the offer structure is valid.
+     * @dev Checks for asset type, asset address, and amount validity.
+     * @param offer The offer to be checked.
+     */
+    modifier checkOfferStructure(OfferStruct calldata offer) {
+        if (offer.expiryTimestamp <= block.timestamp) {
+            revert OfferExpiredTimestampError(offer.expiryTimestamp);
+        }
+        if (
+            offer.timelockPeriod > 0 &&
+            (offer.timelockPeriod <= block.timestamp || offer.timelockPeriod >= offer.expiryTimestamp)
+        ) {
+            revert IncorrectTimelockPeriodError(offer.timelockPeriod);
+        }
+
+        for (uint256 i = 0; i < offer.specialAddresses.length; ) {
+            if (offer.specialAddresses[i] == address(0)) {
+                revert OfferAddressIsZeroError(i);
+            }
+            unchecked {
+                ++i;
+            }
         }
 
         _;
@@ -147,8 +282,12 @@ contract Dotc is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721Hol
     modifier checkOffer(uint256 offerId) {
         DotcOffer memory offer = allOffers[offerId];
 
-        require(offer.maker != address(0), "Dotc: Offer does not exist");
-        require(!offer.isFullyTaken, "Dotc: Offer is already fully taken");
+        if (offer.maker == address(0)) {
+            revert OfferValidityError(offerId, ValidityType.NotExist);
+        }
+        if (offer.isFullyTaken) {
+            revert OfferValidityError(offerId, ValidityType.FullyTaken);
+        }
 
         _;
     }
@@ -159,7 +298,9 @@ contract Dotc is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721Hol
      * @param offerId The ID of the offer to check for expiry.
      */
     modifier notExpired(uint256 offerId) {
-        require(allOffers[offerId].expiryTime > block.timestamp, "Dotc: This offer is already expired");
+        if (allOffers[offerId].offer.expiryTimestamp <= block.timestamp) {
+            revert OfferExpiredError(offerId);
+        }
         _;
     }
 
@@ -169,7 +310,9 @@ contract Dotc is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721Hol
      * @param offerId The ID of the offer to check for timelock expiry.
      */
     modifier timelockPassed(uint256 offerId) {
-        require(allOffers[offerId].timelockPeriod < block.timestamp, "Dotc: This offer is in timelock");
+        if (allOffers[offerId].offer.timelockPeriod >= block.timestamp) {
+            revert OfferInTimelockError(offerId);
+        }
         _;
     }
 
@@ -195,41 +338,30 @@ contract Dotc is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721Hol
      * @notice Creates a new trading offer with specified assets and conditions.
      * @param depositAsset The asset to be deposited by the maker.
      * @param withdrawalAsset The asset desired by the maker in exchange.
-     * @param isFullType Boolean indicating if the offer is for the full amount.
-     * @param specialAddress An optional specific address allowed to take the offer.
-     * @param expiryTimestamp Timestamp when the offer expires.
-     * @param timelockPeriod Period before which the offer cannot be taken.
+     * @param offer Offer Struct.
      * @dev Validates asset structure and initializes a new offer.
      */
     function makeOffer(
         Asset calldata depositAsset,
         Asset calldata withdrawalAsset,
-        bool isFullType,
-        address specialAddress,
-        uint256 expiryTimestamp,
-        uint256 timelockPeriod
-    ) external checkAssetStructure(depositAsset) checkAssetStructure(withdrawalAsset) nonReentrant {
-        require(expiryTimestamp > timelockPeriod, "Dotc: Timelock must be less than expiration time");
-        require(expiryTimestamp > block.timestamp, "Dotc: Expiration timestamp has already expired");
-        require(timelockPeriod == 0 || timelockPeriod > block.timestamp, "Dotc: Timelock period has already expired");
-
-        if (!isFullType) {
-            require(
-                depositAsset.assetType == withdrawalAsset.assetType && depositAsset.assetType == AssetType.ERC20,
-                "Dotc: ERC721/ERC1155 assets don't support partial offers"
-            );
+        OfferStruct calldata offer
+    )
+        external
+        checkAssetStructure(depositAsset)
+        checkAssetStructure(withdrawalAsset)
+        checkOfferStructure(offer)
+        nonReentrant
+    {
+        if (
+            !offer.isFullType &&
+            (depositAsset.assetType != AssetType.ERC20 || withdrawalAsset.assetType != AssetType.ERC20)
+        ) {
+            revert UnsupportedPartialOfferForNonERC20AssetsError();
         }
 
         uint256 _currentOfferId = currentOfferId;
 
-        DotcOffer memory _offer = _createOffer(
-            depositAsset,
-            withdrawalAsset,
-            isFullType,
-            specialAddress,
-            expiryTimestamp,
-            timelockPeriod
-        );
+        DotcOffer memory _offer = _createOffer(depositAsset, withdrawalAsset, offer);
 
         currentOfferId++;
         offersFromAddress[msg.sender].push(_currentOfferId);
@@ -238,20 +370,19 @@ contract Dotc is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721Hol
         // Sending DepositAsset from Maker to Escrow
         assetTransfer(depositAsset, msg.sender, address(manager.escrow()), depositAsset.amount);
 
-        require(
-            manager.escrow().setDeposit(_currentOfferId, msg.sender, depositAsset),
-            "Dotc: Escrow can't set new deposit"
-        );
+        if (!manager.escrow().setDeposit(_currentOfferId, msg.sender, depositAsset)) {
+            revert EscrowCallFailedError(EscrowCallType.Deposit);
+        }
 
         emit CreatedOffer(
             msg.sender,
             _currentOfferId,
-            isFullType,
+            offer.isFullType,
             depositAsset,
             withdrawalAsset,
-            specialAddress,
-            expiryTimestamp,
-            timelockPeriod
+            offer.specialAddresses,
+            offer.expiryTimestamp,
+            offer.timelockPeriod
         );
     }
 
@@ -267,8 +398,21 @@ contract Dotc is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721Hol
     ) public checkOffer(offerId) notExpired(offerId) nonReentrant {
         DotcOffer memory offer = allOffers[offerId];
 
-        if (offer.specialAddress != address(0))
-            require(offer.specialAddress == msg.sender, "Dotc: You are not a designated buyer");
+        if (offer.offer.specialAddresses.length > 0) {
+            bool isSpecialTaker = false;
+            for (uint256 i = 0; i < offer.offer.specialAddresses.length; ) {
+                if (offer.offer.specialAddresses[i] == msg.sender) {
+                    isSpecialTaker = true;
+                    break;
+                }
+                unchecked {
+                    ++i;
+                }
+            }
+            if (!isSpecialTaker) {
+                revert NotSpecialAddressError();
+            }
+        }
 
         uint256 amountToWithdraw = offer.depositAsset.amount;
         uint256 realAmount = amountToWithdraw;
@@ -282,14 +426,17 @@ contract Dotc is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721Hol
             feesAmount = (amountToSend * manager.feeAmount()) / manager.BPS();
             uint256 amountToPay = amountToSend - feesAmount;
 
-            require(feesAmount > 0, "Dotc: Fees amount must be > 0");
-            require(amountToPay > 0, "Dotc: Amount without fees must be > 0!");
+            if (feesAmount == 0) {
+                revert FeeAmountIsZeroError();
+            }
+            if (amountToPay == 0) {
+                revert AmountWithoutFeesIsZeroError();
+            }
 
-            if (offer.isFullType) {
-                require(
-                    standardizedAmount == offer.withdrawalAsset.amount,
-                    "Dotc: Amount to send is not passed for Full request"
-                );
+            if (offer.offer.isFullType) {
+                if (standardizedAmount != offer.withdrawalAsset.amount) {
+                    revert IncorrectFullOfferAmountError(standardizedAmount);
+                }
 
                 isFullyTaken = _fullyTakeOffer(allOffers[offerId]);
             } else {
@@ -313,7 +460,9 @@ contract Dotc is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721Hol
 
                 amountToWithdraw -= feesAmount;
 
-                manager.escrow().withdrawFees(offerId, feesAmount);
+                if (!manager.escrow().withdrawFees(offerId, feesAmount)) {
+                    revert EscrowCallFailedError(EscrowCallType.WithdrawFees);
+                }
             }
 
             // Sending Withdrawal Asset from Taker to Maker
@@ -321,10 +470,9 @@ contract Dotc is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721Hol
         }
 
         // Sending Deposit Asset from Escrow to Taker
-        require(
-            manager.escrow().withdrawDeposit(offerId, amountToWithdraw, msg.sender),
-            "Dotc: Escrow Deposit asset withdrawal failed"
-        );
+        if (!manager.escrow().withdrawDeposit(offerId, amountToWithdraw, msg.sender)) {
+            revert EscrowCallFailedError(EscrowCallType.Withdraw);
+        }
 
         emit TakenOffer(offerId, msg.sender, isFullyTaken, realAmount, amountToSend);
     }
@@ -334,15 +482,16 @@ contract Dotc is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721Hol
      * @param offerId The ID of the offer to cancel.
      * @dev Can only be called by the offer's maker and when the timelock has passed.
      */
-    function cancelOffer(uint256 offerId) external checkOffer(offerId) timelockPassed(offerId) nonReentrant {
-        DotcOffer memory offer = allOffers[offerId];
-        require(offer.maker == msg.sender, "Dotc: Only maker of this offer");
-
+    function cancelOffer(
+        uint256 offerId
+    ) external onlyMaker(offerId) checkOffer(offerId) timelockPassed(offerId) nonReentrant {
         delete allOffers[offerId];
 
         (bool success, uint256 amountToWithdraw) = manager.escrow().cancelDeposit(offerId, msg.sender);
 
-        require(success, "Dotc: Escrow can not cancel deposit");
+        if (!success) {
+            revert EscrowCallFailedError(EscrowCallType.Cancel);
+        }
 
         emit CanceledOffer(offerId, msg.sender, amountToWithdraw);
     }
@@ -351,26 +500,21 @@ contract Dotc is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721Hol
      * @notice Updates an existing offer's details.
      * @param offerId The ID of the offer to update.
      * @param newAmount New amount for the withdrawal asset.
-     * @param expiryTimestamp New expiry timestamp for the offer.
-     * @param timelockPeriod New timelock period for the offer.
+     * @param updatedOffer A structure for the update the offer.
      * @return status Boolean indicating the success of the operation.
      * @dev Only the maker of the offer can update it.
      */
     function updateOffer(
         uint256 offerId,
         uint256 newAmount,
-        uint256 expiryTimestamp,
-        uint256 timelockPeriod
-    ) external checkOffer(offerId) timelockPassed(offerId) returns (bool status) {
+        OfferStruct calldata updatedOffer
+    ) external onlyMaker(offerId) checkOffer(offerId) timelockPassed(offerId) returns (bool status) {
         DotcOffer memory offer = allOffers[offerId];
 
-        require(offer.maker == msg.sender, "Dotc: You are not the owner of this offer");
-
-        if (newAmount != 0 && newAmount != manager.unstandardizeAsset(offer.withdrawalAsset)) {
-            require(
-                offer.withdrawalAsset.assetType != AssetType.ERC721,
-                "Dotc: ERC721 offer amount can not be changed"
-            );
+        if (newAmount > 0) {
+            if (offer.withdrawalAsset.assetType == AssetType.ERC721) {
+                revert ERC721OfferAmountChangeError();
+            }
             uint256 standardizedNewAmount = offer.withdrawalAsset.assetType == AssetType.ERC20
                 ? manager.standardizeNumber(newAmount, offer.withdrawalAsset.assetAddress)
                 : newAmount;
@@ -378,21 +522,44 @@ contract Dotc is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721Hol
             allOffers[offerId].withdrawalAsset.amount = standardizedNewAmount;
             allOffers[offerId].unitPrice = (standardizedNewAmount * 10 ** manager.DECIMALS()) / offer.availableAmount;
 
-            emit OfferUpdated(offerId, newAmount);
+            emit OfferAmountUpdated(offerId, newAmount);
         }
 
-        if (expiryTimestamp > block.timestamp && expiryTimestamp != offer.expiryTime && expiryTimestamp != 0) {
-            allOffers[offerId].expiryTime = expiryTimestamp;
-            emit UpdatedOfferExpiry(offerId, expiryTimestamp);
+        if (updatedOffer.specialAddresses.length > 0) {
+            for (uint256 i = 0; i < updatedOffer.specialAddresses.length; ) {
+                if (updatedOffer.specialAddresses[i] == address(0)) {
+                    revert OfferAddressIsZeroError(i);
+                }
+                unchecked {
+                    ++i;
+                }
+            }
+
+            allOffers[offerId].offer.specialAddresses = updatedOffer.specialAddresses;
+            emit OfferSpecialAddressesUpdated(offerId, updatedOffer.specialAddresses);
         }
 
-        if (timelockPeriod > block.timestamp && timelockPeriod != offer.timelockPeriod && timelockPeriod != 0) {
-            if (expiryTimestamp == 0)
-                require(offer.expiryTime > timelockPeriod, "Dotc: Timelock must be less than expiration time");
-            else require(expiryTimestamp > timelockPeriod, "Dotc: Timelock must be less than expiration time");
+        if (
+            keccak256(abi.encodePacked(updatedOffer.terms)) != keccak256("") &&
+            keccak256(abi.encodePacked(updatedOffer.commsLink)) != keccak256("")
+        ) {
+            allOffers[offerId].offer.terms = updatedOffer.terms;
+            allOffers[offerId].offer.commsLink = updatedOffer.commsLink;
+            emit OfferLinksUpdated(offerId, updatedOffer.terms, updatedOffer.commsLink);
+        }
 
-            allOffers[offerId].timelockPeriod = timelockPeriod;
-            emit UpdatedTimeLockPeriod(offerId, timelockPeriod);
+        if (updatedOffer.expiryTimestamp > offer.offer.expiryTimestamp) {
+            allOffers[offerId].offer.expiryTimestamp = updatedOffer.expiryTimestamp;
+            emit UpdatedOfferExpiry(offerId, updatedOffer.expiryTimestamp);
+        }
+
+        if (updatedOffer.timelockPeriod > offer.offer.timelockPeriod) {
+            if (allOffers[offerId].offer.expiryTimestamp <= updatedOffer.timelockPeriod) {
+                revert IncorrectTimelockPeriodError(updatedOffer.timelockPeriod);
+            }
+
+            allOffers[offerId].offer.timelockPeriod = updatedOffer.timelockPeriod;
+            emit UpdatedTimeLockPeriod(offerId, updatedOffer.timelockPeriod);
         }
 
         return true;
@@ -405,7 +572,9 @@ contract Dotc is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721Hol
      * @dev Can only be called by the current manager.
      */
     function changeManager(IDotcManager _manager) external returns (bool status) {
-        require(msg.sender == address(manager), "Dotc: Manager calls only");
+        if (msg.sender != address(manager)) {
+            revert ManagerOnlyFunctionError();
+        }
 
         manager = _manager;
 
@@ -455,21 +624,17 @@ contract Dotc is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721Hol
     function _createOffer(
         Asset calldata depositAsset,
         Asset calldata withdrawalAsset,
-        bool isFullType,
-        address specialAddress,
-        uint256 expiryTimestamp,
-        uint256 timelockPeriod
+        OfferStruct calldata offer
     ) private view returns (DotcOffer memory _offer) {
         uint256 standardizedDepositAmount = manager.standardizeAsset(depositAsset, msg.sender);
         uint256 standardizedWithdrawalAmount = manager.standardizeAsset(withdrawalAsset);
 
         _offer.maker = msg.sender;
-        _offer.isFullType = isFullType;
+
         _offer.depositAsset = depositAsset;
         _offer.withdrawalAsset = withdrawalAsset;
-        _offer.specialAddress = specialAddress;
-        _offer.expiryTime = expiryTimestamp;
-        _offer.timelockPeriod = timelockPeriod;
+
+        _offer.offer = offer;
 
         if (_offer.depositAsset.assetType == AssetType.ERC20) _offer.depositAsset.amount = standardizedDepositAmount;
         if (_offer.withdrawalAsset.assetType == AssetType.ERC20)
@@ -525,11 +690,13 @@ contract Dotc is ReentrancyGuardUpgradeable, ERC1155HolderUpgradeable, ERC721Hol
      */
     function assetTransfer(Asset memory asset, address from, address to, uint256 amount) private {
         if (asset.assetType == AssetType.ERC20) {
-            IERC20Upgradeable(asset.assetAddress).safeTransferFrom(from, to, amount);
+            IERC20(asset.assetAddress).safeTransferFrom(from, to, amount);
         } else if (asset.assetType == AssetType.ERC721) {
-            IERC721Upgradeable(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId);
+            IERC721(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId);
         } else if (asset.assetType == AssetType.ERC1155) {
-            IERC1155Upgradeable(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId, asset.amount, "");
+            IERC1155(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId, asset.amount, "");
+        } else {
+            revert UnsupportedAssetType(asset.assetType);
         }
     }
 }

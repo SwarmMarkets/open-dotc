@@ -1,11 +1,32 @@
 //SPDX-License-Identifier: GPL-3.0-only
-pragma solidity ^0.8.19;
+pragma solidity 0.8.25;
 
-import { ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20Upgradeable, IERC721Upgradeable, IERC1155Upgradeable, SafeERC20Upgradeable } from "./exports/Exports.sol";
+import { ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IERC20, IERC721, IERC1155, SafeERC20 } from "./exports/Exports.sol";
 
-import { Asset, AssetType } from "./structures/DotcStructures.sol";
+import { Asset, AssetType, UnsupportedAssetType } from "./structures/DotcStructures.sol";
 import { IDotcManager } from "./interfaces/IDotcManager.sol";
 import { IDotcEscrow } from "./interfaces/IDotcEscrow.sol";
+
+/// @title Errors related to asset management in the Dotc Escrow contract
+/// @notice Provides error messages for various failure conditions related to asset handling
+
+/// @notice Indicates no asset amount was specified where a non-zero value is required
+error AssetAmountEqZero();
+
+/// @notice Indicates no amount was specified for withdrawal where a non-zero value is required
+error AmountToWithdrawEqZero();
+
+/// @notice Indicates no amount was specified for cancelling where a non-zero value is required
+error AmountToCancelEqZero();
+
+/// @notice Indicates no fee amount was specified where a non-zero value is required
+error FeesAmountEqZero();
+
+/// @notice Indicates that the operation was attempted by an unauthorized entity, not the manager
+error OnlyManager();
+
+/// @notice Indicates that the operation was attempted by an unauthorized entity, not the Dotc contract
+error OnlyDotc();
 
 /**
  * @title Escrow Contract for Dotc (Decentralized Over-The-Counter) Trading (as part of the "SwarmX.eth Protocol")
@@ -27,7 +48,7 @@ import { IDotcEscrow } from "./interfaces/IDotcEscrow.sol";
  */
 contract DotcEscrow is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDotcEscrow {
     ///@dev Used for Safe transfer tokens
-    using SafeERC20Upgradeable for IERC20Upgradeable;
+    using SafeERC20 for IERC20;
 
     /**
      * @dev Emitted when an offer's assets are deposited into escrow.
@@ -83,7 +104,9 @@ contract DotcEscrow is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDotcE
      * @dev Modifier that restricts function access to the address of the DOTC contract set in the manager.
      */
     modifier onlyDotc() {
-        require(msg.sender == address(manager.dotc()), "Escrow: Dotc calls only");
+        if (msg.sender != address(manager.dotc())) {
+            revert OnlyDotc();
+        }
         _;
     }
 
@@ -134,12 +157,16 @@ contract DotcEscrow is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDotcE
         address taker
     ) external onlyDotc returns (bool) {
         Asset memory asset = assetDeposits[offerId];
-        require(asset.amount > 0, "Escrow: assets amount = 0");
+        if (asset.amount <= 0) {
+            revert AssetAmountEqZero();
+        }
 
         if (asset.assetType == AssetType.ERC20)
             amountToWithdraw = manager.unstandardizeNumber(amountToWithdraw, asset.assetAddress);
 
-        require(amountToWithdraw > 0, "Escrow: amount to withdraw = 0");
+        if (amountToWithdraw <= 0) {
+            revert AmountToWithdrawEqZero();
+        }
 
         assetDeposits[offerId].amount -= amountToWithdraw;
 
@@ -166,7 +193,9 @@ contract DotcEscrow is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDotcE
 
         amountToCancel = asset.amount;
 
-        require(amountToCancel > 0, "Escrow: amount to cancel = 0");
+        if (amountToCancel <= 0) {
+            revert AmountToCancelEqZero();
+        }
 
         delete assetDeposits[offerId];
 
@@ -189,7 +218,9 @@ contract DotcEscrow is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDotcE
 
         uint256 amount = manager.unstandardizeNumber(amountToWithdraw, asset.assetAddress);
 
-        require(amount > 0, "Escrow: fees amount = 0");
+        if (amount <= 0) {
+            revert FeesAmountEqZero();
+        }
 
         address to = manager.feeReceiver();
 
@@ -210,7 +241,9 @@ contract DotcEscrow is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDotcE
      */
 
     function changeManager(IDotcManager _manager) external returns (bool status) {
-        require(msg.sender == address(manager), "Escrow: Manager calls only");
+        if (msg.sender != address(manager)) {
+            revert OnlyManager();
+        }
 
         manager = _manager;
 
@@ -239,11 +272,13 @@ contract DotcEscrow is ERC1155HolderUpgradeable, ERC721HolderUpgradeable, IDotcE
      */
     function _assetTransfer(Asset memory asset, address from, address to, uint256 amount) private {
         if (asset.assetType == AssetType.ERC20) {
-            IERC20Upgradeable(asset.assetAddress).safeTransfer(to, amount);
+            IERC20(asset.assetAddress).safeTransfer(to, amount);
         } else if (asset.assetType == AssetType.ERC721) {
-            IERC721Upgradeable(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId);
+            IERC721(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId);
         } else if (asset.assetType == AssetType.ERC1155) {
-            IERC1155Upgradeable(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId, asset.amount, "");
+            IERC1155(asset.assetAddress).safeTransferFrom(from, to, asset.tokenId, asset.amount, "");
+        } else {
+            revert UnsupportedAssetType(asset.assetType);
         }
     }
 }
