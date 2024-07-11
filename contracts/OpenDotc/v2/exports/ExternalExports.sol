@@ -2,7 +2,10 @@
 pragma solidity 0.8.25;
 
 // Solady
-import { Receiver, SafeTransferLib, FixedPointMathLib, MetadataReaderLib } from "solady/src/Milady.sol";
+import { MetadataReaderLib } from "solady/src/utils/MetadataReaderLib.sol";
+import { FixedPointMathLib } from "solady/src/utils/FixedPointMathLib.sol";
+import { Receiver } from "solady/src/accounts/Receiver.sol";
+import { SafeTransferLib } from "solady/src/utils/SafeTransferLib.sol";
 
 // OZ:
 
