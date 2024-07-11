@@ -2,7 +2,7 @@
 pragma solidity 0.8.25;
 
 /**
- * @title Interface for DOTC Authorizations cotracts (as part of the "SwarmX.eth Protocol")
+ * @title Interface for DOTC Authorizations Contracts (as part of the "SwarmX.eth Protocol")
  * @notice This interface is implemented by the Dotc contract to interact with the DotcManager.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
  * Please read the Disclaimer featured on the SwarmX.eth website ("Terms") carefully before accessing,
@@ -16,12 +16,14 @@ pragma solidity 0.8.25;
  * European Union, Switzerland, the United Nations, as well as the USA). If you do not meet these
  * requirements, please refrain from using the SwarmX.eth Protocol.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
- * @dev Defines the interface for the Dotc's Authoziations contracts.
+ * @dev Defines the interface for the Dotc's Authorization contracts.
  * @author Swarm
  */
 interface IDotcCompatibleAuthorization {
-    /// @notice Returns true if `account` is authorized in Swarm Ecosystem
-    /// @param _account the address to be checked
-    /// @return bool true if `account` is authorized
+    /**
+     * @notice Returns true if the provided `account` is authorized in the Swarm Ecosystem.
+     * @param _account The address to be checked for authorization.
+     * @return bool True if the `account` is authorized, false otherwise.
+     */
     function isAccountAuthorized(address _account) external view returns (bool);
 }

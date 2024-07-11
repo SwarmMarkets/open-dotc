@@ -1,10 +1,16 @@
-//SPDX-License-Identifier: GPL-3.0-only
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
 import { FixedPointMathLib } from "../exports/ExternalExports.sol";
+
 import { AssetHelper } from "./AssetHelper.sol";
+
 import { IDotcCompatibleAuthorization } from "../interfaces/IDotcCompatibleAuthorization.sol";
+
 import { Price, Asset, AssetType, OfferStruct, DotcOffer, TakingOfferType, OfferPricingType } from "../structures/DotcStructuresV2.sol";
+
+/// @title Errors related to offer management in the Offer Helper library.
+/// @notice Provides error messages for various failure conditions related to offer handling.
 
 /// @notice Thrown when an action is attempted on an offer with an expired timestamp.
 /// @param timestamp The expired timestamp for the offer.
@@ -18,7 +24,7 @@ error NotSpecialAddressError(address sender);
 /// @param sender The address that attempts to take a special offer.
 error NotAuthorizedAccountError(address sender);
 
-/// @notice Thrown when the authoriaztion address is set to the zero address.
+/// @notice Thrown when the authorization address is set to the zero address.
 /// @param arrayIndex The index in the array where the zero address was encountered.
 error AddressIsZeroError(uint256 arrayIndex);
 
@@ -32,11 +38,12 @@ error IncorrectTimelockPeriodError(uint256 timelock);
 /// @notice Thrown when an action is attempted on an offer that has already expired.
 error OfferExpiredError(uint256 expiredTime);
 
+/// @notice Thrown when the taking offer type is not specified.
 error TakingOfferTypeShouldBeSpecified();
 
 /**
- * @title TODO (as part of the "SwarmX.eth Protocol")
- * @notice It allows for depositing, withdrawing, and managing of assets in the course of trading.
+ * @title OfferHelper Library (as part of the "SwarmX.eth Protocol")
+ * @notice This library provides functions to handle and validate offer operations within the SwarmX.eth Protocol.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
  * Please read the Disclaimer featured on the SwarmX.eth website ("Terms") carefully before accessing,
  * interacting with, or using the SwarmX.eth Protocol software, consisting of the SwarmX.eth Protocol
@@ -49,14 +56,22 @@ error TakingOfferTypeShouldBeSpecified();
  * European Union, Switzerland, the United Nations, as well as the USA). If you do not meet these
  * requirements, please refrain from using the SwarmX.eth Protocol.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
- * @dev TODO
+ * @dev The library contains functions to ensure proper handling and validity of offers.
  * @author Swarm
  */
 library OfferHelper {
+    /// @dev Used for precise calculations.
     using FixedPointMathLib for uint256;
-    ///@dev Used for Asset interaction
+    /// @dev Used for Asset interaction.
     using AssetHelper for Asset;
 
+    /**
+     * @notice Builds a DOTC offer based on the provided parameters.
+     * @param offer The structure containing offer details.
+     * @param depositAsset The asset being deposited.
+     * @param withdrawalAsset The asset being withdrawn.
+     * @return dotcOffer The constructed DOTC offer.
+     */
     function buildOffer(
         OfferStruct memory offer,
         Asset calldata depositAsset,
@@ -66,7 +81,6 @@ library OfferHelper {
         uint256 withdrawalAmount = withdrawalAsset.amount;
 
         dotcOffer.maker = msg.sender;
-
         dotcOffer.depositAsset = depositAsset;
         dotcOffer.withdrawalAsset = withdrawalAsset;
 
@@ -80,9 +94,9 @@ library OfferHelper {
         } else {
             (uint256 depositToWithdrawalRate, uint256 price) = depositAsset.calculateRate(withdrawalAsset);
 
-            dotcOffer.withdrawalAsset.amount = price;
-
             offer.unitPrice = depositToWithdrawalRate;
+
+            dotcOffer.withdrawalAsset.amount = price;
         }
 
         dotcOffer.offer = offer;
@@ -92,6 +106,8 @@ library OfferHelper {
      * @notice Ensures that the offer structure is valid.
      * @dev Checks for asset type, asset address, and amount validity.
      * @param offer The offer to be checked.
+     * @param depositAsset The asset being deposited.
+     * @param withdrawalAsset The asset being withdrawn.
      */
     function checkOfferStructure(
         OfferStruct calldata offer,
@@ -128,6 +144,11 @@ library OfferHelper {
         }
     }
 
+    /**
+     * @notice Ensures that the offer parameters are valid for taking the offer.
+     * @dev Checks for offer expiration, special address authorization, and account authorization.
+     * @param offer The offer to be checked.
+     */
     function checkOfferParams(OfferStruct calldata offer) external view {
         if (offer.expiryTimestamp <= block.timestamp) {
             revert OfferExpiredError(offer.expiryTimestamp);
@@ -168,6 +189,11 @@ library OfferHelper {
         }
     }
 
+    /**
+     * @notice Checks an array of addresses for zero addresses.
+     * @dev Reverts if any address in the array is the zero address.
+     * @param addressesArray The array of addresses to be checked.
+     */
     function checkAddressesArrayForZeroAddresses(address[] calldata addressesArray) public pure {
         for (uint256 i = 0; i < addressesArray.length; ) {
             if (addressesArray[i] == address(0)) {

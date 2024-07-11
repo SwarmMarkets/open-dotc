@@ -1,22 +1,22 @@
-//SPDX-License-Identifier: GPL-3.0-only
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
+
 import { Initializable, Receiver, SafeTransferLib, IERC721, IERC1155 } from "./exports/ExternalExports.sol";
 
 import { DotcV2 } from "./DotcV2.sol";
 import { DotcManagerV2 } from "./DotcManagerV2.sol";
-
 import { Asset, AssetType, EscrowType, EscrowOffer, OnlyManager, OnlyDotc, ZeroAddressPassed } from "./structures/DotcStructuresV2.sol";
 
-/// @title Errors related to asset management in the Dotc Escrow contract
-/// @notice Provides error messages for various failure conditions related to asset handling
+/// @title Errors related to asset management in the Dotc Escrow contract.
+/// @notice Provides error messages for various failure conditions related to asset handling.
 
-/// @notice Indicates no asset amount was specified where a non-zero value is required
+/// @notice Indicates no asset amount was specified where a non-zero value is required.
 error AssetAmountEqZero();
 
-/// @notice Indicates no amount was specified for cancelling where a non-zero value is required
+/// @notice Indicates no amount was specified for cancelling where a non-zero value is required.
 error AmountToCancelEqZero();
 
-/// @notice Indicates no fee amount was specified where a non-zero value is required
+/// @notice Indicates no fee amount was specified where a non-zero value is required.
 error FeesAmountEqZero();
 
 /**
@@ -38,7 +38,7 @@ error FeesAmountEqZero();
  * @author Swarm
  */
 contract DotcEscrowV2 is Initializable, Receiver {
-    ///@dev Used for Safe transfer tokens
+    /// @dev Used for Safe transfer tokens.
     using SafeTransferLib for address;
 
     /**
@@ -48,6 +48,7 @@ contract DotcEscrowV2 is Initializable, Receiver {
      * @param amount Amount of the asset deposited.
      */
     event OfferDeposited(uint256 indexed offerId, address indexed maker, uint256 indexed amount);
+
     /**
      * @dev Emitted when assets are withdrawn from escrow for an offer.
      * @param offerId Unique identifier of the offer.
@@ -55,6 +56,7 @@ contract DotcEscrowV2 is Initializable, Receiver {
      * @param amount Amount of the asset withdrawn.
      */
     event OfferWithdrawn(uint256 indexed offerId, address indexed taker, uint256 indexed amount);
+
     /**
      * @dev Emitted when an offer is cancelled and its assets are returned.
      * @param offerId Unique identifier of the cancelled offer.
@@ -62,6 +64,7 @@ contract DotcEscrowV2 is Initializable, Receiver {
      * @param amountToWithdraw Amount of the asset returned to the maker.
      */
     event OfferCancelled(uint256 indexed offerId, address indexed maker, uint256 indexed amountToWithdraw);
+
     /**
      * @dev Emitted when fees are withdrawn from the escrow.
      * @param offerId Unique identifier of the relevant offer.
@@ -83,7 +86,7 @@ contract DotcEscrowV2 is Initializable, Receiver {
     /**
      * @dev Mapping from offer IDs to their corresponding deposited assets.
      */
-    mapping(uint256 offerId => EscrowOffer escrowOffer) public escrowOffers;
+    mapping(uint256 => EscrowOffer) public escrowOffers;
 
     /**
      * @notice Ensures that the function is only callable by the DOTC contract.
@@ -191,14 +194,19 @@ contract DotcEscrowV2 is Initializable, Receiver {
         emit FeesWithdrew(offerId, to, feesAmountToWithdraw);
     }
 
+    /**
+     * @notice Withdraws fee amount from escrow to the default fee receiver.
+     * @param offerId The ID of the offer related to the fees.
+     * @param feesAmountToWithdraw The amount of fees to withdraw.
+     */
     function withdrawFees(uint256 offerId, uint256 feesAmountToWithdraw) public {
         withdrawFees(offerId, feesAmountToWithdraw, manager.feeReceiver());
     }
 
     /**
-     * @notice Changes the dotc in the escrow contract.
-     * @param _dotc The new dotc's address.
-     * @dev Ensures that only the current owner can perform this operation.
+     * @notice Changes the DOTC contract address in the escrow contract.
+     * @param _dotc The new DOTC contract's address.
+     * @dev Ensures that only the manager can perform this operation.
      */
     function changeDotc(DotcV2 _dotc) external {
         if (msg.sender != address(manager)) {

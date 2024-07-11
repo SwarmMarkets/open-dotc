@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: GPL-3.0-only
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
 import { Initializable, Receiver, SafeTransferLib, FixedPointMathLib, IERC721, IERC1155, IERC165 } from "./exports/ExternalExports.sol";
@@ -9,7 +9,10 @@ import { DotcOfferHelper } from "./helpers/DotcOfferHelper.sol";
 import { DotcEscrowV2 } from "./DotcEscrowV2.sol";
 import { DotcManagerV2 } from "./DotcManagerV2.sol";
 
-import { Asset, AssetType, OfferPricingType, TakingOfferType, ValidityType, OfferStruct, DotcOffer, OnlyManager } from "./structures/DotcStructuresV2.sol";
+import { Asset, AssetType, ValidityType, OfferStruct, DotcOffer, OnlyManager } from "./structures/DotcStructuresV2.sol";
+
+/// @title Errors related to management in the Dotc contract.
+/// @notice Provides error messages for various failure conditions related to dotc management handling.
 
 /// @title Errors related to the Dotc contract
 /// @notice Provides error messages for various failure conditions related to Offers and Assets handling
@@ -27,9 +30,10 @@ error IncorrectFullOfferAmountError(uint256 providedAmount);
 /// @notice Thrown when there's an attempt to change the amount of an ERC721 offer.
 error ERC721OfferAmountChangeError();
 
-/// @notice Indicates that the operation was attempted by an unauthorized entity, not the Escrow contract
+/// @notice Indicates that the operation was attempted by an unauthorized entity, not the Escrow contract.
 error OnlyEscrow();
 
+/// @notice Indicates that the operation was attempted by an unauthorized entity, not permitted for dynamic pricing.
 error OnlyDynamicPricing();
 
 /**
@@ -51,14 +55,15 @@ error OnlyDynamicPricing();
  * @author Swarm
  */
 contract DotcV2 is Initializable, Receiver {
-    ///@dev Used for Safe transfer tokens
+    /// @dev Used for Safe transfer tokens.
     using SafeTransferLib for address;
+    /// @dev Used for precise calculations.
     using FixedPointMathLib for uint256;
-    ///@dev Used for Asset interaction
+    /// @dev Used for Asset interaction.
     using AssetHelper for Asset;
-    ///@dev Used for Offer interaction
+    /// @dev Used for Offer interaction.
     using OfferHelper for OfferStruct;
-    ///@dev Used for Dotc Offer interaction
+    /// @dev Used for Dotc Offer interaction.
     using DotcOfferHelper for DotcOffer;
 
     /**
@@ -67,7 +72,7 @@ contract DotcV2 is Initializable, Receiver {
      * @param offerId Unique identifier of the created offer.
      * @param depositAsset Asset to be deposited by the maker.
      * @param withdrawalAsset Asset to be withdrawn by the maker.
-     * @param offer TODO
+     * @param offer Offer details.
      */
     event CreatedOffer(
         address indexed maker,
@@ -76,6 +81,7 @@ contract DotcV2 is Initializable, Receiver {
         Asset withdrawalAsset,
         OfferStruct offer
     );
+
     /**
      * @notice Emitted when an offer is successfully taken.
      * @param offerId Unique identifier of the taken offer.
@@ -83,6 +89,7 @@ contract DotcV2 is Initializable, Receiver {
      * @param validityType Indicates if the offer is fully taken.
      * @param amountToReceive Amount received in the trade.
      * @param amountPaid Amount paid to take the offer.
+     * @param affiliate Address of the affiliate involved in the trade.
      */
     event TakenOffer(
         uint256 indexed offerId,
@@ -92,6 +99,7 @@ contract DotcV2 is Initializable, Receiver {
         uint256 amountPaid,
         address affiliate
     );
+
     /**
      * @notice Emitted when an offer is canceled.
      * @param offerId Unique identifier of the canceled offer.
@@ -99,39 +107,45 @@ contract DotcV2 is Initializable, Receiver {
      * @param amountToReceive Amount that was to be received from the offer.
      */
     event CanceledOffer(uint256 indexed offerId, address indexed canceledBy, uint256 amountToReceive);
+
     /**
      * @notice Emitted when an existing offer is updated.
      * @param offerId Unique identifier of the updated offer.
      * @param newOffer Details of the new offer.
      */
     event OfferAmountUpdated(uint256 indexed offerId, uint256 newOffer);
+
     /**
      * @notice Emitted when the expiry time of an offer is updated.
      * @param offerId Unique identifier of the offer with updated expiry.
      * @param newExpiryTimestamp The new expiry timestamp of the offer.
      */
     event UpdatedOfferExpiry(uint256 indexed offerId, uint256 newExpiryTimestamp);
+
     /**
      * @notice Emitted when the timelock period of an offer is updated.
      * @param offerId Unique identifier of the offer with updated timelock.
      * @param newTimelockPeriod The new timelock period of the offer.
      */
     event UpdatedTimeLockPeriod(uint256 indexed offerId, uint256 newTimelockPeriod);
+
     /**
-     * @notice Emitted when the Term and Comms links for an offer is updated.
+     * @notice Emitted when the Term and Comms links for an offer are updated.
      * @param offerId Unique identifier of the offer with updated links.
      * @param newTerms The new terms for the offer.
      * @param newCommsLink The new comms link for the offer.
      */
     event OfferLinksUpdated(uint256 indexed offerId, string newTerms, string newCommsLink);
+
     /**
-     * @notice Emitted when the array of special addresses of an offer is udpated.
+     * @notice Emitted when the array of special addresses of an offer is updated.
      * @param offerId Unique identifier of the offer with updated links.
      * @param specialAddresses The new special addresses of the offer.
      */
     event OfferSpecialAddressesUpdated(uint256 indexed offerId, address[] specialAddresses);
+
     /**
-     * @notice Emitted when the array of special addresses of an offer is udpated.
+     * @notice Emitted when the array of special addresses of an offer is updated.
      * @param offerId Unique identifier of the offer with updated links.
      * @param authAddresses The new auth addresses of the offer.
      */
@@ -168,8 +182,7 @@ contract DotcV2 is Initializable, Receiver {
     }
 
     /**
-     * @notice Initializes the contract with a given escrow.
-     * @dev Sets up the reentrancy guard and ERC token holder functionalities.
+     * @notice Initializes the contract with a given manager.
      * @param _manager The address of the manager to be set for this contract.
      */
     function initialize(DotcManagerV2 _manager) public initializer {
@@ -211,6 +224,12 @@ contract DotcV2 is Initializable, Receiver {
         emit CreatedOffer(msg.sender, _currentOfferId, depositAsset, withdrawalAsset, offer);
     }
 
+    /**
+     * @notice Takes a fixed price offer.
+     * @param offerId The ID of the offer to take.
+     * @param withdrawalAmountPaid The amount paid to withdraw the asset.
+     * @param affiliate The address of the affiliate.
+     */
     function takeOfferFixed(uint256 offerId, uint256 withdrawalAmountPaid, address affiliate) public {
         DotcOffer memory offer = allOffers[offerId];
         offer.checkDotcOfferParams();
@@ -262,6 +281,12 @@ contract DotcV2 is Initializable, Receiver {
         emit TakenOffer(offerId, msg.sender, validityType, depositAssetAmount, withdrawalAssetAmount, affiliate);
     }
 
+    /**
+     * @notice Takes a dynamic price offer.
+     * @param offerId The ID of the offer to take.
+     * @param withdrawalAmountPaid The amount paid to withdraw the asset.
+     * @param affiliate The address of the affiliate.
+     */
     function takeOfferDynamic(uint256 offerId, uint256 withdrawalAmountPaid, address affiliate) public {
         DotcOffer memory offer = allOffers[offerId];
         offer.checkDotcOfferParams();
@@ -412,6 +437,13 @@ contract DotcV2 is Initializable, Receiver {
         }
     }
 
+    /**
+     * @dev Internal function to handle the sending of withdrawal fees.
+     * @param asset The asset from which the fees will be sent.
+     * @param assetAmount The amount of the asset.
+     * @param affiliate The address of the affiliate.
+     * @return The fees amount.
+     */
     function _sendWithdrawalFees(Asset memory asset, uint256 assetAmount, address affiliate) private returns (uint256) {
         uint256 feeAmount = manager.feeAmount();
 
@@ -437,6 +469,13 @@ contract DotcV2 is Initializable, Receiver {
         return fees;
     }
 
+    /**
+     * @dev Internal function to handle the sending of deposit fees.
+     * @param offerId The ID of the offer.
+     * @param assetAmount The amount of the asset.
+     * @param affiliate The address of the affiliate.
+     * @return The fees amount.
+     */
     function _sendDepositFees(uint256 offerId, uint256 assetAmount, address affiliate) private returns (uint256) {
         uint256 feeAmount = manager.feeAmount();
 

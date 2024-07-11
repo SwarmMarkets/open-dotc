@@ -1,17 +1,15 @@
-//SPDX-License-Identifier: GPL-3.0-only
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
 import { OwnableUpgradeable } from "./exports/ExternalExports.sol";
-
 import { AssetHelper } from "./helpers/AssetHelper.sol";
 import { DotcV2 } from "./DotcV2.sol";
 import { DotcEscrowV2 } from "./DotcEscrowV2.sol";
-
 import { OnlyDotc, ZeroAddressPassed, IncorrectPercentage } from "./structures/DotcStructuresV2.sol";
 
 /**
- * @title TODO (as part of the "SwarmX.eth Protocol")
- * @notice TODO
+ * @title DotcManagerV2 (as part of the "SwarmX.eth Protocol")
+ * @notice This contract manages DOTC and escrow addresses, fee settings, and other configurations for the SwarmX.eth Protocol.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
  * Please read the Disclaimer featured on the SwarmX.eth website ("Terms") carefully before accessing,
  * interacting with, or using the SwarmX.eth Protocol software, consisting of the SwarmX.eth Protocol
@@ -24,16 +22,17 @@ import { OnlyDotc, ZeroAddressPassed, IncorrectPercentage } from "./structures/D
  * European Union, Switzerland, the United Nations, as well as the USA). If you do not meet these
  * requirements, please refrain from using the SwarmX.eth Protocol.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
- * @dev TODO
+ * @dev This contract is upgradable and manages key configurations for the SwarmX.eth Protocol.
  * @author Swarm
  */
 contract DotcManagerV2 is OwnableUpgradeable {
     /**
-     * @dev Emitted when the dotc address is changed.
-     * @param by Address of the user who changed the dotc address.
-     * @param dotc New dotc's address.
+     * @dev Emitted when the DOTC address is changed.
+     * @param by Address of the user who changed the DOTC address.
+     * @param dotc New DOTC's address.
      */
     event DotcAddressSet(address indexed by, DotcV2 dotc);
+
     /**
      * @dev Emitted when the escrow address is changed.
      * @param by Address of the user who changed the escrow address.
@@ -42,29 +41,49 @@ contract DotcManagerV2 is OwnableUpgradeable {
     event EscrowAddressSet(address indexed by, DotcEscrowV2 escrow);
 
     /**
-     * @dev
+     * @dev Emitted when the fees receiver is changed.
      * @param by Address of the user who performed the update.
+     * @param feeReceiver New fees receiver's address.
      */
     event FeesReceiverSet(address indexed by, address feeReceiver);
-    event FeesAmountSet(address indexed by, uint256 feeAmount);
+
     /**
-     * @dev
+     * @dev Emitted when the fees amount is changed.
      * @param by Address of the user who performed the update.
-     * @param revShareAmount  TODO
+     * @param feeAmount New fees amount.
+     */
+    event FeesAmountSet(address indexed by, uint256 feeAmount);
+
+    /**
+     * @dev Emitted when the revenue share percentage is changed.
+     * @param by Address of the user who performed the update.
+     * @param revShareAmount New revenue share percentage.
      */
     event RevShareSet(address indexed by, uint256 revShareAmount);
 
     /**
-     * @dev Address of the dotc contract.
+     * @dev Address of the DOTC contract.
      */
     DotcV2 public dotc;
 
+    /**
+     * @dev Address of the escrow contract.
+     */
     DotcEscrowV2 public escrow;
 
-    // Fees
+    /**
+     * @dev Address to receive fees.
+     */
     address public feeReceiver;
+
+    /**
+     * @dev Fee amount.
+     */
     uint256 public feeAmount;
 
+    /**
+     * @dev Revenue share percentage.
+     */
     uint256 public revSharePercentage;
 
     /**
@@ -84,23 +103,21 @@ contract DotcManagerV2 is OwnableUpgradeable {
     }
 
     /**
-     * @notice Initializes the escrow contract with a fees parameters.
-     * @dev Sets up the contract to handle ERC1155 and ERC721 tokens.
+     * @notice Initializes the DotcManager contract with a fee receiver address.
      * @param _newFeeReceiver The address of the fee receiver.
      */
     function initialize(address _newFeeReceiver) public initializer {
         __Ownable_init(msg.sender);
 
         feeReceiver = _newFeeReceiver;
-        feeAmount = 25 * (10 ** 23);
-
-        revSharePercentage = 8000;
+        feeAmount = 25 * (10 ** 23); // Default fee amount
+        revSharePercentage = 8000; // Default revenue share percentage
     }
 
     /**
-     * @notice Changes the dotc in the escrow contract.
-     * @param _dotc The new dotc's address.
-     * @dev Ensures that only the current owner can perform this operation.
+     * @notice Changes the DOTC contract address.
+     * @param _dotc The new DOTC contract's address.
+     * @dev Ensures that the new address is not zero.
      */
     function changeDotc(DotcV2 _dotc) external onlyOwner {
         if (address(_dotc) == address(0)) {
@@ -108,14 +125,13 @@ contract DotcManagerV2 is OwnableUpgradeable {
         }
 
         dotc = _dotc;
-
         emit DotcAddressSet(msg.sender, _dotc);
     }
 
     /**
-     * @notice Changes the escrow address.
-     * @param _escrow The new escrow's address.
-     * @dev Ensures that only the current owner can perform this operation.
+     * @notice Changes the escrow contract address.
+     * @param _escrow The new escrow contract's address.
+     * @dev Ensures that the new address is not zero.
      */
     function changeEscrow(DotcEscrowV2 _escrow) external onlyOwner {
         if (address(_escrow) == address(0)) {
@@ -123,12 +139,11 @@ contract DotcManagerV2 is OwnableUpgradeable {
         }
 
         escrow = _escrow;
-
         emit EscrowAddressSet(msg.sender, _escrow);
     }
 
     /**
-     * @notice Changes the escrow address in the Dotc contract.
+     * @notice Changes the DOTC address in the escrow contract.
      * @dev Ensures that only the current owner can perform this operation.
      */
     function changeDotcInEscrow() external onlyOwner {
@@ -136,7 +151,7 @@ contract DotcManagerV2 is OwnableUpgradeable {
     }
 
     /**
-     * @notice Changes the escrow address in the Dotc contract.
+     * @notice Changes the escrow address in the DOTC contract.
      * @dev Ensures that only the current owner can perform this operation.
      */
     function changeEscrowInDotc() external onlyOwner {
@@ -144,10 +159,10 @@ contract DotcManagerV2 is OwnableUpgradeable {
     }
 
     /**
-     * @notice
+     * @notice Changes the fee settings for the contract.
      * @param _newFeeReceiver The new fee receiver address.
      * @param _feeAmount The new fee amount.
-     * @param _revShare The new fee amount.
+     * @param _revShare The new revenue share percentage.
      * @dev Requires caller to be the owner of the contract.
      */
     function changeFees(address _newFeeReceiver, uint256 _feeAmount, uint256 _revShare) external onlyOwner {

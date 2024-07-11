@@ -1,7 +1,10 @@
-//SPDX-License-Identifier: GPL-3.0-only
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
 import { DotcOffer, ValidityType } from "../structures/DotcStructuresV2.sol";
+
+/// @title Errors related to dotc offer management in the Dotc Offer Helper library.
+/// @notice Provides error messages for various failure conditions related to dotc offer handling.
 
 /// @notice Thrown when an offer encounters a validity-related issue.
 /// @param validityType The type of validity error encountered, represented as an enum of `ValidityType`.
@@ -15,8 +18,8 @@ error OnlyMakerAllowedError(address maker);
 error OfferInTimelockError(uint256 currentUnixTime);
 
 /**
- * @title TODO (as part of the "SwarmX.eth Protocol")
- * @notice It allows for depositing, withdrawing, and managing of assets in the course of trading.
+ * @title DotcOfferHelper Library (as part of the "SwarmX.eth Protocol")
+ * @notice This library provides functions to handle and validate offer operations within the SwarmX.eth Protocol.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
  * Please read the Disclaimer featured on the SwarmX.eth website ("Terms") carefully before accessing,
  * interacting with, or using the SwarmX.eth Protocol software, consisting of the SwarmX.eth Protocol
@@ -29,15 +32,14 @@ error OfferInTimelockError(uint256 currentUnixTime);
  * European Union, Switzerland, the United Nations, as well as the USA). If you do not meet these
  * requirements, please refrain from using the SwarmX.eth Protocol.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
- * @dev TODO
+ * @dev The library contains functions to ensure proper handling and validity of offers.
  * @author Swarm
  */
 library DotcOfferHelper {
     /**
-     * @notice Ensures that the caller to the offer is maker of this offer.
-     * Ensures that the timelock period of the offer has passed.
-     * @dev Checks if the offer exists and has not been fully taken.
-     * Checks if the current time is beyond the offer's timelock period.
+     * @notice Ensures that the offer parameters are valid and that the offer can be interacted with.
+     * @dev Checks if the offer exists and has not been fully taken or cancelled.
+     *      Verifies that the current time is beyond the offer's timelock period.
      * @param offer The offer to be checked.
      */
     function checkDotcOfferParams(DotcOffer calldata offer) external view {
@@ -54,6 +56,10 @@ library DotcOfferHelper {
         }
     }
 
+    /**
+     * @notice Ensures that the caller is the maker of the offer.
+     * @param offer The offer to check the maker against.
+     */
     function onlyMaker(DotcOffer calldata offer) external view {
         if (offer.maker != msg.sender) {
             revert OnlyMakerAllowedError(offer.maker);

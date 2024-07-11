@@ -2,10 +2,14 @@
 pragma solidity 0.8.25;
 
 import { FixedPointMathLib, MetadataReaderLib, IERC20, IERC721, IERC1155, IERC165 } from "../exports/ExternalExports.sol";
+
 import { Asset, AssetType, Price, OfferPricingType, IncorrectPercentage } from "../structures/DotcStructuresV2.sol";
 import { IDotcCompatiblePriceFeed } from "../interfaces/IDotcCompatiblePriceFeed.sol";
 
-/// @notice Indicates an operation with zero amount which is not allowed
+/// @title Errors related to assets in the AssetHelper Library.
+/// @notice Provides error messages for various failure conditions related to asset handling.
+
+/// @notice Indicates an operation with zero amount which is not allowed.
 error ZeroAmountPassed();
 
 /// @notice Thrown when an asset type is not defined.
@@ -18,28 +22,28 @@ error AssetAddressIsZeroError();
 error AssetAmountIsZeroError();
 
 /// @notice Thrown when the asset amount for an ERC721 asset exceeds one.
-/// ERC721 tokens should have an amount of exactly one.
+/// @dev ERC721 tokens should have an amount of exactly one.
 error ERC721AmountExceedsOneError();
 
-/// @notice Indicates the account does not have enough ERC20 tokens required
-/// @param account The account in question
-/// @param erc20Token The ERC20 token address
-/// @param currentAmount The current amount the account holds
-/// @param requiredAmount The required amount that was not met
+/// @notice Indicates the account does not have enough ERC20 tokens required.
+/// @param account The account in question.
+/// @param erc20Token The ERC20 token address.
+/// @param currentAmount The current amount the account holds.
+/// @param requiredAmount The required amount that was not met.
 error AddressHaveNoERC20(address account, address erc20Token, uint256 currentAmount, uint256 requiredAmount);
 
-/// @notice Indicates the account does not own the specified ERC721 token
-/// @param account The account in question
-/// @param erc721Token The ERC721 token address
-/// @param tokenId The token ID that the account does not own
+/// @notice Indicates the account does not own the specified ERC721 token.
+/// @param account The account in question.
+/// @param erc721Token The ERC721 token address.
+/// @param tokenId The token ID that the account does not own.
 error AddressHaveNoERC721(address account, address erc721Token, uint256 tokenId);
 
-/// @notice Indicates the account does not have enough of the specified ERC1155 token
-/// @param account The account in question
-/// @param erc1155Token The ERC1155 token address
-/// @param tokenId The token ID in question
-/// @param currentAmount The current amount the account holds
-/// @param requiredAmount The required amount that was not met
+/// @notice Indicates the account does not have enough of the specified ERC1155 token.
+/// @param account The account in question.
+/// @param erc1155Token The ERC1155 token address.
+/// @param tokenId The token ID in question.
+/// @param currentAmount The current amount the account holds.
+/// @param requiredAmount The required amount that was not met.
 error AddressHaveNoERC1155(
     address account,
     address erc1155Token,
@@ -48,23 +52,27 @@ error AddressHaveNoERC1155(
     uint256 requiredAmount
 );
 
-/// @notice Indicates that the token address does not match the expected asset type
-/// @param token The token address
-/// @param incorrectType The incorrect asset type provided
+/// @notice Indicates that the token address does not match the expected asset type.
+/// @param token The token address.
+/// @param incorrectType The incorrect asset type provided.
 error IncorrectAssetTypeForAddress(address token, AssetType incorrectType);
 
-/// @notice Indicates the asset type provided is not supported by this contract
-/// @param unsupportedType The unsupported asset type provided
+/// @notice Indicates the asset type provided is not supported by this contract.
+/// @param unsupportedType The unsupported asset type provided.
 error UnsupportedAssetType(AssetType unsupportedType);
 
+/// @notice Indicates the price feed address is incorrect.
 error IncorrectPriceFeed(address assetPriceFeedAddress);
 
+/// @notice Indicates that the price should not be specified for the given offer pricing type.
 error PriceShouldNotBeSpecifiedFor(OfferPricingType offerPricingType);
+
+/// @notice Indicates that both min and max price should not be specified for the given offer pricing type.
 error BothMinMaxCanNotBeSpecifiedFor(OfferPricingType offerPricingType);
 
 /**
- * @title TODO (as part of the "SwarmX.eth Protocol")
- * @notice It allows for depositing, withdrawing, and managing of assets in the course of trading.
+ * @title AssetHelper Library (as part of the "SwarmX.eth Protocol")
+ * @notice This library provides functions to handle and validate asset operations within the SwarmX.eth Protocol.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
  * Please read the Disclaimer featured on the SwarmX.eth website ("Terms") carefully before accessing,
  * interacting with, or using the SwarmX.eth Protocol software, consisting of the SwarmX.eth Protocol
@@ -77,20 +85,22 @@ error BothMinMaxCanNotBeSpecifiedFor(OfferPricingType offerPricingType);
  * European Union, Switzerland, the United Nations, as well as the USA). If you do not meet these
  * requirements, please refrain from using the SwarmX.eth Protocol.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
- * @dev TODO
+ * @dev The library uses FixedPointMathLib and MetadataReaderLib for precise calculations and metadata reading.
  * @author Swarm
  */
 library AssetHelper {
+    /// @dev Used for precise calculations.
     using FixedPointMathLib for uint256;
+    /// @dev Used for metadata reading.
     using MetadataReaderLib for address;
 
-    /**
-     * @dev Base points used to standardize decimals.
-     */
+    /// @notice Base points used to standardize decimals.
     uint256 public constant BPS = 10 ** 27;
 
+    /// @notice Scaling factor used in percentage calculations.
     uint256 constant SCALING_FACTOR = 10000;
 
+    /// @notice Default number of decimals used in standardization.
     uint8 constant DECIMALS_BY_DEFAULT = 8;
 
     /**
@@ -105,7 +115,7 @@ library AssetHelper {
     }
 
     /**
-     * @dev Internal function to check if an account owns an asset.
+     * @notice Checks if an account owns the specified asset in the required amount.
      * @param asset The asset to check.
      * @param account The account to verify ownership.
      * @param amount The amount of the asset.
@@ -142,6 +152,7 @@ library AssetHelper {
      * @notice Ensures that the asset structure is valid.
      * @dev Checks for asset type, asset address, and amount validity.
      * @param asset The asset to be checked.
+     * @param offerPricingType The type of pricing for the offer.
      */
     function checkAssetStructure(Asset calldata asset, OfferPricingType offerPricingType) external pure {
         if (asset.assetType == AssetType.NoType) {
@@ -160,6 +171,13 @@ library AssetHelper {
         _checkPriceStructure(asset.price, offerPricingType);
     }
 
+    /**
+     * @notice Calculates the rate between two assets for deposit and withdrawal.
+     * @param depositAsset The asset being deposited.
+     * @param withdrawalAsset The asset being withdrawn.
+     * @return depositToWithdrawalRate The rate from deposit to withdrawal asset.
+     * @return withdrawalPrice The calculated withdrawal price.
+     */
     function calculateRate(
         Asset calldata depositAsset,
         Asset calldata withdrawalAsset
@@ -193,6 +211,15 @@ library AssetHelper {
         }
     }
 
+    /**
+     * @notice Calculates fees based on the given amount, fee amount, and revenue share percentage.
+     * @param amount The total amount.
+     * @param feeAmount The fee amount to be deducted.
+     * @param revSharePercentage The revenue share percentage.
+     * @return fees The total calculated fees.
+     * @return feesToFeeReceiver The fees allocated to the fee receiver.
+     * @return feesToAffiliate The fees allocated to the affiliate.
+     */
     function calculateFees(
         uint256 amount,
         uint256 feeAmount,
@@ -246,14 +273,32 @@ library AssetHelper {
         return _unstandardize(amount, decimals);
     }
 
+    /**
+     * @notice Calculates the percentage of a given value.
+     * @param value The value to calculate the percentage of.
+     * @param percentage The percentage to apply.
+     * @return The calculated percentage.
+     */
     function calculatePercentage(uint256 value, uint256 percentage) public pure returns (uint256) {
         return value.fullMulDiv(percentage, SCALING_FACTOR);
     }
 
+    /**
+     * @notice Calculates the part percentage of a given whole.
+     * @param part The part value.
+     * @param whole The whole value.
+     * @return The calculated part percentage.
+     */
     function calculatePartPercentage(uint256 part, uint256 whole) public pure returns (uint256) {
         return part.fullMulDiv(SCALING_FACTOR, whole);
     }
 
+    /**
+     * @dev Internal function to check the price of an asset.
+     * @param asset The asset to check.
+     * @return price The price of the asset.
+     * @return decimals The decimals of the price feed.
+     */
     function _checkPrice(Asset calldata asset) private view returns (uint256 price, uint8 decimals) {
         int256 intAnswer;
         try IDotcCompatiblePriceFeed(asset.price.priceFeedAddress).latestRoundData() returns (
@@ -291,6 +336,11 @@ library AssetHelper {
         }
     }
 
+    /**
+     * @dev Internal function to check the price structure of an asset.
+     * @param price The price structure to check.
+     * @param offerPricingType The type of pricing for the offer.
+     */
     function _checkPriceStructure(Price calldata price, OfferPricingType offerPricingType) private pure {
         if (
             offerPricingType == OfferPricingType.FixedPricing &&
