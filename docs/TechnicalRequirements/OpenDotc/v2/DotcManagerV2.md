@@ -1,107 +1,8 @@
 # Solidity API
 
-## ZeroAmountPassed
-
-```solidity
-error ZeroAmountPassed()
-```
-
-Indicates an operation with zero amount which is not allowed
-
-## ZeroAddressPassed
-
-```solidity
-error ZeroAddressPassed()
-```
-
-Indicates usage of a zero address where an actual address is required
-
-## AddressHaveNoERC20
-
-```solidity
-error AddressHaveNoERC20(address account, address erc20Token, uint256 currentAmount, uint256 requiredAmount)
-```
-
-Indicates the account does not have enough ERC20 tokens required
-
-### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| account | address | The account in question |
-| erc20Token | address | The ERC20 token address |
-| currentAmount | uint256 | The current amount the account holds |
-| requiredAmount | uint256 | The required amount that was not met |
-
-## AddressHaveNoERC721
-
-```solidity
-error AddressHaveNoERC721(address account, address erc721Token, uint256 tokenId)
-```
-
-Indicates the account does not own the specified ERC721 token
-
-### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| account | address | The account in question |
-| erc721Token | address | The ERC721 token address |
-| tokenId | uint256 | The token ID that the account does not own |
-
-## AddressHaveNoERC1155
-
-```solidity
-error AddressHaveNoERC1155(address account, address erc1155Token, uint256 tokenId, uint256 currentAmount, uint256 requiredAmount)
-```
-
-Indicates the account does not have enough of the specified ERC1155 token
-
-### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| account | address | The account in question |
-| erc1155Token | address | The ERC1155 token address |
-| tokenId | uint256 | The token ID in question |
-| currentAmount | uint256 | The current amount the account holds |
-| requiredAmount | uint256 | The required amount that was not met |
-
-## IncorrectAssetTypeForAddress
-
-```solidity
-error IncorrectAssetTypeForAddress(address token, enum AssetType incorrectType)
-```
-
-Indicates that the token address does not match the expected asset type
-
-### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| token | address | The token address |
-| incorrectType | enum AssetType | The incorrect asset type provided |
-
-## ChangeEscrowManagerError
-
-```solidity
-error ChangeEscrowManagerError()
-```
-
-Indicates when an unauthorized attempt is made to change the escrow manager
-
-## ChangeDotcManagerError
-
-```solidity
-error ChangeDotcManagerError()
-```
-
-Indicates when an unauthorized attempt is made to change the DOTC manager
-
 ## DotcManagerV2
 
-This contract serves as the central point for managing various aspects of the DOTC system
-such as fees, escrow addresses, and asset standardization.
+This contract manages DOTC and escrow addresses, fee settings, and other configurations for the SwarmX.eth Protocol.
 ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
 Please read the Disclaimer featured on the SwarmX.eth website ("Terms") carefully before accessing,
 interacting with, or using the SwarmX.eth Protocol software, consisting of the SwarmX.eth Protocol
@@ -115,103 +16,87 @@ European Union, Switzerland, the United Nations, as well as the USA). If you do 
 requirements, please refrain from using the SwarmX.eth Protocol.
 ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
 
-_Manages configurations and settings for the DOTC trading platform, including fee settings and escrow management._
+_This contract is upgradable and manages key configurations for the SwarmX.eth Protocol._
+
+### DotcAddressSet
+
+```solidity
+event DotcAddressSet(address by, contract DotcV2 dotc)
+```
+
+_Emitted when the DOTC address is changed._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| by | address | Address of the user who changed the DOTC address. |
+| dotc | contract DotcV2 | New DOTC's address. |
 
 ### EscrowAddressSet
 
 ```solidity
-event EscrowAddressSet(address by, contract IDotcEscrow escrow)
+event EscrowAddressSet(address by, contract DotcEscrowV2 escrow)
 ```
 
-_Emitted when the escrow address is updated._
+_Emitted when the escrow address is changed._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| by | address | Address of the user who changed the escrow address. |
+| escrow | contract DotcEscrowV2 | New escrow's address. |
+
+### FeesReceiverSet
+
+```solidity
+event FeesReceiverSet(address by, address feeReceiver)
+```
+
+_Emitted when the fees receiver is changed._
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | by | address | Address of the user who performed the update. |
-| escrow | contract IDotcEscrow | New escrow address. |
+| feeReceiver | address | New fees receiver's address. |
 
-### DotcSet
+### FeesAmountSet
 
 ```solidity
-event DotcSet(address by, contract IDotc Dotc)
+event FeesAmountSet(address by, uint256 feeAmount)
 ```
 
-_Emitted when the DOTC contract address is updated._
+_Emitted when the fees amount is changed._
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | by | address | Address of the user who performed the update. |
-| Dotc | contract IDotc | New DOTC contract address. |
+| feeAmount | uint256 | New fees amount. |
 
-### FeeReceiverSet
+### RevShareSet
 
 ```solidity
-event FeeReceiverSet(address by, address newFeeReceiver)
+event RevShareSet(address by, uint256 revShareAmount)
 ```
 
-_Emitted when the fee receiver address is updated._
+_Emitted when the revenue share percentage is changed._
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | by | address | Address of the user who performed the update. |
-| newFeeReceiver | address | New fee receiver address. |
-
-### FeeAmountSet
-
-```solidity
-event FeeAmountSet(address by, uint256 feeAmount)
-```
-
-_Emitted when the fee amount is updated._
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| by | address | Address of the user who performed the update. |
-| feeAmount | uint256 | New fee amount. |
-
-### ManagerAddressSet
-
-```solidity
-event ManagerAddressSet(address by, contract IDotcManager manager)
-```
-
-_Emitted when the manager address is updated._
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| by | address | Address of the user who performed the update. |
-| manager | contract IDotcManager | New manager address. |
-
-### BPS
-
-```solidity
-uint256 BPS
-```
-
-_Base points used to standardize decimals._
-
-### DECIMALS
-
-```solidity
-uint256 DECIMALS
-```
-
-_Standard decimal places used in Swarm._
+| revShareAmount | uint256 | New revenue share percentage. |
 
 ### dotc
 
 ```solidity
-contract IDotc dotc
+contract DotcV2 dotc
 ```
 
 _Address of the DOTC contract._
@@ -219,7 +104,7 @@ _Address of the DOTC contract._
 ### escrow
 
 ```solidity
-contract IDotcEscrow escrow
+contract DotcEscrowV2 escrow
 ```
 
 _Address of the escrow contract._
@@ -230,7 +115,7 @@ _Address of the escrow contract._
 address feeReceiver
 ```
 
-_Address where trading fees are sent._
+_Address to receive fees._
 
 ### feeAmount
 
@@ -238,35 +123,25 @@ _Address where trading fees are sent._
 uint256 feeAmount
 ```
 
-_Amount of fees charged for trading._
+_Fee amount._
 
-### zeroAddressCheck
-
-```solidity
-modifier zeroAddressCheck(address _address)
-```
-
-Ensures that the given address is not the zero address.
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| _address | address | The address to check. |
-
-### zeroAmountCheck
+### revSharePercentage
 
 ```solidity
-modifier zeroAmountCheck(uint256 amount)
+uint256 revSharePercentage
 ```
 
-Ensures that the given amount is greater than zero.
+_Revenue share percentage._
 
-#### Parameters
+### onlyDotc
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| amount | uint256 | The amount to check. |
+```solidity
+modifier onlyDotc()
+```
+
+Ensures that the function is only callable by the DOTC contract.
+
+_Modifier that restricts function access to the address of the DOTC contract._
 
 ### constructor
 
@@ -280,67 +155,73 @@ constructor() public
 function initialize(address _newFeeReceiver) public
 ```
 
-Initializes the DotcManager contract.
-
-_Sets up the contract with default values and fee receiver._
+Initializes the DotcManager contract with a fee receiver address.
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| _newFeeReceiver | address | The initial address for receiving fees. |
+| _newFeeReceiver | address | The address of the fee receiver. |
 
-### changeEscrowAddress
+### changeDotc
 
 ```solidity
-function changeEscrowAddress(contract IDotcEscrow _escrow) external returns (bool status)
+function changeDotc(contract DotcV2 _dotc) external
 ```
 
-Updates the address of the escrow contract.
+Changes the DOTC contract address.
 
-_Requires caller to be the owner of the contract._
+_Ensures that the new address is not zero._
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| _escrow | contract IDotcEscrow | The new escrow contract address. |
+| _dotc | contract DotcV2 | The new DOTC contract's address. |
 
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| status | bool | True if the operation was successful. |
-
-### changeDotcAddress
+### changeEscrow
 
 ```solidity
-function changeDotcAddress(contract IDotc _dotc) external returns (bool status)
+function changeEscrow(contract DotcEscrowV2 _escrow) external
 ```
 
-Updates the address of the DOTC contract.
+Changes the escrow contract address.
 
-_Requires caller to be the owner of the contract._
+_Ensures that the new address is not zero._
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| _dotc | contract IDotc | The new DOTC contract address. |
+| _escrow | contract DotcEscrowV2 | The new escrow contract's address. |
 
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| status | bool | True if the operation was successful. |
-
-### changeFeeReceiver
+### changeDotcInEscrow
 
 ```solidity
-function changeFeeReceiver(address _newFeeReceiver) external returns (bool status)
+function changeDotcInEscrow() external
 ```
 
-Updates the address for receiving trading fees.
+Changes the DOTC address in the escrow contract.
+
+_Ensures that only the current owner can perform this operation._
+
+### changeEscrowInDotc
+
+```solidity
+function changeEscrowInDotc() external
+```
+
+Changes the escrow address in the DOTC contract.
+
+_Ensures that only the current owner can perform this operation._
+
+### changeFees
+
+```solidity
+function changeFees(address _newFeeReceiver, uint256 _feeAmount, uint256 _revShare) external
+```
+
+Changes the fee settings for the contract.
 
 _Requires caller to be the owner of the contract._
 
@@ -349,221 +230,6 @@ _Requires caller to be the owner of the contract._
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | _newFeeReceiver | address | The new fee receiver address. |
-
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| status | bool | True if the operation was successful. |
-
-### changeFeeAmount
-
-```solidity
-function changeFeeAmount(uint256 _feeAmount) external returns (bool status)
-```
-
-Updates the trading fee amount.
-
-_Requires caller to be the owner of the contract._
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
 | _feeAmount | uint256 | The new fee amount. |
-
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| status | bool | True if the operation was successful. |
-
-### changeManagerInContracts
-
-```solidity
-function changeManagerInContracts(contract IDotcManager _manager) external returns (bool status)
-```
-
-Updates the manager address in the DOTC and escrow contracts.
-
-_Requires caller to be the owner and ensures the new manager address is valid._
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| _manager | contract IDotcManager | The new manager address. |
-
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| status | bool | True if the operation was successful. |
-
-### checkAssetOwner
-
-```solidity
-function checkAssetOwner(struct Asset asset, address account, uint256 amount) external view returns (enum AssetType)
-```
-
-Checks if the specified account is the owner of the specified asset.
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| asset | struct Asset | The asset to check. |
-| account | address | The account to verify ownership. |
-| amount | uint256 |  |
-
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| [0] | enum AssetType | The type of the asset if the account owns it. |
-
-### standardizeAsset
-
-```solidity
-function standardizeAsset(struct Asset asset) external view returns (uint256 amount)
-```
-
-Standardizes the amount of an asset based on its type.
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| asset | struct Asset | The asset to standardize. |
-
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| amount | uint256 | The standardized amount of the asset. |
-
-### standardizeAsset
-
-```solidity
-function standardizeAsset(struct Asset asset, address assetOwner) external view returns (uint256 amount)
-```
-
-Standardizes the amount of an asset based on its type with checking the ownership of this asset.
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| asset | struct Asset | The asset to standardize. |
-| assetOwner | address | The address to check. |
-
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| amount | uint256 | The standardized amount of the asset. |
-
-### unstandardizeAsset
-
-```solidity
-function unstandardizeAsset(struct Asset asset) public view returns (uint256 amount)
-```
-
-Converts the standardized amount of an asset back to its original form.
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| asset | struct Asset | The asset to unstandardize. |
-
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| amount | uint256 | The unstandardized amount of the asset. |
-
-### standardizeNumber
-
-```solidity
-function standardizeNumber(uint256 amount, address token) public view returns (uint256)
-```
-
-Standardizes a numerical amount based on token decimals.
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| amount | uint256 | The amount to standardize. |
-| token | address | The address of the token. |
-
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| [0] | uint256 | The standardized numerical amount. |
-
-### standardizeNumber
-
-```solidity
-function standardizeNumber(uint256 amount, uint8 decimals) external pure returns (uint256)
-```
-
-Standardizes a numerical amount based on token decimals.
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| amount | uint256 | The amount to standardize. |
-| decimals | uint8 | The decimals of the token. |
-
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| [0] | uint256 | The standardized numerical amount. |
-
-### unstandardizeNumber
-
-```solidity
-function unstandardizeNumber(uint256 amount, address token) public view returns (uint256)
-```
-
-Converts a standardized numerical amount back to its original form based on token decimals.
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| amount | uint256 | The amount to unstandardize. |
-| token | address | The address of the token. |
-
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| [0] | uint256 | The unstandardized numerical amount. |
-
-### unstandardizeNumber
-
-```solidity
-function unstandardizeNumber(uint256 amount, uint8 decimals) external pure returns (uint256)
-```
-
-Converts a standardized numerical amount back to its original form based on token decimals.
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| amount | uint256 | The amount to unstandardize. |
-| decimals | uint8 | The decimals of the token. |
-
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| [0] | uint256 | The unstandardized numerical amount. |
+| _revShare | uint256 | The new revenue share percentage. |
 

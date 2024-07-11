@@ -1,18 +1,36 @@
 # Solidity API
 
-## UnsupportedAssetType
+## OnlyManager
 
 ```solidity
-error UnsupportedAssetType(enum AssetType unsupportedType)
+error OnlyManager()
 ```
 
-Indicates the asset type provided is not supported by this contract
+Indicates that the operation was attempted by a non owner address.
 
-### Parameters
+## OnlyDotc
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| unsupportedType | enum AssetType | The unsupported asset type provided |
+```solidity
+error OnlyDotc()
+```
+
+Indicates that the operation was attempted by an unauthorized entity, not the Dotc contract.
+
+## ZeroAddressPassed
+
+```solidity
+error ZeroAddressPassed()
+```
+
+Indicates usage of a zero address where an actual address is required.
+
+## IncorrectPercentage
+
+```solidity
+error IncorrectPercentage(uint256 incorrectRevShare)
+```
+
+Indicates that pasted not correct percentage amount.
 
 ## AssetType
 
@@ -26,6 +44,93 @@ enum AssetType {
   ERC20,
   ERC721,
   ERC1155
+}
+```
+
+## OfferPricingType
+
+Defines the different types of pricing offers that can be used in the system.
+
+_Enum representing various pricing offer types supported in DOTC trades._
+
+```solidity
+enum OfferPricingType {
+  NoType,
+  FixedPricing,
+  DynamicPricing
+}
+```
+
+## TakingOfferType
+
+Defines the different types of taking offers that can be used in the system.
+
+_Enum representing various taking offer types supported in DOTC trades._
+
+```solidity
+enum TakingOfferType {
+  NoType,
+  PartialTaking,
+  FullyTaking
+}
+```
+
+## ValidityType
+
+Defines the types of validity states an offer can have in the DOTC system.
+
+_Enum representing different states of offer validity, like non-existent or fully taken.
+- NotExist: Indicates the offer does not exist.
+- Partial: Represents a Partial Taking offer type where `taker` can take not the full amount of assets.
+- Fully: Represents a Fully Taking offer type where `taker` should take the full amount of assets._
+
+```solidity
+enum ValidityType {
+  NotTaken,
+  Cancelled,
+  PartiallyTaken,
+  FullyTaken
+}
+```
+
+## EscrowType
+
+Defines the types of escrow states an offer can have in the DOTC system.
+
+_Enum representing different states of escrow, like offer deposited or fully withdrew.
+- NoType: Represents a state with no specific escrow type.
+- OfferDeposited: Indicates that the offer has been deposited.
+- OfferFullyWithdrew: Indicates that the offer has been fully withdrawn.
+- OfferPartiallyWithdrew: Indicates that the offer has been partially withdrawn.
+- OfferCancelled: Indicates that the offer has been cancelled._
+
+```solidity
+enum EscrowType {
+  NoType,
+  OfferDeposited,
+  OfferFullyWithdrew,
+  OfferPartiallyWithdrew,
+  OfferCancelled
+}
+```
+
+## Price
+
+Represents the price details in the DOTC trading system.
+
+_Defines the structure for price details including price feed address, min, max, and percentage._
+
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+
+```solidity
+struct Price {
+  address priceFeedAddress;
+  uint256 min;
+  uint256 max;
+  uint256 percentage;
 }
 ```
 
@@ -46,58 +151,7 @@ struct Asset {
   address assetAddress;
   uint256 amount;
   uint256 tokenId;
-}
-```
-
-## EscrowCallType
-
-Defines the different types of calls that can be made to the escrow in the DOTC system.
-
-_Enum representing various escrow call types such as deposit, withdraw, and cancel operations.
-- Deposit: Represents a call to deposit assets into escrow.
-- Withdraw: Represents a call to withdraw assets from escrow.
-- Cancel: Represents a call to cancel an operation in the escrow._
-
-```solidity
-enum EscrowCallType {
-  Deposit,
-  Withdraw,
-  WithdrawFees,
-  Cancel
-}
-```
-
-## ValidityType
-
-Defines the types of validity states an offer can have in the DOTC system.
-
-_Enum representing different states of offer validity, like non-existent or fully taken.
-- NotExist: Indicates the offer does not exist.
-- FullyTaken: Indicates the offer has been fully taken._
-
-```solidity
-enum ValidityType {
-  NotExist,
-  FullyTaken
-}
-```
-
-## TimeConstraintType
-
-Defines the types of time constraints an offer can have in the DOTC system.
-
-_Enum representing different time-related constraints for offers.
-- Expired: Indicates the offer has expired.
-- TimelockGreaterThanExpirationTime: Indicates the timelock is greater than the offer's expiration time.
-- InTimelock: Indicates the offer is currently in its timelock period.
-- IncorrectTimelock: Indicates an incorrect setting of the timelock period._
-
-```solidity
-enum TimeConstraintType {
-  Expired,
-  TimelockGreaterThanExpirationTime,
-  InTimelock,
-  IncorrectTimelock
+  struct Price price;
 }
 ```
 
@@ -114,8 +168,11 @@ _Structure encapsulating details of an offer, including its type, special condit
 
 ```solidity
 struct OfferStruct {
-  bool isFullType;
+  enum TakingOfferType takingOfferType;
+  enum OfferPricingType offerPricingType;
   address[] specialAddresses;
+  address[] authorizationAddresses;
+  uint256 unitPrice;
   uint256 expiryTimestamp;
   uint256 timelockPeriod;
   string terms;
@@ -137,12 +194,28 @@ _Contains comprehensive information about an offer, including assets involved an
 ```solidity
 struct DotcOffer {
   address maker;
-  bool isFullyTaken;
-  uint256 availableAmount;
-  uint256 unitPrice;
+  enum ValidityType validityType;
   struct Asset depositAsset;
   struct Asset withdrawalAsset;
   struct OfferStruct offer;
+}
+```
+
+## EscrowOffer
+
+Represents the escrow details of an offer in the DOTC trading system.
+
+_Defines the structure for escrow details including escrow type and deposit asset._
+
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+
+```solidity
+struct EscrowOffer {
+  enum EscrowType escrowType;
+  struct Asset depositAsset;
 }
 ```
 
