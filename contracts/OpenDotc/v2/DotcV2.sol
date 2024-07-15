@@ -235,7 +235,7 @@ contract DotcV2 is Initializable, Receiver {
         offer.checkDotcOfferParams();
         offer.offer.checkOfferParams();
 
-        if (withdrawalAmountPaid == 0) {
+        if (withdrawalAmountPaid == 0 || withdrawalAmountPaid > offer.withdrawalAsset.amount) {
             withdrawalAmountPaid = offer.withdrawalAsset.amount;
         }
 
@@ -264,12 +264,12 @@ contract DotcV2 is Initializable, Receiver {
 
         allOffers[offerId].validityType = validityType;
 
-        // If WithdrawalAsset is not an ERC20 then fees will be taken from Maker
-        if (offer.withdrawalAsset.assetType != AssetType.ERC20 && offer.depositAsset.assetType == AssetType.ERC20) {
-            depositAssetAmount -= _sendDepositFees(offerId, depositAssetAmount, affiliate);
-        } else if (offer.withdrawalAsset.assetType == AssetType.ERC20) {
+        if (offer.withdrawalAsset.assetType == AssetType.ERC20) {
             // If WithdrawalAsset is an ERC20 then fees will be taken from Taker
             withdrawalAmountPaid -= _sendWithdrawalFees(offer.withdrawalAsset, withdrawalAmountPaid, affiliate);
+        } else if (offer.depositAsset.assetType == AssetType.ERC20) {
+            // If WithdrawalAsset is not an ERC20 then fees will be taken from Maker
+            depositAssetAmount -= _sendDepositFees(offerId, depositAssetAmount, affiliate);
         }
 
         //Transfer WithdrawalAsset from Taker to Maker
@@ -323,12 +323,12 @@ contract DotcV2 is Initializable, Receiver {
 
         allOffers[offerId].validityType = validityType;
 
-        // If WithdrawalAsset is not an ERC20 then fees will be taken from Maker
-        if (offer.withdrawalAsset.assetType != AssetType.ERC20 && offer.depositAsset.assetType == AssetType.ERC20) {
-            depositAssetAmount -= _sendDepositFees(offerId, depositAssetAmount, affiliate);
-        } else if (offer.withdrawalAsset.assetType == AssetType.ERC20) {
+        if (offer.withdrawalAsset.assetType == AssetType.ERC20) {
             // If WithdrawalAsset is an ERC20 then fees will be taken from Taker
             withdrawalAmountPaid -= _sendWithdrawalFees(offer.withdrawalAsset, withdrawalAmountPaid, affiliate);
+        } else if (offer.depositAsset.assetType == AssetType.ERC20) {
+            // If WithdrawalAsset is not an ERC20 then fees will be taken from Maker
+            depositAssetAmount -= _sendDepositFees(offerId, depositAssetAmount, affiliate);
         }
 
         //Transfer WithdrawalAsset from Taker to Maker

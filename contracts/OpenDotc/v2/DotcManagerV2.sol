@@ -86,17 +86,6 @@ contract DotcManagerV2 is OwnableUpgradeable {
      */
     uint256 public revSharePercentage;
 
-    /**
-     * @notice Ensures that the function is only callable by the DOTC contract.
-     * @dev Modifier that restricts function access to the address of the DOTC contract.
-     */
-    modifier onlyDotc() {
-        if (msg.sender != address(dotc)) {
-            revert OnlyDotc();
-        }
-        _;
-    }
-
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -166,23 +155,18 @@ contract DotcManagerV2 is OwnableUpgradeable {
      * @dev Requires caller to be the owner of the contract.
      */
     function changeFees(address _newFeeReceiver, uint256 _feeAmount, uint256 _revShare) external onlyOwner {
-        if (_newFeeReceiver != address(0)) {
-            feeReceiver = _newFeeReceiver;
-            emit FeesReceiverSet(msg.sender, _newFeeReceiver);
+        if (_revShare > AssetHelper.SCALING_FACTOR) {
+            revert IncorrectPercentage(_revShare);
         }
 
-        if (_feeAmount != 0) {
-            feeAmount = _feeAmount;
-            emit FeesAmountSet(msg.sender, _feeAmount);
-        }
+        feeReceiver = _newFeeReceiver;
 
-        if (_revShare > 0) {
-            if (_revShare > AssetHelper.SCALING_FACTOR) {
-                revert IncorrectPercentage(_revShare);
-            }
+        feeAmount = _feeAmount;
 
-            revSharePercentage = _revShare;
-            emit RevShareSet(msg.sender, _revShare);
-        }
+        revSharePercentage = _revShare;
+
+        emit RevShareSet(msg.sender, _revShare);
+        emit FeesAmountSet(msg.sender, _feeAmount);
+        emit FeesReceiverSet(msg.sender, _newFeeReceiver);
     }
 }
