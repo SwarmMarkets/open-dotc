@@ -10,7 +10,7 @@
     "postinstall": "patch-package",
     "clean": "hardhat clean",
     "compile": "hardhat compile",
-    "recompile": "hardhat clean && hardhat compile",
+    "recompile": "hardhat clean && rm -rf ./coverage && hardhat compile",
     "def_coverage": "hardhat coverage",
     "size": "hardhat size-contracts",
     "coverage": "dotenv -e .env.test hardhat coverage --solcoverjs ./.solcover.js --temp artifacts --testfiles \"./test/**/*.ts\"",
