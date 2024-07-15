@@ -5,7 +5,7 @@ import { Initializable, Receiver, SafeTransferLib, IERC721, IERC1155 } from "./e
 
 import { DotcV2 } from "./DotcV2.sol";
 import { DotcManagerV2 } from "./DotcManagerV2.sol";
-import { Asset, AssetType, EscrowType, EscrowOffer, OnlyManager, OnlyDotc, ZeroAddressPassed } from "./structures/DotcStructuresV2.sol";
+import { Asset, AssetType, EscrowOfferStatusType, EscrowDeposit, OnlyManager, OnlyDotc, ZeroAddressPassed } from "./structures/DotcStructuresV2.sol";
 
 /// @title Errors related to asset management in the Dotc Escrow contract.
 /// @notice Provides error messages for various failure conditions related to asset handling.
@@ -86,7 +86,7 @@ contract DotcEscrowV2 is Initializable, Receiver {
     /**
      * @dev Mapping from offer IDs to their corresponding deposited assets.
      */
-    mapping(uint256 => EscrowOffer) public escrowOffers;
+    mapping(uint256 => EscrowDeposit) public escrowDeposits;
 
     /**
      * @notice Ensures that the function is only callable by the DOTC contract.
@@ -121,8 +121,8 @@ contract DotcEscrowV2 is Initializable, Receiver {
      * @dev Only callable by DOTC contract, ensures the asset is correctly deposited.
      */
     function setDeposit(uint256 offerId, address maker, Asset calldata asset) external onlyDotc {
-        escrowOffers[offerId].escrowType = EscrowType.OfferDeposited;
-        escrowOffers[offerId].depositAsset = asset;
+        escrowDeposits[offerId].escrowOfferStatusType = EscrowOfferStatusType.OfferDeposited;
+        escrowDeposits[offerId].depositAsset = asset;
 
         emit OfferDeposited(offerId, maker, asset.amount);
     }
@@ -135,18 +135,18 @@ contract DotcEscrowV2 is Initializable, Receiver {
      * @dev Ensures that the withdrawal is valid and transfers the asset to the taker.
      */
     function withdrawDeposit(uint256 offerId, uint256 amountToWithdraw, address taker) external onlyDotc {
-        EscrowOffer memory offer = escrowOffers[offerId];
+        EscrowDeposit memory offer = escrowDeposits[offerId];
 
         if (offer.depositAsset.amount <= 0) {
             revert AssetAmountEqZero();
         }
 
-        escrowOffers[offerId].depositAsset.amount -= amountToWithdraw;
+        escrowDeposits[offerId].depositAsset.amount -= amountToWithdraw;
 
-        if (escrowOffers[offerId].depositAsset.amount == 0) {
-            escrowOffers[offerId].escrowType = EscrowType.OfferFullyWithdrew;
+        if (escrowDeposits[offerId].depositAsset.amount == 0) {
+            escrowDeposits[offerId].escrowOfferStatusType = EscrowOfferStatusType.OfferFullyWithdrawn;
         } else {
-            escrowOffers[offerId].escrowType = EscrowType.OfferPartiallyWithdrew;
+            escrowDeposits[offerId].escrowOfferStatusType = EscrowOfferStatusType.OfferPartiallyWithdrawn;
         }
 
         _assetTransfer(offer.depositAsset, address(this), taker, amountToWithdraw);
@@ -162,7 +162,7 @@ contract DotcEscrowV2 is Initializable, Receiver {
      * @dev Only callable by DOTC contract, ensures the asset is returned to the maker.
      */
     function cancelDeposit(uint256 offerId, address maker) external onlyDotc returns (uint256 amountToCancel) {
-        EscrowOffer memory offer = escrowOffers[offerId];
+        EscrowDeposit memory offer = escrowDeposits[offerId];
 
         if (offer.depositAsset.amount <= 0) {
             revert AmountToCancelEqZero();
@@ -170,8 +170,8 @@ contract DotcEscrowV2 is Initializable, Receiver {
 
         amountToCancel = offer.depositAsset.amount;
 
-        escrowOffers[offerId].escrowType = EscrowType.OfferCancelled;
-        escrowOffers[offerId].depositAsset.amount = 0;
+        escrowDeposits[offerId].escrowOfferStatusType = EscrowOfferStatusType.OfferCancelled;
+        escrowDeposits[offerId].depositAsset.amount = 0;
 
         _assetTransfer(offer.depositAsset, address(this), maker, offer.depositAsset.amount);
 
@@ -185,9 +185,9 @@ contract DotcEscrowV2 is Initializable, Receiver {
      * @dev Ensures that the fee withdrawal is valid and transfers the fee to the designated receiver.
      */
     function withdrawFees(uint256 offerId, uint256 feesAmountToWithdraw, address to) public onlyDotc {
-        EscrowOffer memory offer = escrowOffers[offerId];
+        EscrowDeposit memory offer = escrowDeposits[offerId];
 
-        escrowOffers[offerId].depositAsset.amount -= feesAmountToWithdraw;
+        escrowDeposits[offerId].depositAsset.amount -= feesAmountToWithdraw;
 
         _assetTransfer(offer.depositAsset, address(this), to, feesAmountToWithdraw);
 

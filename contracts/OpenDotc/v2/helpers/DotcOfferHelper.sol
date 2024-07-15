@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
-import { DotcOffer, ValidityType } from "../structures/DotcStructuresV2.sol";
+import { DotcOffer, OfferFillType } from "../structures/DotcStructuresV2.sol";
 
 /// @title Errors related to dotc offer management in the Dotc Offer Helper library.
 /// @notice Provides error messages for various failure conditions related to dotc offer handling.
 
 /// @notice Thrown when an offer encounters a validity-related issue.
-/// @param validityType The type of validity error encountered, represented as an enum of `ValidityType`.
-error OfferValidityError(ValidityType validityType);
+/// @param offerFillType The type of validity error encountered, represented as an enum of `OfferFillType`.
+error OfferValidityError(OfferFillType offerFillType);
 
 /// @notice Thrown when a non-maker tries to perform an action on their own offer.
 /// @param maker The address of the offer's maker.
@@ -45,10 +45,10 @@ library DotcOfferHelper {
     function checkDotcOfferParams(DotcOffer calldata offer) external view {
         if (
             offer.maker == address(0) ||
-            offer.validityType == ValidityType.FullyTaken ||
-            offer.validityType == ValidityType.Cancelled
+            offer.offerFillType == OfferFillType.FullyTaken ||
+            offer.offerFillType == OfferFillType.Cancelled
         ) {
-            revert OfferValidityError(offer.validityType);
+            revert OfferValidityError(offer.offerFillType);
         }
 
         if (offer.offer.timelockPeriod >= block.timestamp) {

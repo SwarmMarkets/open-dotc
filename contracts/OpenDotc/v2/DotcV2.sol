@@ -9,7 +9,7 @@ import { DotcOfferHelper } from "./helpers/DotcOfferHelper.sol";
 import { DotcEscrowV2 } from "./DotcEscrowV2.sol";
 import { DotcManagerV2 } from "./DotcManagerV2.sol";
 
-import { Asset, AssetType, ValidityType, OfferStruct, DotcOffer, OnlyManager } from "./structures/DotcStructuresV2.sol";
+import { Asset, AssetType, OfferFillType, OfferStruct, DotcOffer, OnlyManager } from "./structures/DotcStructuresV2.sol";
 
 /// @title Errors related to management in the Dotc contract.
 /// @notice Provides error messages for various failure conditions related to dotc management handling.
@@ -86,7 +86,7 @@ contract DotcV2 is Initializable, Receiver {
      * @notice Emitted when an offer is successfully taken.
      * @param offerId Unique identifier of the taken offer.
      * @param takenBy Address of the user taking the offer.
-     * @param validityType Indicates if the offer is fully taken.
+     * @param offerFillType Indicates if the offer is fully taken.
      * @param amountToReceive Amount received in the trade.
      * @param amountPaid Amount paid to take the offer.
      * @param affiliate Address of the affiliate involved in the trade.
@@ -94,7 +94,7 @@ contract DotcV2 is Initializable, Receiver {
     event TakenOffer(
         uint256 indexed offerId,
         address indexed takenBy,
-        ValidityType indexed validityType,
+        OfferFillType indexed offerFillType,
         uint256 amountToReceive,
         uint256 amountPaid,
         address affiliate
@@ -257,12 +257,12 @@ contract DotcV2 is Initializable, Receiver {
         allOffers[offerId].withdrawalAsset.amount -= withdrawalAmountPaid;
         allOffers[offerId].depositAsset.amount -= depositAssetAmount;
 
-        ValidityType validityType = (allOffers[offerId].withdrawalAsset.amount == 0 ||
+        OfferFillType offerFillType = (allOffers[offerId].withdrawalAsset.amount == 0 ||
             allOffers[offerId].depositAsset.amount == 0)
-            ? ValidityType.FullyTaken
-            : ValidityType.PartiallyTaken;
+            ? OfferFillType.FullyTaken
+            : OfferFillType.PartiallyTaken;
 
-        allOffers[offerId].validityType = validityType;
+        allOffers[offerId].offerFillType = offerFillType;
 
         if (offer.withdrawalAsset.assetType == AssetType.ERC20) {
             // If WithdrawalAsset is an ERC20 then fees will be taken from Taker
@@ -278,7 +278,7 @@ contract DotcV2 is Initializable, Receiver {
         //Transfer DepositAsset from Maker to Taker
         escrow.withdrawDeposit(offerId, depositAssetAmount, msg.sender);
 
-        emit TakenOffer(offerId, msg.sender, validityType, depositAssetAmount, withdrawalAssetAmount, affiliate);
+        emit TakenOffer(offerId, msg.sender, offerFillType, depositAssetAmount, withdrawalAssetAmount, affiliate);
     }
 
     /**
@@ -316,12 +316,12 @@ contract DotcV2 is Initializable, Receiver {
         allOffers[offerId].depositAsset.amount -= depositAssetAmount;
         allOffers[offerId].withdrawalAsset.amount = withdrawalPrice - withdrawalAmountPaid;
 
-        ValidityType validityType = allOffers[offerId].depositAsset.amount == 0 ||
+        OfferFillType offerFillType = allOffers[offerId].depositAsset.amount == 0 ||
             allOffers[offerId].withdrawalAsset.amount == 0
-            ? ValidityType.FullyTaken
-            : ValidityType.PartiallyTaken;
+            ? OfferFillType.FullyTaken
+            : OfferFillType.PartiallyTaken;
 
-        allOffers[offerId].validityType = validityType;
+        allOffers[offerId].offerFillType = offerFillType;
 
         if (offer.withdrawalAsset.assetType == AssetType.ERC20) {
             // If WithdrawalAsset is an ERC20 then fees will be taken from Taker
@@ -337,7 +337,14 @@ contract DotcV2 is Initializable, Receiver {
         //Transfer DepositAsset from Maker to Taker
         escrow.withdrawDeposit(offerId, depositAssetAmount, msg.sender);
 
-        emit TakenOffer(offerId, msg.sender, validityType, fullDepositAssetAmount, fullWithdrawalAmountPaid, affiliate);
+        emit TakenOffer(
+            offerId,
+            msg.sender,
+            offerFillType,
+            fullDepositAssetAmount,
+            fullWithdrawalAmountPaid,
+            affiliate
+        );
     }
 
     /**
@@ -400,7 +407,7 @@ contract DotcV2 is Initializable, Receiver {
         offer.onlyMaker();
         offer.checkDotcOfferParams();
 
-        allOffers[offerId].validityType = ValidityType.Cancelled;
+        allOffers[offerId].offerFillType = OfferFillType.Cancelled;
 
         uint256 amountToWithdraw = escrow.cancelDeposit(offerId, msg.sender);
 

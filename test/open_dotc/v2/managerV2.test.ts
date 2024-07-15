@@ -83,6 +83,9 @@ describe('DotcManagerV2', () => {
     it('Should change rev share percentage', async () => {
       const { dotcManager, deployer } = await loadFixture(fixture);
 
+      const incorrectRevShare = 10000000;
+      await expect(dotcManager.changeFees(ethers.constants.AddressZero, 0, 10000000)).to.be.revertedWithCustomError(dotcManager, 'IncorrectPercentage').withArgs(incorrectRevShare);
+
       const tx = await dotcManager.changeFees(ethers.constants.AddressZero, 0, 100);
 
       await expect(tx).to.emit(dotcManager, 'RevShareSet').withArgs(await deployer.getAddress(), 100);

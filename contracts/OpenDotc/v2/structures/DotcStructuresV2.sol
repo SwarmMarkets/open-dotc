@@ -78,7 +78,7 @@ enum TakingOfferType {
 }
 
 /**
- * @title Validity Type Enum.
+ * @title Offer Fill Type Enum.
  * @notice Defines the types of validity states an offer can have in the DOTC system.
  * @dev Enum representing different states of offer validity, like non-existent or fully taken.
  * - NotExist: Indicates the offer does not exist.
@@ -86,7 +86,8 @@ enum TakingOfferType {
  * - Fully: Represents a Fully Taking offer type where `taker` should take the full amount of assets.
  * @author Swarm
  */
-enum ValidityType {
+enum OfferFillType {
+    // OfferFillType
     NotTaken,
     Cancelled,
     PartiallyTaken,
@@ -94,21 +95,21 @@ enum ValidityType {
 }
 
 /**
- * @title Escrow Type Enum.
+ * @title Escrow Offer Status Type Enum.
  * @notice Defines the types of escrow states an offer can have in the DOTC system.
  * @dev Enum representing different states of escrow, like offer deposited or fully withdrew.
  * - NoType: Represents a state with no specific escrow type.
  * - OfferDeposited: Indicates that the offer has been deposited.
- * - OfferFullyWithdrew: Indicates that the offer has been fully withdrawn.
- * - OfferPartiallyWithdrew: Indicates that the offer has been partially withdrawn.
+ * - OfferFullyWithdrawn: Indicates that the offer has been fully withdrawn.
+ * - OfferPartiallyWithdrawn: Indicates that the offer has been partially withdrawn.
  * - OfferCancelled: Indicates that the offer has been cancelled.
  * @author Swarm
  */
-enum EscrowType {
+enum EscrowOfferStatusType {
     NoType,
     OfferDeposited,
-    OfferFullyWithdrew,
-    OfferPartiallyWithdrew,
+    OfferFullyWithdrawn,
+    OfferPartiallyWithdrawn,
     OfferCancelled
 }
 
@@ -181,7 +182,7 @@ struct OfferStruct {
  * @notice Detailed structure of an offer in the DOTC trading system.
  * @dev Contains comprehensive information about an offer, including assets involved and trade conditions.
  * @param maker Address of the individual creating the offer.
- * @param validityType The type of the dotc offer validation (NotExist, PartiallyTaken, FullyTaken).
+ * @param offerFillType The type of the dotc offer validation (NotExist, PartiallyTaken, FullyTaken).
  * @param depositAsset Asset offered by the maker.
  * @param withdrawalAsset Asset requested by the maker in exchange.
  * @param offer Detailed structure of the offer including special conditions and timing.
@@ -189,7 +190,7 @@ struct OfferStruct {
  */
 struct DotcOffer {
     address maker;
-    ValidityType validityType;
+    OfferFillType offerFillType;
     Asset depositAsset;
     Asset withdrawalAsset;
     OfferStruct offer;
@@ -199,11 +200,11 @@ struct DotcOffer {
  * @title Escrow Offer Structure.
  * @notice Represents the escrow details of an offer in the DOTC trading system.
  * @dev Defines the structure for escrow details including escrow type and deposit asset.
- * @param escrowType The type of the escrow (OfferDeposited, OfferFullyWithdrew, etc.).
+ * @param escrowOfferStatusType The type of the escrow (OfferDeposited, OfferFullyWithdrawn, etc.).
  * @param depositAsset The asset being deposited in the escrow.
  * @author Swarm
  */
-struct EscrowOffer {
-    EscrowType escrowType;
+struct EscrowDeposit {
+    EscrowOfferStatusType escrowOfferStatusType;
     Asset depositAsset;
 }

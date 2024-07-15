@@ -19,18 +19,18 @@ export enum TakingOfferType {
 	FullyTaking
 }
 
-export enum ValidityType {
+export enum OfferFillType {
 	NotTaken,
 	Cancelled,
 	PartiallyTaken,
 	FullyTaken
 }
 
-export enum EscrowType {
+export enum EscrowOfferStatusType {
 	NoType,
 	OfferDeposited,
-	OfferFullyWithdrew,
-	OfferPartiallyWithdrew,
+	OfferFullyWithdrawn,
+	OfferPartiallyWithdrawn,
 	OfferCancelled
 }
 
@@ -63,14 +63,14 @@ export interface OfferStruct {
 
 export interface DotcOfferStruct {
 	maker: string;
-	validityType: ValidityType;
+	offerFillType: OfferFillType;
 	depositAsset: AssetStruct;
 	withdrawalAsset: AssetStruct;
 	offer: OfferStruct;
 }
 
 export interface EscrowOfferStruct {
-	escrowType: EscrowType;
+	escrowOfferStatusType: EscrowOfferStatusType;
 	depositAsset: AssetStruct;
 }
 
