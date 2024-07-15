@@ -122,10 +122,10 @@ contract DotcV2 dotc
 
 _Address of the dotc contract._
 
-### escrowOffers
+### escrowDeposits
 
 ```solidity
-mapping(uint256 => struct EscrowOffer) escrowOffers
+mapping(uint256 => struct EscrowDeposit) escrowDeposits
 ```
 
 _Mapping from offer IDs to their corresponding deposited assets._

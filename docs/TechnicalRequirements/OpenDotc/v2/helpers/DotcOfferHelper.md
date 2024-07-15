@@ -3,7 +3,7 @@
 ## OfferValidityError
 
 ```solidity
-error OfferValidityError(enum ValidityType validityType)
+error OfferValidityError(enum OfferFillType offerFillType)
 ```
 
 Thrown when an offer encounters a validity-related issue.
@@ -12,7 +12,7 @@ Thrown when an offer encounters a validity-related issue.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| validityType | enum ValidityType | The type of validity error encountered, represented as an enum of `ValidityType`. |
+| offerFillType | enum OfferFillType | The type of validity error encountered, represented as an enum of `OfferFillType`. |
 
 ## OnlyMakerAllowedError
 

@@ -133,16 +133,6 @@ uint256 revSharePercentage
 
 _Revenue share percentage._
 
-### onlyDotc
-
-```solidity
-modifier onlyDotc()
-```
-
-Ensures that the function is only callable by the DOTC contract.
-
-_Modifier that restricts function access to the address of the DOTC contract._
-
 ### constructor
 
 ```solidity

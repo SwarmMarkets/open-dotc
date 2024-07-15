@@ -75,7 +75,7 @@ enum TakingOfferType {
 }
 ```
 
-## ValidityType
+## OfferFillType
 
 Defines the types of validity states an offer can have in the DOTC system.
 
@@ -85,7 +85,7 @@ _Enum representing different states of offer validity, like non-existent or full
 - Fully: Represents a Fully Taking offer type where `taker` should take the full amount of assets._
 
 ```solidity
-enum ValidityType {
+enum OfferFillType {
   NotTaken,
   Cancelled,
   PartiallyTaken,
@@ -93,23 +93,23 @@ enum ValidityType {
 }
 ```
 
-## EscrowType
+## EscrowOfferStatusType
 
 Defines the types of escrow states an offer can have in the DOTC system.
 
 _Enum representing different states of escrow, like offer deposited or fully withdrew.
 - NoType: Represents a state with no specific escrow type.
 - OfferDeposited: Indicates that the offer has been deposited.
-- OfferFullyWithdrew: Indicates that the offer has been fully withdrawn.
-- OfferPartiallyWithdrew: Indicates that the offer has been partially withdrawn.
+- OfferFullyWithdrawn: Indicates that the offer has been fully withdrawn.
+- OfferPartiallyWithdrawn: Indicates that the offer has been partially withdrawn.
 - OfferCancelled: Indicates that the offer has been cancelled._
 
 ```solidity
-enum EscrowType {
+enum EscrowOfferStatusType {
   NoType,
   OfferDeposited,
-  OfferFullyWithdrew,
-  OfferPartiallyWithdrew,
+  OfferFullyWithdrawn,
+  OfferPartiallyWithdrawn,
   OfferCancelled
 }
 ```
@@ -194,14 +194,14 @@ _Contains comprehensive information about an offer, including assets involved an
 ```solidity
 struct DotcOffer {
   address maker;
-  enum ValidityType validityType;
+  enum OfferFillType offerFillType;
   struct Asset depositAsset;
   struct Asset withdrawalAsset;
   struct OfferStruct offer;
 }
 ```
 
-## EscrowOffer
+## EscrowDeposit
 
 Represents the escrow details of an offer in the DOTC trading system.
 
@@ -213,8 +213,8 @@ _Defines the structure for escrow details including escrow type and deposit asse
 | ---- | ---- | ----------- |
 
 ```solidity
-struct EscrowOffer {
-  enum EscrowType escrowType;
+struct EscrowDeposit {
+  enum EscrowOfferStatusType escrowOfferStatusType;
   struct Asset depositAsset;
 }
 ```

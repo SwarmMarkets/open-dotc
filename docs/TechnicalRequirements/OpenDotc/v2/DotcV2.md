@@ -93,7 +93,7 @@ Emitted when a new trading offer is created.
 ### TakenOffer
 
 ```solidity
-event TakenOffer(uint256 offerId, address takenBy, enum ValidityType validityType, uint256 amountToReceive, uint256 amountPaid, address affiliate)
+event TakenOffer(uint256 offerId, address takenBy, enum OfferFillType offerFillType, uint256 amountToReceive, uint256 amountPaid, address affiliate)
 ```
 
 Emitted when an offer is successfully taken.
@@ -104,7 +104,7 @@ Emitted when an offer is successfully taken.
 | ---- | ---- | ----------- |
 | offerId | uint256 | Unique identifier of the taken offer. |
 | takenBy | address | Address of the user taking the offer. |
-| validityType | enum ValidityType | Indicates if the offer is fully taken. |
+| offerFillType | enum OfferFillType | Indicates if the offer is fully taken. |
 | amountToReceive | uint256 | Amount received in the trade. |
 | amountPaid | uint256 | Amount paid to take the offer. |
 | affiliate | address | Address of the affiliate involved in the trade. |
