@@ -228,7 +228,7 @@ describe('OpenDotcV2', () => {
           .div(BigNumber.from(DepositAssetERC20.amount));
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.FixedPricing,
           unitPrice: unitPrice,
           specialAddresses: [],
@@ -315,7 +315,7 @@ describe('OpenDotcV2', () => {
           tokenId: 4,
         };
 
-        Offer.takingOfferType = TakingOfferType.PartialTaking;
+        Offer.takingOfferType = TakingOfferType.PartialOffer;
         Offer.timelockPeriod = 0;
 
         await erc20_18.approve(dotc.address, ethers.utils.parseEther('1000000'));
@@ -338,7 +338,7 @@ describe('OpenDotcV2', () => {
           tokenId: 0,
         };
 
-        Offer.takingOfferType = TakingOfferType.FullyTaking;
+        Offer.takingOfferType = TakingOfferType.BlockOffer;
 
         await expect(dotc.makeOffer(DepositAssetERC20_false, WithdrawalAssetERC20, Offer)).to.be.revertedWithCustomError(
           assetHelper,
@@ -489,7 +489,7 @@ describe('OpenDotcV2', () => {
           .div(BigNumber.from(DepositAssetERC20_standardized.amount));
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.PartialTaking,
+          takingOfferType: TakingOfferType.PartialOffer,
           offerPricingType: OfferPricingType.FixedPricing,
           unitPrice: unitPrice,
           specialAddresses: [],
@@ -577,7 +577,7 @@ describe('OpenDotcV2', () => {
           .div(BigNumber.from(DepositAssetERC20.amount));
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.FixedPricing,
           unitPrice: unitPrice,
           specialAddresses: [],
@@ -664,7 +664,7 @@ describe('OpenDotcV2', () => {
           .div(BigNumber.from(WithdrawalAssetERC721.amount));
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.FixedPricing,
           unitPrice: unitPrice,
           specialAddresses: [],
@@ -751,7 +751,7 @@ describe('OpenDotcV2', () => {
           .div(BigNumber.from(DepositAssetERC20.amount));
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.FixedPricing,
           unitPrice: unitPrice,
           specialAddresses: [],
@@ -838,7 +838,7 @@ describe('OpenDotcV2', () => {
           .div(BigNumber.from(WithdrawalAssetERC1155.amount));
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.FixedPricing,
           unitPrice: unitPrice,
           specialAddresses: [],
@@ -923,7 +923,7 @@ describe('OpenDotcV2', () => {
           .div(BigNumber.from(DepositAssetERC721.amount));
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.FixedPricing,
           unitPrice: unitPrice,
           specialAddresses: [],
@@ -1006,7 +1006,7 @@ describe('OpenDotcV2', () => {
           .div(BigNumber.from(DepositAssetERC1155.amount));
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.FixedPricing,
           unitPrice: unitPrice,
           specialAddresses: [],
@@ -1113,7 +1113,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.FixedPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -1248,7 +1248,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -1289,12 +1289,12 @@ describe('OpenDotcV2', () => {
 
         offerId++;
 
-        Offer.takingOfferType = TakingOfferType.PartialTaking;
+        Offer.takingOfferType = TakingOfferType.PartialOffer;
         await dotc
           .connect(acc1)
           .makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
         expect((await dotc.allOffers(offerId)).offer.takingOfferType).to.eq(Offer.takingOfferType);
-        Offer.takingOfferType = TakingOfferType.FullyTaking;
+        Offer.takingOfferType = TakingOfferType.BlockOffer;
 
         WithdrawalAssetERC20.price.percentage = 10001;
         await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer)).to.be.revertedWithCustomError(
@@ -1345,7 +1345,7 @@ describe('OpenDotcV2', () => {
       };
 
       const offer: OfferStruct = {
-        takingOfferType: TakingOfferType.PartialTaking,
+        takingOfferType: TakingOfferType.PartialOffer,
         offerPricingType: OfferPricingType.FixedPricing,
         unitPrice: 0,
         specialAddresses: [],
@@ -1400,7 +1400,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.FixedPricing,
           unitPrice: 0,
           specialAddresses: [await acc2.getAddress(), await deployer.getAddress()],
@@ -1534,7 +1534,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.FixedPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -1621,7 +1621,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.PartialTaking,
+          takingOfferType: TakingOfferType.PartialOffer,
           offerPricingType: OfferPricingType.FixedPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -1732,7 +1732,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.PartialTaking,
+          takingOfferType: TakingOfferType.PartialOffer,
           offerPricingType: OfferPricingType.FixedPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -1815,7 +1815,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.PartialTaking,
+          takingOfferType: TakingOfferType.PartialOffer,
           offerPricingType: OfferPricingType.FixedPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -1902,7 +1902,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.FixedPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -1986,7 +1986,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.FixedPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -2054,7 +2054,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.FixedPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -2133,7 +2133,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.FixedPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -2200,7 +2200,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.FixedPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -2269,7 +2269,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.FixedPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -2352,7 +2352,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.FixedPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -2422,7 +2422,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.FixedPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -2520,7 +2520,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -2632,7 +2632,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.PartialTaking,
+          takingOfferType: TakingOfferType.PartialOffer,
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -2742,7 +2742,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.PartialTaking,
+          takingOfferType: TakingOfferType.PartialOffer,
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -2857,7 +2857,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.PartialTaking,
+          takingOfferType: TakingOfferType.PartialOffer,
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -2970,7 +2970,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.PartialTaking,
+          takingOfferType: TakingOfferType.PartialOffer,
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -3083,7 +3083,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.PartialTaking,
+          takingOfferType: TakingOfferType.PartialOffer,
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -3197,7 +3197,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -3312,7 +3312,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -3430,7 +3430,7 @@ describe('OpenDotcV2', () => {
         const WithdrawalAssetERC20 = DepositAssetERC20;
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -3545,7 +3545,7 @@ describe('OpenDotcV2', () => {
         const WithdrawalAssetERC20 = DepositAssetERC20;
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -3658,7 +3658,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -3774,7 +3774,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -3895,7 +3895,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.FullyTaking,
+          takingOfferType: TakingOfferType.BlockOffer,
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -4005,7 +4005,7 @@ describe('OpenDotcV2', () => {
         };
 
         const Offer: OfferStruct = {
-          takingOfferType: TakingOfferType.PartialTaking,
+          takingOfferType: TakingOfferType.PartialOffer,
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           specialAddresses: [],
@@ -4100,7 +4100,7 @@ describe('OpenDotcV2', () => {
       };
 
       const Offer: OfferStruct = {
-        takingOfferType: TakingOfferType.FullyTaking,
+        takingOfferType: TakingOfferType.BlockOffer,
         offerPricingType: OfferPricingType.FixedPricing,
         unitPrice: 0,
         specialAddresses: [],
@@ -4208,7 +4208,7 @@ describe('OpenDotcV2', () => {
 
 
       const Offer: OfferStruct = {
-        takingOfferType: TakingOfferType.PartialTaking,
+        takingOfferType: TakingOfferType.PartialOffer,
         offerPricingType: OfferPricingType.FixedPricing,
         unitPrice: 0,
         specialAddresses: [],
@@ -4305,7 +4305,7 @@ describe('OpenDotcV2', () => {
       };
 
       const Offer: OfferStruct = {
-        takingOfferType: TakingOfferType.PartialTaking,
+        takingOfferType: TakingOfferType.PartialOffer,
         offerPricingType: OfferPricingType.FixedPricing,
         unitPrice: 0,
         specialAddresses: [],
@@ -4391,7 +4391,7 @@ describe('OpenDotcV2', () => {
       };
 
       const Offer: OfferStruct = {
-        takingOfferType: TakingOfferType.FullyTaking,
+        takingOfferType: TakingOfferType.BlockOffer,
         offerPricingType: OfferPricingType.FixedPricing,
         unitPrice: 0,
         specialAddresses: [],
@@ -4468,7 +4468,7 @@ describe('OpenDotcV2', () => {
       };
 
       const Offer: OfferStruct = {
-        takingOfferType: TakingOfferType.FullyTaking,
+        takingOfferType: TakingOfferType.BlockOffer,
         offerPricingType: OfferPricingType.FixedPricing,
         unitPrice: 0,
         specialAddresses: [],
@@ -4544,7 +4544,7 @@ describe('OpenDotcV2', () => {
       };
 
       const Offer: OfferStruct = {
-        takingOfferType: TakingOfferType.FullyTaking,
+        takingOfferType: TakingOfferType.BlockOffer,
         offerPricingType: OfferPricingType.FixedPricing,
         unitPrice: 0,
         specialAddresses: [],
@@ -4621,7 +4621,7 @@ describe('OpenDotcV2', () => {
       };
 
       const Offer: OfferStruct = {
-        takingOfferType: TakingOfferType.FullyTaking,
+        takingOfferType: TakingOfferType.BlockOffer,
         offerPricingType: OfferPricingType.FixedPricing,
         unitPrice: 0,
         specialAddresses: [],
@@ -4696,7 +4696,7 @@ describe('OpenDotcV2', () => {
       };
 
       const Offer: OfferStruct = {
-        takingOfferType: TakingOfferType.FullyTaking,
+        takingOfferType: TakingOfferType.BlockOffer,
         offerPricingType: OfferPricingType.FixedPricing,
         unitPrice: 0,
         specialAddresses: [],
@@ -4769,7 +4769,7 @@ describe('OpenDotcV2', () => {
       };
 
       const Offer: OfferStruct = {
-        takingOfferType: TakingOfferType.FullyTaking,
+        takingOfferType: TakingOfferType.BlockOffer,
         offerPricingType: OfferPricingType.FixedPricing,
         unitPrice: 0,
         specialAddresses: [],
@@ -4852,7 +4852,7 @@ describe('OpenDotcV2', () => {
       };
 
       const Offer: OfferStruct = {
-        takingOfferType: TakingOfferType.FullyTaking,
+        takingOfferType: TakingOfferType.BlockOffer,
         offerPricingType: OfferPricingType.FixedPricing,
         unitPrice: 0,
         specialAddresses: [],

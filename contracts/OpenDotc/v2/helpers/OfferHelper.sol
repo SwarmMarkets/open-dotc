@@ -85,7 +85,7 @@ library OfferHelper {
         dotcOffer.withdrawalAsset = withdrawalAsset;
 
         if (offer.offerPricingType == OfferPricingType.FixedPricing) {
-            if (offer.takingOfferType == TakingOfferType.PartialTaking) {
+            if (offer.takingOfferType == TakingOfferType.PartialOffer) {
                 depositAmount = depositAsset.standardize();
                 withdrawalAmount = withdrawalAsset.standardize();
             }
@@ -137,7 +137,7 @@ library OfferHelper {
         }
 
         if (
-            offer.takingOfferType == TakingOfferType.PartialTaking &&
+            offer.takingOfferType == TakingOfferType.PartialOffer &&
             (depositAsset.assetType != AssetType.ERC20 || withdrawalAsset.assetType != AssetType.ERC20)
         ) {
             revert UnsupportedPartialOfferForNonERC20AssetsError();

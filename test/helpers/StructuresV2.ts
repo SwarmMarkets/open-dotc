@@ -15,8 +15,8 @@ export enum OfferPricingType {
 
 export enum TakingOfferType {
 	NoType,
-	PartialTaking,
-	FullyTaking
+	PartialOffer,
+	BlockOffer
 }
 
 export enum OfferFillType {

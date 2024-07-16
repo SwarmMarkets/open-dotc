@@ -68,13 +68,13 @@ enum OfferPricingType {
  * @dev Enum representing various taking offer types supported in DOTC trades.
  * @author Swarm
  * - NoType: Represents a state with no specific taking offer type.
- * - PartialTaking: Represents a Partial Taking offer type where `taker` can take not the full amount of assets.
- * - FullyTaking: Represents a Fully Taking offer type where `taker` should take the full amount of assets.
+ * - PartialOffer: Represents a Partial Taking offer type where `taker` can take not the full amount of assets.
+ * - BlockOffer: Represents a Fully Taking offer type where `taker` should take the full amount of assets.
  */
 enum TakingOfferType {
     NoType,
-    PartialTaking,
-    FullyTaking
+    PartialOffer,
+    BlockOffer // BlockOffer
 }
 
 /**
@@ -87,7 +87,6 @@ enum TakingOfferType {
  * @author Swarm
  */
 enum OfferFillType {
-    // OfferFillType
     NotTaken,
     Cancelled,
     PartiallyTaken,
