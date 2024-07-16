@@ -17,15 +17,16 @@ async function main(): Promise<void> {
     });
   await verifyContract(dotcOfferHelper_address);
 
-  // await verifyContract(dotcManager_address);
-  // await verifyContract(dotc_address,
-  //   [],
-  //   {
-  //     AssetHelper: assetHelper_address,
-  //     OfferHelper: offerHelper_address,
-  //     DotcOfferHelper: dotcOfferHelper_address,
-  //   });
-  // await verifyContract(escrow_address);
+  await verifyContract(dotcManager_address);
+  await verifyContract(dotc_address,
+    [],
+    {
+      AssetHelper: assetHelper_address,
+      OfferHelper: offerHelper_address,
+      DotcOfferHelper: dotcOfferHelper_address,
+    }
+  );
+  await verifyContract(escrow_address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

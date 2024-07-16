@@ -944,6 +944,7 @@
     "@nomicfoundation/edr-linux-x64-musl" "0.4.1"
     "@nomicfoundation/edr-win32-x64-msvc" "0.4.1"
 
+
 "@nomicfoundation/ethereumjs-common@4.0.4":
   version "4.0.4"
   resolved "https://registry.yarnpkg.com/@nomicfoundation/ethereumjs-common/-/ethereumjs-common-4.0.4.tgz#9901f513af2d4802da87c66d6f255b510bef5acb"
