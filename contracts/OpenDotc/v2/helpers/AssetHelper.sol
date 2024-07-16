@@ -323,10 +323,10 @@ library AssetHelper {
         uint256 uintAnswer = uint256(intAnswer);
         uint256 percentage = calculatePercentage(uintAnswer, asset.price.percentage);
 
-        price = asset.price.max > 0
-            ? (uintAnswer + percentage).max(asset.price.max)
-            : asset.price.min > 0
-                ? (uintAnswer - percentage).min(asset.price.min)
+        price = asset.price.offerMinimumPrice > 0
+            ? (uintAnswer + percentage).max(asset.price.offerMinimumPrice)
+            : asset.price.offerMaximumPrice > 0
+                ? (uintAnswer - percentage).min(asset.price.offerMaximumPrice)
                 : uintAnswer;
 
         try IDotcCompatiblePriceFeed(asset.price.priceFeedAddress).decimals() returns (uint8 _decimals) {
@@ -344,13 +344,13 @@ library AssetHelper {
     function _checkPriceStructure(Price calldata price, OfferPricingType offerPricingType) private pure {
         if (
             offerPricingType == OfferPricingType.FixedPricing &&
-            (price.max > 0 || price.min > 0 || price.percentage > 0)
+            (price.offerMinimumPrice > 0 || price.offerMaximumPrice > 0 || price.percentage > 0)
         ) {
             revert PriceShouldNotBeSpecifiedFor(offerPricingType);
         }
 
         if (offerPricingType == OfferPricingType.DynamicPricing) {
-            if (price.max > 0 && price.min > 0) {
+            if (price.offerMinimumPrice > 0 && price.offerMaximumPrice > 0) {
                 revert BothMinMaxCanNotBeSpecifiedFor(offerPricingType);
             }
 

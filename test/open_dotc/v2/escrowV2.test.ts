@@ -74,8 +74,8 @@ describe('OpenDotcEscrowV2', () => {
 
       const Price: PriceStruct = {
         priceFeedAddress: await otherAcc.getAddress(),
-        min: 0,
-        max: 0,
+        offerMaximumPrice: 0,
+        offerMinimumPrice: 0,
         percentage: 0
       }
 
@@ -105,8 +105,8 @@ describe('OpenDotcEscrowV2', () => {
 
       const Price: PriceStruct = {
         priceFeedAddress: await otherAcc.getAddress(),
-        min: 0,
-        max: 0,
+        offerMaximumPrice: 0,
+        offerMinimumPrice: 0,
         percentage: 0
       }
 
@@ -195,8 +195,8 @@ describe('OpenDotcEscrowV2', () => {
 
       const Price: PriceStruct = {
         priceFeedAddress: await otherAcc.getAddress(),
-        min: 0,
-        max: 0,
+        offerMaximumPrice: 0,
+        offerMinimumPrice: 0,
         percentage: 0
       }
 
@@ -286,8 +286,8 @@ describe('OpenDotcEscrowV2', () => {
 
       const Price: PriceStruct = {
         priceFeedAddress: await otherAcc.getAddress(),
-        min: 0,
-        max: 0,
+        offerMaximumPrice: 0,
+        offerMinimumPrice: 0,
         percentage: 0
       }
 
@@ -401,8 +401,8 @@ describe('OpenDotcEscrowV2', () => {
 
       const Price: PriceStruct = {
         priceFeedAddress: await otherAcc.getAddress(),
-        min: 0,
-        max: 0,
+        offerMaximumPrice: 0,
+        offerMinimumPrice: 0,
         percentage: 0
       }
 
@@ -441,8 +441,8 @@ describe('OpenDotcEscrowV2', () => {
 
       const Price: PriceStruct = {
         priceFeedAddress: await otherAcc.getAddress(),
-        min: 0,
-        max: 0,
+        offerMaximumPrice: 0,
+        offerMinimumPrice: 0,
         percentage: 0
       }
 

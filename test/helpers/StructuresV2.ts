@@ -36,8 +36,8 @@ export enum EscrowOfferStatusType {
 
 export interface PriceStruct {
 	priceFeedAddress: string;
-	min: BigNumberish;
-	max: BigNumberish;
+	offerMaximumPrice: BigNumberish;
+	offerMinimumPrice: BigNumberish;
 	percentage: BigNumberish;
 }
 

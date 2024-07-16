@@ -116,17 +116,17 @@ enum EscrowOfferStatusType {
 /**
  * @title Price Structure.
  * @notice Represents the price details in the DOTC trading system.
- * @dev Defines the structure for price details including price feed address, min, max, and percentage.
+ * @dev Defines the structure for price details including price feed address, offerMaximumPrice, offerMinimumPrice, and percentage.
  * @param priceFeedAddress The contract address of the price feed for this asset.
- * @param min The minimum price limit.
- * @param max The maximum price limit.
+ * @param offerMaximumPrice The maximum price limit.
+ * @param offerMinimumPrice The minimum price limit.
  * @param percentage The price percentage.
  * @author Swarm
  */
 struct Price {
     address priceFeedAddress;
-    uint256 min;
-    uint256 max;
+    uint256 offerMaximumPrice;
+    uint256 offerMinimumPrice;
     uint256 percentage;
 }
 

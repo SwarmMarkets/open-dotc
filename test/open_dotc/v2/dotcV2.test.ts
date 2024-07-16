@@ -128,8 +128,8 @@ describe('OpenDotcV2', () => {
 
     Price = {
       priceFeedAddress: priceFeed_fake.address,
-      min: 0,
-      max: 0,
+      offerMaximumPrice: 0,
+      offerMinimumPrice: 0,
       percentage: 0
     }
 
@@ -1219,15 +1219,15 @@ describe('OpenDotcV2', () => {
 
         const PriceDeposit: PriceStruct = {
           priceFeedAddress: priceFeed_18.address,
-          min: 0,
-          max: depositAssetPrice,
+          offerMaximumPrice: 0,
+          offerMinimumPrice: depositAssetPrice,
           percentage: 100
         }
 
         const PriceWithdrawal: PriceStruct = {
           priceFeedAddress: priceFeed_6.address,
-          min: 0,
-          max: withdrawalAssetPrice,
+          offerMaximumPrice: 0,
+          offerMinimumPrice: withdrawalAssetPrice,
           percentage: 100
         }
 
@@ -1317,7 +1317,7 @@ describe('OpenDotcV2', () => {
         ).withArgs(WithdrawalAssetERC20.price.priceFeedAddress);
         WithdrawalAssetERC20.price.priceFeedAddress = priceFeed_6.address;
 
-        WithdrawalAssetERC20.price.min = 1;
+        WithdrawalAssetERC20.price.offerMaximumPrice = 1;
         await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer)).to.be.revertedWithCustomError(
           assetHelper,
           'BothMinMaxCanNotBeSpecifiedFor',
@@ -2470,7 +2470,7 @@ describe('OpenDotcV2', () => {
     });
 
     describe('Dynamic Price', () => {
-      it('Should take full dynamic price offer (max) (erc20 => erc20)', async () => {
+      it('Should take full dynamic price offer (offerMinimumPrice) (erc20 => erc20)', async () => {
         const { dotc, escrow, assetHelper, dotcManager, priceFeed_6, priceFeed_18, erc20_18, erc20_6, deployer, acc1, acc2 } = await loadFixture(
           fixture,
         );
@@ -2491,15 +2491,15 @@ describe('OpenDotcV2', () => {
 
         const PriceDeposit: PriceStruct = {
           priceFeedAddress: priceFeed_18.address,
-          min: 0,
-          max: depositAssetPrice,
+          offerMaximumPrice: 0,
+          offerMinimumPrice: depositAssetPrice,
           percentage: 100
         }
 
         const PriceWithdrawal: PriceStruct = {
           priceFeedAddress: priceFeed_6.address,
-          min: 0,
-          max: withdrawalAssetPrice,
+          offerMaximumPrice: 0,
+          offerMinimumPrice: withdrawalAssetPrice,
           percentage: 100
         }
 
@@ -2582,7 +2582,7 @@ describe('OpenDotcV2', () => {
         expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
       });
 
-      it('Should take partial dynamic price offer fully (max) (erc20 => erc20)', async () => {
+      it('Should take partial dynamic price offer fully (offerMinimumPrice) (erc20 => erc20)', async () => {
         const { dotc, escrow, assetHelper, dotcManager, priceFeed_6, priceFeed_18, erc20_18, erc20_6, deployer, acc1, acc2 } = await loadFixture(
           fixture,
         );
@@ -2603,15 +2603,15 @@ describe('OpenDotcV2', () => {
 
         const PriceDeposit: PriceStruct = {
           priceFeedAddress: priceFeed_18.address,
-          min: 0,
-          max: depositAssetPrice,
+          offerMaximumPrice: 0,
+          offerMinimumPrice: depositAssetPrice,
           percentage: 100
         }
 
         const PriceWithdrawal: PriceStruct = {
           priceFeedAddress: priceFeed_6.address,
-          min: 0,
-          max: withdrawalAssetPrice,
+          offerMaximumPrice: 0,
+          offerMinimumPrice: withdrawalAssetPrice,
           percentage: 100
         }
 
@@ -2692,7 +2692,7 @@ describe('OpenDotcV2', () => {
         expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
       });
 
-      it('Should take partial dynamic price offer partially (max) (erc20 => erc20)', async () => {
+      it('Should take partial dynamic price offer partially (offerMinimumPrice) (erc20 => erc20)', async () => {
         const { dotc, escrow, assetHelper, dotcManager, priceFeed_6, priceFeed_18, erc20_18, erc20_6, deployer, acc1, acc2 } = await loadFixture(
           fixture,
         );
@@ -2713,15 +2713,15 @@ describe('OpenDotcV2', () => {
 
         const PriceDeposit: PriceStruct = {
           priceFeedAddress: priceFeed_18.address,
-          min: 0,
-          max: depositAssetPrice,
+          offerMaximumPrice: 0,
+          offerMinimumPrice: depositAssetPrice,
           percentage: 100
         }
 
         const PriceWithdrawal: PriceStruct = {
           priceFeedAddress: priceFeed_6.address,
-          min: 0,
-          max: withdrawalAssetPrice,
+          offerMaximumPrice: 0,
+          offerMinimumPrice: withdrawalAssetPrice,
           percentage: 100
         }
 
@@ -2807,7 +2807,7 @@ describe('OpenDotcV2', () => {
         expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferPartiallyWithdrawn);
       });
 
-      it('Should take full dynamic price offer (min) (erc20 => erc20)', async () => {
+      it('Should take full dynamic price offer (offerMaximumPrice) (erc20 => erc20)', async () => {
         const { dotc, escrow, assetHelper, dotcManager, priceFeed_6, priceFeed_18, erc20_18, erc20_6, deployer, acc1, acc2 } = await loadFixture(
           fixture,
         );
@@ -2828,15 +2828,15 @@ describe('OpenDotcV2', () => {
 
         const PriceDeposit: PriceStruct = {
           priceFeedAddress: priceFeed_6.address,
-          min: depositAssetPrice.add(1),
-          max: 0,
+          offerMaximumPrice: depositAssetPrice.add(1),
+          offerMinimumPrice: 0,
           percentage: 100
         }
 
         const PriceWithdrawal: PriceStruct = {
           priceFeedAddress: priceFeed_18.address,
-          min: withdrawalAssetPrice.add(1),
-          max: 0,
+          offerMaximumPrice: withdrawalAssetPrice.add(1),
+          offerMinimumPrice: 0,
           percentage: 100
         }
 
@@ -2920,7 +2920,7 @@ describe('OpenDotcV2', () => {
         expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
       });
 
-      it('Should take partial dynamic price offer fully (min) (erc20 => erc20)', async () => {
+      it('Should take partial dynamic price offer fully (offerMaximumPrice) (erc20 => erc20)', async () => {
         const { dotc, escrow, assetHelper, dotcManager, priceFeed_6, priceFeed_18, erc20_18, erc20_6, deployer, acc1, acc2 } = await loadFixture(
           fixture,
         );
@@ -2941,15 +2941,15 @@ describe('OpenDotcV2', () => {
 
         const PriceDeposit: PriceStruct = {
           priceFeedAddress: priceFeed_6.address,
-          min: depositAssetPrice,
-          max: 0,
+          offerMaximumPrice: depositAssetPrice,
+          offerMinimumPrice: 0,
           percentage: 100
         }
 
         const PriceWithdrawal: PriceStruct = {
           priceFeedAddress: priceFeed_18.address,
-          min: withdrawalAssetPrice,
-          max: 0,
+          offerMaximumPrice: withdrawalAssetPrice,
+          offerMinimumPrice: 0,
           percentage: 100
         }
 
@@ -3033,7 +3033,7 @@ describe('OpenDotcV2', () => {
         expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
       });
 
-      it('Should take partial dynamic price offer partially (min) (erc20 => erc20)', async () => {
+      it('Should take partial dynamic price offer partially (offerMaximumPrice) (erc20 => erc20)', async () => {
         const { dotc, escrow, assetHelper, dotcManager, priceFeed_6, priceFeed_18, erc20_18, erc20_6, deployer, acc1, acc2 } = await loadFixture(
           fixture,
         );
@@ -3054,15 +3054,15 @@ describe('OpenDotcV2', () => {
 
         const PriceDeposit: PriceStruct = {
           priceFeedAddress: priceFeed_6.address,
-          min: depositAssetPrice,
-          max: 0,
+          offerMaximumPrice: depositAssetPrice,
+          offerMinimumPrice: 0,
           percentage: 100
         }
 
         const PriceWithdrawal: PriceStruct = {
           priceFeedAddress: priceFeed_18.address,
-          min: withdrawalAssetPrice,
-          max: 0,
+          offerMaximumPrice: withdrawalAssetPrice,
+          offerMinimumPrice: 0,
           percentage: 100
         }
 
@@ -3147,7 +3147,7 @@ describe('OpenDotcV2', () => {
         expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferPartiallyWithdrawn);
       });
 
-      it('Should take full dynamic price offer (max) (erc20 => erc1155)', async () => {
+      it('Should take full dynamic price offer (offerMinimumPrice) (erc20 => erc1155)', async () => {
         const { dotc, escrow, dotcManager, assetHelper, erc20_18, erc1155, priceFeed_18, priceFeed_1155, acc1, acc2, deployer } = await loadFixture(fixture);
 
         const offerId = 0;
@@ -3168,15 +3168,15 @@ describe('OpenDotcV2', () => {
 
         const PriceDeposit: PriceStruct = {
           priceFeedAddress: priceFeed_18.address,
-          min: 0,
-          max: depositAssetPrice,
+          offerMaximumPrice: 0,
+          offerMinimumPrice: depositAssetPrice,
           percentage: 100
         }
 
         const PriceWithdrawal: PriceStruct = {
           priceFeedAddress: priceFeed_1155.address,
-          min: 0,
-          max: withdrawalAssetPrice,
+          offerMaximumPrice: 0,
+          offerMinimumPrice: withdrawalAssetPrice,
           percentage: 100
         }
 
@@ -3265,7 +3265,7 @@ describe('OpenDotcV2', () => {
         expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
       });
 
-      it('Should take full dynamic price offer (min) (erc20 => erc1155)', async () => {
+      it('Should take full dynamic price offer (offerMaximumPrice) (erc20 => erc1155)', async () => {
         const { dotc, escrow, dotcManager, assetHelper, erc20_18, erc1155, priceFeed_18, priceFeed_1155, acc1, acc2, deployer } = await loadFixture(fixture);
 
         const offerId = 0;
@@ -3283,15 +3283,15 @@ describe('OpenDotcV2', () => {
 
         const PriceDeposit: PriceStruct = {
           priceFeedAddress: priceFeed_18.address,
-          min: depositAssetPrice,
-          max: 0,
+          offerMaximumPrice: depositAssetPrice,
+          offerMinimumPrice: 0,
           percentage: 100
         }
 
         const PriceWithdrawal: PriceStruct = {
           priceFeedAddress: priceFeed_1155.address,
-          min: withdrawalAssetPrice,
-          max: 0,
+          offerMaximumPrice: withdrawalAssetPrice,
+          offerMinimumPrice: 0,
           percentage: 100
         }
 
@@ -3380,7 +3380,7 @@ describe('OpenDotcV2', () => {
         expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
       });
 
-      it('Should take full dynamic price offer (max) (erc1155 => erc20)', async () => {
+      it('Should take full dynamic price offer (offerMinimumPrice) (erc1155 => erc20)', async () => {
         const { dotc, escrow, dotcManager, assetHelper, erc20_18, erc1155, priceFeed_18, priceFeed_1155, acc1, acc2, deployer } = await loadFixture(fixture);
 
         const offerId = 0;
@@ -3398,15 +3398,15 @@ describe('OpenDotcV2', () => {
 
         const PriceDeposit: PriceStruct = {
           priceFeedAddress: priceFeed_18.address,
-          min: 0,
-          max: withdrawalAssetPrice,
+          offerMaximumPrice: 0,
+          offerMinimumPrice: withdrawalAssetPrice,
           percentage: 100
         }
 
         const PriceWithdrawal: PriceStruct = {
           priceFeedAddress: priceFeed_1155.address,
-          min: 0,
-          max: depositAssetPrice,
+          offerMaximumPrice: 0,
+          offerMinimumPrice: depositAssetPrice,
           percentage: 100
         }
 
@@ -3495,7 +3495,7 @@ describe('OpenDotcV2', () => {
         expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
       });
 
-      it('Should take full dynamic price offer (min) (erc1155 => erc20)', async () => {
+      it('Should take full dynamic price offer (offerMaximumPrice) (erc1155 => erc20)', async () => {
         const { dotc, escrow, dotcManager, assetHelper, erc20_18, erc1155, priceFeed_18, priceFeed_1155, acc1, acc2, deployer } = await loadFixture(fixture);
 
         const offerId = 0;
@@ -3513,15 +3513,15 @@ describe('OpenDotcV2', () => {
 
         const PriceDeposit: PriceStruct = {
           priceFeedAddress: priceFeed_18.address,
-          min: withdrawalAssetPrice,
-          max: 0,
+          offerMaximumPrice: withdrawalAssetPrice,
+          offerMinimumPrice: 0,
           percentage: 100
         }
 
         const PriceWithdrawal: PriceStruct = {
           priceFeedAddress: priceFeed_1155.address,
-          min: depositAssetPrice,
-          max: 0,
+          offerMaximumPrice: depositAssetPrice,
+          offerMinimumPrice: 0,
           percentage: 100
         }
 
@@ -3610,7 +3610,7 @@ describe('OpenDotcV2', () => {
         expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
       });
 
-      it('Should take full dynamic price offer (max) (erc20 => erc721)', async () => {
+      it('Should take full dynamic price offer (offerMinimumPrice) (erc20 => erc721)', async () => {
         const { dotc, escrow, dotcManager, assetHelper, erc20_18, erc721, priceFeed_18, priceFeed_721, acc1, acc2, deployer } = await loadFixture(fixture);
 
         const offerId = 0;
@@ -3629,15 +3629,15 @@ describe('OpenDotcV2', () => {
 
         const PriceDeposit: PriceStruct = {
           priceFeedAddress: priceFeed_18.address,
-          min: 0,
-          max: depositAssetPrice,
+          offerMaximumPrice: 0,
+          offerMinimumPrice: depositAssetPrice,
           percentage: 100
         }
 
         const PriceWithdrawal: PriceStruct = {
           priceFeedAddress: priceFeed_721.address,
-          min: 0,
-          max: withdrawalAssetPrice,
+          offerMaximumPrice: 0,
+          offerMinimumPrice: withdrawalAssetPrice,
           percentage: 100
         }
 
@@ -3726,7 +3726,7 @@ describe('OpenDotcV2', () => {
         expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
       });
 
-      it('Should take full dynamic price offer (min) (erc20 => erc721)', async () => {
+      it('Should take full dynamic price offer (offerMaximumPrice) (erc20 => erc721)', async () => {
         const { dotc, escrow, dotcManager, assetHelper, erc20_18, erc721, priceFeed_18, priceFeed_721, acc1, acc2, deployer } = await loadFixture(fixture);
 
         const offerId = 0;
@@ -3745,15 +3745,15 @@ describe('OpenDotcV2', () => {
 
         const PriceDeposit: PriceStruct = {
           priceFeedAddress: priceFeed_18.address,
-          min: depositAssetPrice,
-          max: 0,
+          offerMaximumPrice: depositAssetPrice,
+          offerMinimumPrice: 0,
           percentage: 100
         }
 
         const PriceWithdrawal: PriceStruct = {
           priceFeedAddress: priceFeed_721.address,
-          min: withdrawalAssetPrice,
-          max: 0,
+          offerMaximumPrice: withdrawalAssetPrice,
+          offerMinimumPrice: 0,
           percentage: 100
         }
 
@@ -3842,7 +3842,7 @@ describe('OpenDotcV2', () => {
         expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
       });
 
-      it('Should take full dynamic price offer (max) (erc20 => erc20) (MAX CHECK)', async () => {
+      it('Should take full dynamic price offer (offerMinimumPrice) (erc20 => erc20) (MAX CHECK)', async () => {
         const { dotc, escrow, assetHelper, dotcManager, priceFeed_6, priceFeed_18, erc20_18, erc20_6, deployer, acc1, acc2 } = await loadFixture(
           fixture,
         );
@@ -3866,15 +3866,15 @@ describe('OpenDotcV2', () => {
 
         const PriceDeposit: PriceStruct = {
           priceFeedAddress: priceFeed_18.address,
-          min: 0,
-          max: depositAssetPrice,
+          offerMaximumPrice: 0,
+          offerMinimumPrice: depositAssetPrice,
           percentage: 100
         }
 
         const PriceWithdrawal: PriceStruct = {
           priceFeedAddress: priceFeed_6.address,
-          min: 0,
-          max: withdrawalAssetPrice,
+          offerMaximumPrice: 0,
+          offerMinimumPrice: withdrawalAssetPrice,
           percentage: 100
         }
 
@@ -3952,7 +3952,7 @@ describe('OpenDotcV2', () => {
         expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
       });
 
-      it('Should take full dynamic price offer (min) (erc20 => erc20) (MIN CHECK)', async () => {
+      it('Should take full dynamic price offer (offerMaximumPrice) (erc20 => erc20) (MIN CHECK)', async () => {
         const { dotc, escrow, assetHelper, dotcManager, priceFeed_6, priceFeed_18, erc20_18, erc20_6, deployer, acc1, acc2 } = await loadFixture(
           fixture,
         );
@@ -3976,15 +3976,15 @@ describe('OpenDotcV2', () => {
 
         const PriceDeposit: PriceStruct = {
           priceFeedAddress: priceFeed_6.address,
-          min: depositAssetPrice,
-          max: 0,
+          offerMaximumPrice: depositAssetPrice,
+          offerMinimumPrice: 0,
           percentage: 100
         }
 
         const PriceWithdrawal: PriceStruct = {
           priceFeedAddress: priceFeed_18.address,
-          min: withdrawalAssetPrice,
-          max: 0,
+          offerMaximumPrice: withdrawalAssetPrice,
+          offerMinimumPrice: 0,
           percentage: 100
         }
 
