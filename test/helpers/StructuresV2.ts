@@ -26,6 +26,12 @@ export enum OfferFillType {
 	FullyTaken
 }
 
+export enum PercentageType {
+	NoType,
+	Plus,
+	Minus
+}
+
 export enum EscrowOfferStatusType {
 	NoType,
 	OfferDeposited,
@@ -34,11 +40,17 @@ export enum EscrowOfferStatusType {
 	OfferCancelled
 }
 
-export interface PriceStruct {
+export interface AssetPriceStruct {
 	priceFeedAddress: string;
 	offerMaximumPrice: BigNumberish;
 	offerMinimumPrice: BigNumberish;
+}
+
+export interface OfferPriceStruct {
+	offerPricingType: OfferPricingType;
+	unitPrice: BigNumberish;
 	percentage: BigNumberish;
+	percentageType: PercentageType;
 }
 
 export interface AssetStruct {
@@ -46,15 +58,14 @@ export interface AssetStruct {
 	assetAddress: string;
 	amount: BigNumberish;
 	tokenId: BigNumberish;
-	price: PriceStruct;
+	assetPrice: AssetPriceStruct;
 }
 
 export interface OfferStruct {
 	takingOfferType: TakingOfferType;
-	offerPricingType: OfferPricingType;
+	offerPrice: OfferPriceStruct;
 	specialAddresses: string[];
 	authorizationAddresses: string[];
-	unitPrice: BigNumberish;
 	expiryTimestamp: BigNumberish;
 	timelockPeriod: BigNumberish;
 	terms: string;
