@@ -39,7 +39,7 @@ error IncorrectTimelockPeriodError(uint256 timelock);
 error OfferExpiredError(uint256 expiredTime);
 
 /// @notice Thrown when the taking offer type is not specified.
-error TakingOfferTypeShouldBeSpecified();
+error TypesShouldBeSpecified();
 
 /**
  * @title OfferHelper Library (as part of the "SwarmX.eth Protocol")
@@ -92,7 +92,10 @@ library OfferHelper {
 
             offer.unitPrice = withdrawalAmount.fullMulDiv(AssetHelper.BPS, depositAmount);
         } else {
-            (uint256 depositToWithdrawalRate, uint256 price) = depositAsset.calculateRate(withdrawalAsset);
+            (uint256 depositToWithdrawalRate, uint256 price) = depositAsset.getRateAndPrice(
+                withdrawalAsset,
+                offer.offerPrice
+            );
 
             offer.unitPrice = depositToWithdrawalRate;
 
@@ -132,8 +135,11 @@ library OfferHelper {
             checkAddressesArrayForZeroAddresses(offer.authorizationAddresses);
         }
 
-        if (offer.takingOfferType == TakingOfferType.NoType) {
-            revert TakingOfferTypeShouldBeSpecified();
+        if (
+            offer.takingOfferType == TakingOfferType.NoType ||
+            offer.offerPrice.offerPricingType == OfferPricingType.NoType
+        ) {
+            revert TypesShouldBeSpecified();
         }
 
         if (

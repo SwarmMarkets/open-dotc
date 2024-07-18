@@ -168,7 +168,7 @@ library AssetHelper {
             revert ERC721AmountExceedsOneError();
         }
 
-        _checkPriceStructure(asset.price, offerPricingType);
+        _checkAssetPriceStructure(asset.assetPrice, offerPricingType);
     }
 
     /**
@@ -178,12 +178,12 @@ library AssetHelper {
      * @return depositToWithdrawalRate The rate from deposit to withdrawal asset.
      * @return withdrawalPrice The calculated withdrawal price.
      */
-    function calculateRate(
+    function getRateAndPrice(
         Asset calldata depositAsset,
         Asset calldata withdrawalAsset
     ) external view returns (uint256 depositToWithdrawalRate, uint256 withdrawalPrice) {
-        (uint256 depositPriceInUsd, uint8 depositAssetPriceFeedDecimals) = _checkPrice(depositAsset);
-        (uint256 withdrawalPriceInUsd, uint8 withdrawalAssetPriceFeedDecimals) = _checkPrice(withdrawalAsset);
+        (uint256 depositPriceInUsd, uint8 depositAssetPriceFeedDecimals) = _getPrice(depositAsset);
+        (uint256 withdrawalPriceInUsd, uint8 withdrawalAssetPriceFeedDecimals) = _getPrice(withdrawalAsset);
 
         uint256 standardizedDepositPrice = _standardize(depositPriceInUsd, depositAssetPriceFeedDecimals);
         uint256 standardizedWithdrawalPrice = _standardize(withdrawalPriceInUsd, withdrawalAssetPriceFeedDecimals);
@@ -220,7 +220,7 @@ library AssetHelper {
      * @return feesToFeeReceiver The fees allocated to the fee receiver.
      * @return feesToAffiliate The fees allocated to the affiliate.
      */
-    function calculateFees(
+    function getFees(
         uint256 amount,
         uint256 feeAmount,
         uint256 revSharePercentage
@@ -229,6 +229,35 @@ library AssetHelper {
 
         feesToAffiliate = calculatePercentage(fees, revSharePercentage);
         feesToFeeReceiver = fees - feesToAffiliate;
+    }
+
+    function getRateWithPercentage(
+        uint256 rate,
+        OfferPrice calldata offerPrice
+    ) public pure returns (uint256 rateWithPercentage) {
+        uint256 percentage = calculatePercentage(rate, offerPrice.percentage);
+
+        rateWithPercentage = offerPrice.percentageType == PercentageType.Plus ? rate + percentage : rate - percentage;
+    }
+
+    /**
+     * @notice Calculates the part percentage of a given whole.
+     * @param part The part value.
+     * @param whole The whole value.
+     * @return The calculated part percentage.
+     */
+    function getPartPercentage(uint256 part, uint256 whole) public pure returns (uint256) {
+        return part.fullMulDiv(SCALING_FACTOR, whole);
+    }
+
+    /**
+     * @notice Calculates the percentage of a given value.
+     * @param value The value to calculate the percentage of.
+     * @param percentage The percentage to apply.
+     * @return The calculated percentage.
+     */
+    function calculatePercentage(uint256 value, uint256 percentage) public pure returns (uint256) {
+        return value.fullMulDiv(percentage, SCALING_FACTOR);
     }
 
     /**
@@ -274,32 +303,12 @@ library AssetHelper {
     }
 
     /**
-     * @notice Calculates the percentage of a given value.
-     * @param value The value to calculate the percentage of.
-     * @param percentage The percentage to apply.
-     * @return The calculated percentage.
-     */
-    function calculatePercentage(uint256 value, uint256 percentage) public pure returns (uint256) {
-        return value.fullMulDiv(percentage, SCALING_FACTOR);
-    }
-
-    /**
-     * @notice Calculates the part percentage of a given whole.
-     * @param part The part value.
-     * @param whole The whole value.
-     * @return The calculated part percentage.
-     */
-    function calculatePartPercentage(uint256 part, uint256 whole) public pure returns (uint256) {
-        return part.fullMulDiv(SCALING_FACTOR, whole);
-    }
-
-    /**
      * @dev Internal function to check the price of an asset.
      * @param asset The asset to check.
      * @return price The price of the asset.
      * @return decimals The decimals of the price feed.
      */
-    function _checkPrice(Asset calldata asset) private view returns (uint256 price, uint8 decimals) {
+    function _getPrice(Asset calldata asset) private view returns (uint256 price, uint8 decimals) {
         int256 intAnswer;
         try IDotcCompatiblePriceFeed(asset.price.priceFeedAddress).latestRoundData() returns (
             uint80,
@@ -341,7 +350,7 @@ library AssetHelper {
      * @param price The price structure to check.
      * @param offerPricingType The type of pricing for the offer.
      */
-    function _checkPriceStructure(Price calldata price, OfferPricingType offerPricingType) private pure {
+    function _checkAssetPriceStructure(AssetPrice calldata price, OfferPricingType offerPricingType) private pure {
         if (
             offerPricingType == OfferPricingType.FixedPricing &&
             (price.offerMinimumPrice > 0 || price.offerMaximumPrice > 0 || price.percentage > 0)

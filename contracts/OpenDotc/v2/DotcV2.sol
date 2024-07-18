@@ -292,7 +292,7 @@ contract DotcV2 is Initializable, Receiver {
         offer.checkDotcOfferParams();
         offer.offer.checkOfferParams();
 
-        (, uint256 withdrawalPrice) = offer.depositAsset.calculateRate(offer.withdrawalAsset);
+        (, uint256 withdrawalPrice) = offer.depositAsset.getRateAndPrice(offer.withdrawalAsset, offer.offer.offerPrice);
 
         if (withdrawalAmountPaid == 0 || withdrawalAmountPaid > withdrawalPrice) {
             withdrawalAmountPaid = withdrawalPrice;
@@ -308,7 +308,7 @@ contract DotcV2 is Initializable, Receiver {
         } else {
             depositAssetAmount = AssetHelper.calculatePercentage(
                 offer.depositAsset.amount,
-                AssetHelper.calculatePartPercentage(withdrawalAmountPaid, withdrawalPrice)
+                AssetHelper.getPartPercentage(withdrawalAmountPaid, withdrawalPrice)
             );
         }
         uint256 fullDepositAssetAmount = depositAssetAmount;
@@ -460,7 +460,7 @@ contract DotcV2 is Initializable, Receiver {
 
         address feeReceiver = manager.feeReceiver();
 
-        (uint256 fees, uint256 feesToFeeReceiver, uint256 feesToAffiliate) = AssetHelper.calculateFees(
+        (uint256 fees, uint256 feesToFeeReceiver, uint256 feesToAffiliate) = AssetHelper.getFees(
             assetAmount,
             feeAmount,
             manager.revSharePercentage()
@@ -490,7 +490,7 @@ contract DotcV2 is Initializable, Receiver {
             return 0;
         }
 
-        (uint256 fees, uint256 feesToFeeReceiver, uint256 feesToAffiliate) = AssetHelper.calculateFees(
+        (uint256 fees, uint256 feesToFeeReceiver, uint256 feesToAffiliate) = AssetHelper.getFees(
             assetAmount,
             feeAmount,
             manager.revSharePercentage()
