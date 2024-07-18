@@ -78,12 +78,28 @@ enum TakingOfferType {
 }
 
 /**
+ * @title Offer Types Enum.
+ * @notice Defines the different types of taking offers that can be used in the system.
+ * @dev Enum representing various taking offer types supported in DOTC trades.
+ * @author Swarm
+ * - NoType: Represents a state with no specific taking offer type.
+ * - PartialOffer: Represents a Partial Taking offer type where `taker` can take not the full amount of assets.
+ * - BlockOffer: Represents a Fully Taking offer type where `taker` should take the full amount of assets.
+ */
+enum PercentageType {
+    NoType,
+    Plus,
+    Minus
+}
+
+/**
  * @title Offer Fill Type Enum.
  * @notice Defines the types of validity states an offer can have in the DOTC system.
  * @dev Enum representing different states of offer validity, like non-existent or fully taken.
- * - NotExist: Indicates the offer does not exist.
- * - Partial: Represents a Partial Taking offer type where `taker` can take not the full amount of assets.
- * - Fully: Represents a Fully Taking offer type where `taker` should take the full amount of assets.
+ * - NotTaken:
+ * - Cancelled:
+ * - PartiallyTaken:
+ * - FullyTaken:
  * @author Swarm
  */
 enum OfferFillType {
@@ -119,14 +135,19 @@ enum EscrowOfferStatusType {
  * @param priceFeedAddress The contract address of the price feed for this asset.
  * @param offerMaximumPrice The maximum price limit.
  * @param offerMinimumPrice The minimum price limit.
- * @param percentage The price percentage.
  * @author Swarm
  */
-struct Price {
+struct AssetPrice {
     address priceFeedAddress;
     uint256 offerMaximumPrice;
     uint256 offerMinimumPrice;
+}
+
+struct OfferPrice {
+    OfferPricingType offerPricingType;
+    uint256 unitPrice;
     uint256 percentage;
+    PercentageType percentageType;
 }
 
 /**
@@ -146,7 +167,7 @@ struct Asset {
     address assetAddress;
     uint256 amount;
     uint256 tokenId;
-    Price price;
+    AssetPrice assetPrice;
 }
 
 /**
@@ -157,7 +178,6 @@ struct Asset {
  * @param offerPricingType The type of the offer pricing (FixedPricing, DynamicPricing).
  * @param specialAddresses Array of addresses with exclusive rights to take the offer.
  * @param authorizationAddresses Array of addresses authorized to take the offer.
- * @param unitPrice The unit price of the asset in the offer.
  * @param expiryTimestamp Unix timestamp marking the offer's expiration.
  * @param timelockPeriod Duration in seconds for which the offer is locked from being taken.
  * @param terms String URL pointing to the terms associated with the offer.
@@ -166,10 +186,9 @@ struct Asset {
  */
 struct OfferStruct {
     TakingOfferType takingOfferType;
-    OfferPricingType offerPricingType;
+    OfferPrice offerPrice;
     address[] specialAddresses;
     address[] authorizationAddresses;
-    uint256 unitPrice;
     uint256 expiryTimestamp;
     uint256 timelockPeriod;
     string terms;

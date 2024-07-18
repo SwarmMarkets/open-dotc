@@ -201,8 +201,8 @@ contract DotcV2 is Initializable, Receiver {
         Asset calldata withdrawalAsset,
         OfferStruct calldata offer
     ) external {
-        depositAsset.checkAssetStructure(offer.offerPricingType);
-        withdrawalAsset.checkAssetStructure(offer.offerPricingType);
+        depositAsset.checkAssetStructure(offer.offerPrice.offerPricingType);
+        withdrawalAsset.checkAssetStructure(offer.offerPrice.offerPricingType);
 
         depositAsset.checkAssetOwner(msg.sender, depositAsset.amount);
 
@@ -248,7 +248,7 @@ contract DotcV2 is Initializable, Receiver {
                 (
                     offer.withdrawalAsset.standardize(withdrawalAmountPaid).fullMulDiv(
                         AssetHelper.BPS,
-                        offer.offer.unitPrice
+                        offer.offer.offerPrice.unitPrice
                     )
                 )
             )

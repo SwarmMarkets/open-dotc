@@ -3,7 +3,7 @@ pragma solidity 0.8.25;
 
 import { FixedPointMathLib, MetadataReaderLib, IERC20, IERC721, IERC1155, IERC165 } from "../exports/ExternalExports.sol";
 
-import { Asset, AssetType, Price, OfferPricingType, IncorrectPercentage } from "../structures/DotcStructuresV2.sol";
+import { Asset, AssetType, AssetPrice, OfferPrice, OfferPricingType, PercentageType } from "../structures/DotcStructuresV2.sol";
 import { IDotcCompatiblePriceFeed } from "../interfaces/IDotcCompatiblePriceFeed.sol";
 
 /// @title Errors related to assets in the AssetHelper Library.
@@ -180,7 +180,8 @@ library AssetHelper {
      */
     function getRateAndPrice(
         Asset calldata depositAsset,
-        Asset calldata withdrawalAsset
+        Asset calldata withdrawalAsset,
+        OfferPrice calldata offerPrice
     ) external view returns (uint256 depositToWithdrawalRate, uint256 withdrawalPrice) {
         (uint256 depositPriceInUsd, uint8 depositAssetPriceFeedDecimals) = _getPrice(depositAsset);
         (uint256 withdrawalPriceInUsd, uint8 withdrawalAssetPriceFeedDecimals) = _getPrice(withdrawalAsset);
@@ -310,7 +311,7 @@ library AssetHelper {
      */
     function _getPrice(Asset calldata asset) private view returns (uint256 price, uint8 decimals) {
         int256 intAnswer;
-        try IDotcCompatiblePriceFeed(asset.price.priceFeedAddress).latestRoundData() returns (
+        try IDotcCompatiblePriceFeed(asset.assetPrice.priceFeedAddress).latestRoundData() returns (
             uint80,
             int256 _answer,
             uint256,
@@ -319,26 +320,25 @@ library AssetHelper {
         ) {
             intAnswer = _answer;
         } catch {
-            try IDotcCompatiblePriceFeed(asset.price.priceFeedAddress).latestAnswer() returns (int256 _answer) {
+            try IDotcCompatiblePriceFeed(asset.assetPrice.priceFeedAddress).latestAnswer() returns (int256 _answer) {
                 intAnswer = _answer;
             } catch {
-                revert IncorrectPriceFeed(asset.price.priceFeedAddress);
+                revert IncorrectPriceFeed(asset.assetPrice.priceFeedAddress);
             }
         }
         if (intAnswer <= 0) {
-            revert IncorrectPriceFeed(asset.price.priceFeedAddress);
+            revert IncorrectPriceFeed(asset.assetPrice.priceFeedAddress);
         }
 
         uint256 uintAnswer = uint256(intAnswer);
-        uint256 percentage = calculatePercentage(uintAnswer, asset.price.percentage);
 
-        price = asset.price.offerMinimumPrice > 0
-            ? (uintAnswer + percentage).max(asset.price.offerMinimumPrice)
-            : asset.price.offerMaximumPrice > 0
-                ? (uintAnswer - percentage).min(asset.price.offerMaximumPrice)
+        price = asset.assetPrice.offerMinimumPrice > 0
+            ? uintAnswer.max(asset.assetPrice.offerMinimumPrice)
+            : asset.assetPrice.offerMaximumPrice > 0
+                ? uintAnswer.min(asset.assetPrice.offerMaximumPrice)
                 : uintAnswer;
 
-        try IDotcCompatiblePriceFeed(asset.price.priceFeedAddress).decimals() returns (uint8 _decimals) {
+        try IDotcCompatiblePriceFeed(asset.assetPrice.priceFeedAddress).decimals() returns (uint8 _decimals) {
             decimals = _decimals;
         } catch {
             decimals = DECIMALS_BY_DEFAULT;
@@ -353,7 +353,7 @@ library AssetHelper {
     function _checkAssetPriceStructure(AssetPrice calldata price, OfferPricingType offerPricingType) private pure {
         if (
             offerPricingType == OfferPricingType.FixedPricing &&
-            (price.offerMinimumPrice > 0 || price.offerMaximumPrice > 0 || price.percentage > 0)
+            (price.offerMinimumPrice > 0 || price.offerMaximumPrice > 0)
         ) {
             revert PriceShouldNotBeSpecifiedFor(offerPricingType);
         }
@@ -361,10 +361,6 @@ library AssetHelper {
         if (offerPricingType == OfferPricingType.DynamicPricing) {
             if (price.offerMinimumPrice > 0 && price.offerMaximumPrice > 0) {
                 revert BothMinMaxCanNotBeSpecifiedFor(offerPricingType);
-            }
-
-            if (price.percentage > SCALING_FACTOR) {
-                revert IncorrectPercentage(price.percentage);
             }
         }
     }

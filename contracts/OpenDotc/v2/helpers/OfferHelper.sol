@@ -7,7 +7,7 @@ import { AssetHelper } from "./AssetHelper.sol";
 
 import { IDotcCompatibleAuthorization } from "../interfaces/IDotcCompatibleAuthorization.sol";
 
-import { Price, Asset, AssetType, OfferStruct, DotcOffer, TakingOfferType, OfferPricingType } from "../structures/DotcStructuresV2.sol";
+import { OfferPrice, AssetPrice, Asset, AssetType, OfferStruct, DotcOffer, TakingOfferType, OfferPricingType, PercentageType, IncorrectPercentage } from "../structures/DotcStructuresV2.sol";
 
 /// @title Errors related to offer management in the Offer Helper library.
 /// @notice Provides error messages for various failure conditions related to offer handling.
@@ -84,20 +84,22 @@ library OfferHelper {
         dotcOffer.depositAsset = depositAsset;
         dotcOffer.withdrawalAsset = withdrawalAsset;
 
-        if (offer.offerPricingType == OfferPricingType.FixedPricing) {
+        if (offer.offerPrice.offerPricingType == OfferPricingType.FixedPricing) {
             if (offer.takingOfferType == TakingOfferType.PartialOffer) {
                 depositAmount = depositAsset.standardize();
                 withdrawalAmount = withdrawalAsset.standardize();
             }
 
-            offer.unitPrice = withdrawalAmount.fullMulDiv(AssetHelper.BPS, depositAmount);
+            offer.offerPrice.unitPrice = withdrawalAmount.fullMulDiv(AssetHelper.BPS, depositAmount);
+            offer.offerPrice.percentage = 0;
+            offer.offerPrice.percentageType = PercentageType.NoType;
         } else {
             (uint256 depositToWithdrawalRate, uint256 price) = depositAsset.getRateAndPrice(
                 withdrawalAsset,
                 offer.offerPrice
             );
 
-            offer.unitPrice = depositToWithdrawalRate;
+            offer.offerPrice.unitPrice = depositToWithdrawalRate;
 
             dotcOffer.withdrawalAsset.amount = price;
         }
