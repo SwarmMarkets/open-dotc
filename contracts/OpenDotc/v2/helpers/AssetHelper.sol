@@ -198,6 +198,8 @@ library AssetHelper {
             depositToWithdrawalRate = standardizedDepositPrice.fullMulDiv(BPS, standardizedWithdrawalPrice);
         }
 
+        depositToWithdrawalRate = getRateWithPercentage(depositToWithdrawalRate, offerPrice);
+
         if (depositAsset.assetType != AssetType.ERC20) {
             withdrawalPrice = depositToWithdrawalRate * depositAsset.amount;
         } else {
@@ -207,8 +209,10 @@ library AssetHelper {
             );
         }
 
-        if (withdrawalAsset.assetType != AssetType.ERC20) {
+        if (withdrawalAsset.assetType == AssetType.ERC1155) {
             withdrawalPrice /= BPS;
+        } else if (withdrawalAsset.assetType == AssetType.ERC721) {
+            withdrawalPrice = 1;
         }
     }
 

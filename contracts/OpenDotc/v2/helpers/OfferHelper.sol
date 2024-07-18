@@ -135,6 +135,7 @@ library OfferHelper {
 
         if (offer.authorizationAddresses.length > 0) {
             checkAddressesArrayForZeroAddresses(offer.authorizationAddresses);
+            checkAddressInAuth(offer.authorizationAddresses);
         }
 
         if (
@@ -149,6 +150,21 @@ library OfferHelper {
             (depositAsset.assetType != AssetType.ERC20 || withdrawalAsset.assetType != AssetType.ERC20)
         ) {
             revert UnsupportedPartialOfferForNonERC20AssetsError();
+        }
+
+        _checkOfferPrice(offer.offerPrice);
+    }
+
+    function _checkOfferPrice(OfferPrice calldata offerPrice) private pure {
+        if (
+            offerPrice.percentageType == PercentageType.NoType &&
+            offerPrice.offerPricingType == OfferPricingType.DynamicPricing
+        ) {
+            revert TypesShouldBeSpecified();
+        }
+
+        if (offerPrice.percentage > AssetHelper.SCALING_FACTOR) {
+            revert IncorrectPercentage(offerPrice.percentage);
         }
     }
 
@@ -180,19 +196,22 @@ library OfferHelper {
         }
 
         if (offer.authorizationAddresses.length > 0) {
-            bool isAccountAuthorized = false;
-            for (uint256 i = 0; i < offer.authorizationAddresses.length; ) {
-                if (IDotcCompatibleAuthorization(offer.authorizationAddresses[i]).isAccountAuthorized(msg.sender)) {
-                    isAccountAuthorized = true;
-                    break;
-                }
-                unchecked {
-                    ++i;
-                }
-            }
+            checkAddressInAuth(offer.authorizationAddresses);
+        }
+    }
 
-            if (!isAccountAuthorized) {
+    /**
+     * @notice Checks an array of authorization addresses for authorized address `msg.sender`.
+     * @dev Reverts if some of authorization addresses returned false.
+     * @param authAddressesArray The array of authorization addresses to be checked.
+     */
+    function checkAddressInAuth(address[] calldata authAddressesArray) public view {
+        for (uint256 i = 0; i < authAddressesArray.length; ) {
+            if (!IDotcCompatibleAuthorization(authAddressesArray[i]).isAccountAuthorized(msg.sender)) {
                 revert NotAuthorizedAccountError(msg.sender);
+            }
+            unchecked {
+                ++i;
             }
         }
     }
