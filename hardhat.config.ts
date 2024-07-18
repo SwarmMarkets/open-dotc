@@ -50,7 +50,7 @@ const config: HardhatUserConfig = {
       },
       forking: {
         url: getNetworkConfig('polygon', AccountTypes.SwarmMnemonic).url!,
-        enabled: true,
+        enabled: false,
         blockNumber: 57833958,
       },
     },
