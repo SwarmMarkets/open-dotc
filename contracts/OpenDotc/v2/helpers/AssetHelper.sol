@@ -9,9 +9,6 @@ import { IDotcCompatiblePriceFeed } from "../interfaces/IDotcCompatiblePriceFeed
 /// @title Errors related to assets in the AssetHelper Library.
 /// @notice Provides error messages for various failure conditions related to asset handling.
 
-/// @notice Indicates an operation with zero amount which is not allowed.
-error ZeroAmountPassed();
-
 /// @notice Thrown when an asset type is not defined.
 error AssetTypeUndefinedError();
 
@@ -104,17 +101,6 @@ library AssetHelper {
     uint8 constant DECIMALS_BY_DEFAULT = 8;
 
     /**
-     * @notice Ensures that the given amount is greater than zero.
-     * @param amount The amount to check.
-     */
-    modifier zeroAmountCheck(uint256 amount) {
-        if (amount <= 0) {
-            revert ZeroAmountPassed();
-        }
-        _;
-    }
-
-    /**
      * @notice Checks if an account owns the specified asset in the required amount.
      * @param asset The asset to check.
      * @param account The account to verify ownership.
@@ -183,11 +169,11 @@ library AssetHelper {
         Asset calldata withdrawalAsset,
         OfferPrice calldata offerPrice
     ) external view returns (uint256 depositToWithdrawalRate, uint256 withdrawalPrice) {
-        (uint256 depositPriceInUsd, uint8 depositAssetPriceFeedDecimals) = _getPrice(depositAsset);
-        (uint256 withdrawalPriceInUsd, uint8 withdrawalAssetPriceFeedDecimals) = _getPrice(withdrawalAsset);
+        (uint256 depositAssetPriceInUsd, uint8 depositAssetPriceFeedDecimals) = _getPrice(depositAsset);
+        (uint256 withdrawalAssetPriceInUsd, uint8 withdrawalAssetPriceFeedDecimals) = _getPrice(withdrawalAsset);
 
-        uint256 standardizedDepositPrice = _standardize(depositPriceInUsd, depositAssetPriceFeedDecimals);
-        uint256 standardizedWithdrawalPrice = _standardize(withdrawalPriceInUsd, withdrawalAssetPriceFeedDecimals);
+        uint256 standardizedDepositPrice = _standardize(depositAssetPriceInUsd, depositAssetPriceFeedDecimals);
+        uint256 standardizedWithdrawalPrice = _standardize(withdrawalAssetPriceInUsd, withdrawalAssetPriceFeedDecimals);
 
         if (withdrawalAsset.assetType == AssetType.ERC20) {
             depositToWithdrawalRate = standardizedDepositPrice.fullMulDiv(
@@ -251,7 +237,7 @@ library AssetHelper {
      * @param whole The whole value.
      * @return The calculated part percentage.
      */
-    function getPartPercentage(uint256 part, uint256 whole) public pure returns (uint256) {
+    function getPartPercentage(uint256 part, uint256 whole) external pure returns (uint256) {
         return part.fullMulDiv(SCALING_FACTOR, whole);
     }
 
@@ -270,7 +256,7 @@ library AssetHelper {
      * @param asset The asset to standardize.
      * @return The standardized numerical amount.
      */
-    function standardize(Asset calldata asset) public view returns (uint256) {
+    function standardize(Asset calldata asset) external view returns (uint256) {
         uint8 decimals = asset.assetAddress.readDecimals();
         return _standardize(asset.amount, decimals);
     }
@@ -280,7 +266,7 @@ library AssetHelper {
      * @param asset The asset to standardize.
      * @return The unstandardized numerical amount.
      */
-    function unstandardize(Asset calldata asset) public view returns (uint256) {
+    function unstandardize(Asset calldata asset) external view returns (uint256) {
         uint8 decimals = asset.assetAddress.readDecimals();
         return _unstandardize(asset.amount, decimals);
     }
@@ -291,7 +277,7 @@ library AssetHelper {
      * @param amount The amount to standardize.
      * @return The standardized numerical amount.
      */
-    function standardize(Asset calldata asset, uint256 amount) public view zeroAmountCheck(amount) returns (uint256) {
+    function standardize(Asset calldata asset, uint256 amount) external view returns (uint256) {
         uint8 decimals = asset.assetAddress.readDecimals();
         return _standardize(amount, decimals);
     }
@@ -302,7 +288,7 @@ library AssetHelper {
      * @param amount The amount to unstandardize.
      * @return The unstandardized numerical amount.
      */
-    function unstandardize(Asset calldata asset, uint256 amount) public view zeroAmountCheck(amount) returns (uint256) {
+    function unstandardize(Asset calldata asset, uint256 amount) external view returns (uint256) {
         uint8 decimals = asset.assetAddress.readDecimals();
         return _unstandardize(amount, decimals);
     }

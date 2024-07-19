@@ -36,6 +36,8 @@ error OnlyEscrow();
 /// @notice Indicates that the operation was attempted by an unauthorized entity, not permitted for dynamic pricing.
 error OnlyDynamicPricing();
 
+error DepositToWithdrawalRateOverflow();
+
 /**
  * @title Open Dotc smart contract (as part of the "SwarmX.eth Protocol")
  * @notice This contract handles decentralized over-the-counter trading.
@@ -194,11 +196,11 @@ contract DotcV2 is Initializable, Receiver {
 
         uint256 _currentOfferId = currentOfferId;
 
-        DotcOffer memory _offer = offer.buildOffer(depositAsset, withdrawalAsset);
+        DotcOffer memory dotcOffer = offer.buildOffer(depositAsset, withdrawalAsset);
 
         currentOfferId++;
         offersFromAddress[msg.sender].push(_currentOfferId);
-        allOffers[_currentOfferId] = _offer;
+        allOffers[_currentOfferId] = dotcOffer;
 
         // Sending DepositAsset from Maker to Escrow
         _assetTransfer(depositAsset, msg.sender, address(escrow), depositAsset.amount);
@@ -214,7 +216,7 @@ contract DotcV2 is Initializable, Receiver {
      * @param withdrawalAmountPaid The amount paid to withdraw the asset.
      * @param affiliate The address of the affiliate.
      */
-    function takeOfferFixed(uint256 offerId, uint256 withdrawalAmountPaid, address affiliate) public {
+    function takeOfferFixed(uint256 offerId, uint256 withdrawalAmountPaid, address affiliate) external {
         DotcOffer memory offer = allOffers[offerId];
         offer.checkDotcOfferParams();
         offer.offer.checkOfferParams();
@@ -269,9 +271,15 @@ contract DotcV2 is Initializable, Receiver {
      * @notice Takes a dynamic price offer.
      * @param offerId The ID of the offer to take.
      * @param withdrawalAmountPaid The amount paid to withdraw the asset.
+     * @param maximumDepositToWithdrawalRate TODO description, should be in withdrawal Asset decimals
      * @param affiliate The address of the affiliate.
      */
-    function takeOfferDynamic(uint256 offerId, uint256 withdrawalAmountPaid, address affiliate) public {
+    function takeOfferDynamic(
+        uint256 offerId,
+        uint256 withdrawalAmountPaid,
+        uint256 maximumDepositToWithdrawalRate,
+        address affiliate
+    ) external {
         DotcOffer memory offer = allOffers[offerId];
         offer.checkDotcOfferParams();
         offer.offer.checkOfferParams();
@@ -395,7 +403,7 @@ contract DotcV2 is Initializable, Receiver {
 
         uint256 amountToWithdraw = escrow.cancelDeposit(offerId, msg.sender);
 
-        emit CanceledOffer(offerId, msg.sender, amountToWithdraw);
+        emit CanceledOffer(offerId, amountToWithdraw);
     }
 
     /**
