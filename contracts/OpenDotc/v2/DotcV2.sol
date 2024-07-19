@@ -293,10 +293,6 @@ contract DotcV2 is Initializable, Receiver {
             maximumDepositToWithdrawalRate = depositToWithdrawalRate;
         }
 
-        console.log("maximumDepositToWithdrawalRate", maximumDepositToWithdrawalRate);
-
-        console.log("depositToWithdrawalRate", depositToWithdrawalRate);
-
         if (depositToWithdrawalRate > maximumDepositToWithdrawalRate) {
             revert DepositToWithdrawalRateOverflow();
         }
