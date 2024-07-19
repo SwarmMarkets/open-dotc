@@ -3,6 +3,8 @@
 ## DotcManagerV2
 
 This contract manages DOTC and escrow addresses, fee settings, and other configurations for the SwarmX.eth Protocol.
+
+_This contract is upgradable and manages key configurations for the SwarmX.eth Protocol.
 ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
 Please read the Disclaimer featured on the SwarmX.eth website ("Terms") carefully before accessing,
 interacting with, or using the SwarmX.eth Protocol software, consisting of the SwarmX.eth Protocol
@@ -14,9 +16,7 @@ legal information and terms of service and privacy note presented in the Terms, 
 neither a US person nor a person subject to international sanctions (in particular as imposed by the
 European Union, Switzerland, the United Nations, as well as the USA). If you do not meet these
 requirements, please refrain from using the SwarmX.eth Protocol.
-////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
-
-_This contract is upgradable and manages key configurations for the SwarmX.eth Protocol._
+////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////_
 
 ### DotcAddressSet
 

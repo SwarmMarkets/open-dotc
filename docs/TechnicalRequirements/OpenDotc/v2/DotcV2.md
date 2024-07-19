@@ -54,9 +54,19 @@ error OnlyDynamicPricing()
 
 Indicates that the operation was attempted by an unauthorized entity, not permitted for dynamic pricing.
 
+## DepositToWithdrawalRateOverflow
+
+```solidity
+error DepositToWithdrawalRateOverflow()
+```
+
+Thrown when the deposit-to-withdrawal rate calculation overflows.
+
 ## DotcV2
 
 This contract handles decentralized over-the-counter trading.
+
+_It uses ERC20, ERC721 and ERC1155 token standards for asset management and trade settlement.
 ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
 Please read the Disclaimer featured on the SwarmX.eth website ("Terms") carefully before accessing,
 interacting with, or using the SwarmX.eth Protocol software, consisting of the SwarmX.eth Protocol
@@ -68,14 +78,12 @@ legal information and terms of service and privacy note presented in the Terms, 
 neither a US person nor a person subject to international sanctions (in particular as imposed by the
 European Union, Switzerland, the United Nations, as well as the USA). If you do not meet these
 requirements, please refrain from using the SwarmX.eth Protocol.
-////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
-
-_It uses ERC1155 and ERC721 token standards for asset management and trade settlement._
+////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////_
 
 ### CreatedOffer
 
 ```solidity
-event CreatedOffer(address maker, uint256 offerId, struct Asset depositAsset, struct Asset withdrawalAsset, struct OfferStruct offer)
+event CreatedOffer(address maker, uint256 offerId, struct DotcOffer dotcOffer)
 ```
 
 Emitted when a new trading offer is created.
@@ -86,14 +94,12 @@ Emitted when a new trading offer is created.
 | ---- | ---- | ----------- |
 | maker | address | Address of the user creating the offer. |
 | offerId | uint256 | Unique identifier of the created offer. |
-| depositAsset | struct Asset | Asset to be deposited by the maker. |
-| withdrawalAsset | struct Asset | Asset to be withdrawn by the maker. |
-| offer | struct OfferStruct | Offer details. |
+| dotcOffer | struct DotcOffer | The details of the created offer. |
 
 ### TakenOffer
 
 ```solidity
-event TakenOffer(uint256 offerId, address takenBy, enum OfferFillType offerFillType, uint256 amountToReceive, uint256 amountPaid, address affiliate)
+event TakenOffer(uint256 offerId, address taker, enum OfferFillType offerFillType, uint256 depositAssetAmount, uint256 withdrawalAssetAmount, address affiliate)
 ```
 
 Emitted when an offer is successfully taken.
@@ -103,16 +109,16 @@ Emitted when an offer is successfully taken.
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | offerId | uint256 | Unique identifier of the taken offer. |
-| takenBy | address | Address of the user taking the offer. |
+| taker | address | Address of the user taking the offer. |
 | offerFillType | enum OfferFillType | Indicates if the offer is fully taken. |
-| amountToReceive | uint256 | Amount received in the trade. |
-| amountPaid | uint256 | Amount paid to take the offer. |
+| depositAssetAmount | uint256 | The amount of the deposit asset involved in the offer. |
+| withdrawalAssetAmount | uint256 | The amount of the withdrawal asset involved in the offer. |
 | affiliate | address | Address of the affiliate involved in the trade. |
 
 ### CanceledOffer
 
 ```solidity
-event CanceledOffer(uint256 offerId, address canceledBy, uint256 amountToReceive)
+event CanceledOffer(uint256 offerId, uint256 depositAssetAmountMakerReceived)
 ```
 
 Emitted when an offer is canceled.
@@ -122,23 +128,7 @@ Emitted when an offer is canceled.
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | offerId | uint256 | Unique identifier of the canceled offer. |
-| canceledBy | address | Address of the user who canceled the offer. |
-| amountToReceive | uint256 | Amount that was to be received from the offer. |
-
-### OfferAmountUpdated
-
-```solidity
-event OfferAmountUpdated(uint256 offerId, uint256 newOffer)
-```
-
-Emitted when an existing offer is updated.
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| offerId | uint256 | Unique identifier of the updated offer. |
-| newOffer | uint256 | Details of the new offer. |
+| depositAssetAmountMakerReceived | uint256 | The amount of the deposit asset returned to the maker. |
 
 ### UpdatedOfferExpiry
 
@@ -176,7 +166,7 @@ Emitted when the timelock period of an offer is updated.
 event OfferLinksUpdated(uint256 offerId, string newTerms, string newCommsLink)
 ```
 
-Emitted when the Term and Comms links for an offer are updated.
+Emitted when the terms and communication links for an offer are updated.
 
 #### Parameters
 
@@ -184,7 +174,7 @@ Emitted when the Term and Comms links for an offer are updated.
 | ---- | ---- | ----------- |
 | offerId | uint256 | Unique identifier of the offer with updated links. |
 | newTerms | string | The new terms for the offer. |
-| newCommsLink | string | The new comms link for the offer. |
+| newCommsLink | string | The new communication link for the offer. |
 
 ### OfferSpecialAddressesUpdated
 
@@ -198,7 +188,7 @@ Emitted when the array of special addresses of an offer is updated.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| offerId | uint256 | Unique identifier of the offer with updated links. |
+| offerId | uint256 | Unique identifier of the offer with updated special addresses. |
 | specialAddresses | address[] | The new special addresses of the offer. |
 
 ### OfferAuthAddressesUpdated
@@ -207,14 +197,14 @@ Emitted when the array of special addresses of an offer is updated.
 event OfferAuthAddressesUpdated(uint256 offerId, address[] authAddresses)
 ```
 
-Emitted when the array of special addresses of an offer is updated.
+Emitted when the array of authorization addresses of an offer is updated.
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| offerId | uint256 | Unique identifier of the offer with updated links. |
-| authAddresses | address[] | The new auth addresses of the offer. |
+| offerId | uint256 | Unique identifier of the offer with updated authorization addresses. |
+| authAddresses | address[] | The new authorization addresses of the offer. |
 
 ### manager
 
@@ -298,12 +288,12 @@ _Validates asset structure and initializes a new offer._
 | ---- | ---- | ----------- |
 | depositAsset | struct Asset | The asset to be deposited by the maker. |
 | withdrawalAsset | struct Asset | The asset desired by the maker in exchange. |
-| offer | struct OfferStruct | Offer Struct. |
+| offer | struct OfferStruct | The offer structure containing the offer details. |
 
 ### takeOfferFixed
 
 ```solidity
-function takeOfferFixed(uint256 offerId, uint256 withdrawalAmountPaid, address affiliate) public
+function takeOfferFixed(uint256 offerId, uint256 withdrawalAmountPaid, address affiliate) external
 ```
 
 Takes a fixed price offer.
@@ -319,7 +309,7 @@ Takes a fixed price offer.
 ### takeOfferDynamic
 
 ```solidity
-function takeOfferDynamic(uint256 offerId, uint256 withdrawalAmountPaid, address affiliate) public
+function takeOfferDynamic(uint256 offerId, uint256 withdrawalAmountPaid, uint256 maximumDepositToWithdrawalRate, address affiliate) external
 ```
 
 Takes a dynamic price offer.
@@ -330,6 +320,7 @@ Takes a dynamic price offer.
 | ---- | ---- | ----------- |
 | offerId | uint256 | The ID of the offer to take. |
 | withdrawalAmountPaid | uint256 | The amount paid to withdraw the asset. |
+| maximumDepositToWithdrawalRate | uint256 | The maximum deposit-to-withdrawal rate, should be in withdrawal Asset decimals |
 | affiliate | address | The address of the affiliate. |
 
 ### updateOffer
@@ -347,7 +338,7 @@ _Only the maker of the offer can update it._
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | offerId | uint256 | The ID of the offer to update. |
-| updatedOffer | struct OfferStruct | A structure for the update the offer. |
+| updatedOffer | struct OfferStruct | A structure for the updated offer. |
 
 ### cancelOffer
 

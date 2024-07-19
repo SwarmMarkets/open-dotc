@@ -1,13 +1,5 @@
 # Solidity API
 
-## ZeroAmountPassed
-
-```solidity
-error ZeroAmountPassed()
-```
-
-Indicates an operation with zero amount which is not allowed.
-
 ## AssetTypeUndefinedError
 
 ```solidity
@@ -188,20 +180,6 @@ uint8 DECIMALS_BY_DEFAULT
 
 Default number of decimals used in standardization.
 
-### zeroAmountCheck
-
-```solidity
-modifier zeroAmountCheck(uint256 amount)
-```
-
-Ensures that the given amount is greater than zero.
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| amount | uint256 | The amount to check. |
-
 ### checkAssetOwner
 
 ```solidity
@@ -235,10 +213,10 @@ _Checks for asset type, asset address, and amount validity._
 | asset | struct Asset | The asset to be checked. |
 | offerPricingType | enum OfferPricingType | The type of pricing for the offer. |
 
-### calculateRate
+### getRateAndPrice
 
 ```solidity
-function calculateRate(struct Asset depositAsset, struct Asset withdrawalAsset) external view returns (uint256 depositToWithdrawalRate, uint256 withdrawalPrice)
+function getRateAndPrice(struct Asset depositAsset, struct Asset withdrawalAsset, struct OfferPrice offerPrice) external view returns (uint256 depositToWithdrawalRate, uint256 withdrawalPrice)
 ```
 
 Calculates the rate between two assets for deposit and withdrawal.
@@ -249,6 +227,7 @@ Calculates the rate between two assets for deposit and withdrawal.
 | ---- | ---- | ----------- |
 | depositAsset | struct Asset | The asset being deposited. |
 | withdrawalAsset | struct Asset | The asset being withdrawn. |
+| offerPrice | struct OfferPrice |  |
 
 #### Return Values
 
@@ -257,10 +236,10 @@ Calculates the rate between two assets for deposit and withdrawal.
 | depositToWithdrawalRate | uint256 | The rate from deposit to withdrawal asset. |
 | withdrawalPrice | uint256 | The calculated withdrawal price. |
 
-### calculateFees
+### getFees
 
 ```solidity
-function calculateFees(uint256 amount, uint256 feeAmount, uint256 revSharePercentage) external pure returns (uint256 fees, uint256 feesToFeeReceiver, uint256 feesToAffiliate)
+function getFees(uint256 amount, uint256 feeAmount, uint256 revSharePercentage) external pure returns (uint256 fees, uint256 feesToFeeReceiver, uint256 feesToAffiliate)
 ```
 
 Calculates fees based on the given amount, fee amount, and revenue share percentage.
@@ -281,87 +260,47 @@ Calculates fees based on the given amount, fee amount, and revenue share percent
 | feesToFeeReceiver | uint256 | The fees allocated to the fee receiver. |
 | feesToAffiliate | uint256 | The fees allocated to the affiliate. |
 
-### standardize
+### getRateWithPercentage
 
 ```solidity
-function standardize(struct Asset asset) public view returns (uint256)
+function getRateWithPercentage(uint256 rate, struct OfferPrice offerPrice) public pure returns (uint256 rateWithPercentage)
 ```
 
-Standardizes a numerical amount based on token decimals.
+Adjusts the rate with a specified percentage.
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| asset | struct Asset | The asset to standardize. |
+| rate | uint256 | The initial rate. |
+| offerPrice | struct OfferPrice | The offer price data containing percentage and type. |
 
 #### Return Values
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| [0] | uint256 | The standardized numerical amount. |
+| rateWithPercentage | uint256 | The adjusted rate. |
 
-### unstandardize
+### getPartPercentage
 
 ```solidity
-function unstandardize(struct Asset asset) public view returns (uint256)
+function getPartPercentage(uint256 part, uint256 whole) external pure returns (uint256)
 ```
 
-Converts a standardized numerical amount back to its original form based on token decimals.
+Calculates the part percentage of a given whole.
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| asset | struct Asset | The asset to standardize. |
+| part | uint256 | The part value. |
+| whole | uint256 | The whole value. |
 
 #### Return Values
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| [0] | uint256 | The unstandardized numerical amount. |
-
-### standardize
-
-```solidity
-function standardize(struct Asset asset, uint256 amount) public view returns (uint256)
-```
-
-Standardizes a numerical amount based on token decimals.
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| asset | struct Asset | The asset to standardize. |
-| amount | uint256 | The amount to standardize. |
-
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| [0] | uint256 | The standardized numerical amount. |
-
-### unstandardize
-
-```solidity
-function unstandardize(struct Asset asset, uint256 amount) public view returns (uint256)
-```
-
-Converts a standardized numerical amount back to its original form based on token decimals.
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| asset | struct Asset | The asset to standardize. |
-| amount | uint256 | The amount to unstandardize. |
-
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| [0] | uint256 | The unstandardized numerical amount. |
+| [0] | uint256 | The calculated part percentage. |
 
 ### calculatePercentage
 
@@ -384,24 +323,85 @@ Calculates the percentage of a given value.
 | ---- | ---- | ----------- |
 | [0] | uint256 | The calculated percentage. |
 
-### calculatePartPercentage
+### standardize
 
 ```solidity
-function calculatePartPercentage(uint256 part, uint256 whole) public pure returns (uint256)
+function standardize(struct Asset asset) external view returns (uint256)
 ```
 
-Calculates the part percentage of a given whole.
+Standardizes a numerical amount based on token decimals.
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| part | uint256 | The part value. |
-| whole | uint256 | The whole value. |
+| asset | struct Asset | The asset to standardize. |
 
 #### Return Values
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| [0] | uint256 | The calculated part percentage. |
+| [0] | uint256 | The standardized numerical amount. |
+
+### unstandardize
+
+```solidity
+function unstandardize(struct Asset asset) external view returns (uint256)
+```
+
+Converts a standardized numerical amount back to its original form based on token decimals.
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| asset | struct Asset | The asset to standardize. |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | uint256 | The unstandardized numerical amount. |
+
+### standardize
+
+```solidity
+function standardize(struct Asset asset, uint256 amount) external view returns (uint256)
+```
+
+Standardizes a numerical amount based on token decimals.
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| asset | struct Asset | The asset to standardize. |
+| amount | uint256 | The amount to standardize. |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | uint256 | The standardized numerical amount. |
+
+### unstandardize
+
+```solidity
+function unstandardize(struct Asset asset, uint256 amount) external view returns (uint256)
+```
+
+Converts a standardized numerical amount back to its original form based on token decimals.
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| asset | struct Asset | The asset to standardize. |
+| amount | uint256 | The amount to unstandardize. |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | uint256 | The unstandardized numerical amount. |
 

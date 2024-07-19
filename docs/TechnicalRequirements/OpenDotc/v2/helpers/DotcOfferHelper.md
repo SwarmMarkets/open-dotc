@@ -36,6 +36,12 @@ error OfferInTimelockError(uint256 currentUnixTime)
 
 Thrown when an action is attempted on an offer that is still within its timelock period.
 
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| currentUnixTime | uint256 | The current Unix timestamp when the error occurred. |
+
 ## DotcOfferHelper
 
 This library provides functions to handle and validate offer operations within the SwarmX.eth Protocol.

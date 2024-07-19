@@ -86,10 +86,16 @@ error OfferExpiredError(uint256 expiredTime)
 
 Thrown when an action is attempted on an offer that has already expired.
 
-## TakingOfferTypeShouldBeSpecified
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| expiredTime | uint256 | The time when the offer expired. |
+
+## TypesShouldBeSpecified
 
 ```solidity
-error TakingOfferTypeShouldBeSpecified()
+error TypesShouldBeSpecified()
 ```
 
 Thrown when the taking offer type is not specified.
@@ -167,6 +173,22 @@ _Checks for offer expiration, special address authorization, and account authori
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | offer | struct OfferStruct | The offer to be checked. |
+
+### checkAddressInAuth
+
+```solidity
+function checkAddressInAuth(address[] authAddressesArray) public view
+```
+
+Checks an array of authorization addresses for authorized address `msg.sender`.
+
+_Reverts if some of authorization addresses returned false._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| authAddressesArray | address[] | The array of authorization addresses to be checked. |
 
 ### checkAddressesArrayForZeroAddresses
 

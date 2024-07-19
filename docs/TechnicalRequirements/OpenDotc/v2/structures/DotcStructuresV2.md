@@ -30,7 +30,13 @@ Indicates usage of a zero address where an actual address is required.
 error IncorrectPercentage(uint256 incorrectRevShare)
 ```
 
-Indicates that pasted not correct percentage amount.
+Indicates that an incorrect percentage amount was passed.
+
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| incorrectRevShare | uint256 | The incorrect percentage amount that was passed. |
 
 ## AssetType
 
@@ -70,8 +76,22 @@ _Enum representing various taking offer types supported in DOTC trades._
 ```solidity
 enum TakingOfferType {
   NoType,
-  PartialTaking,
-  FullyTaking
+  PartialOffer,
+  BlockOffer
+}
+```
+
+## PercentageType
+
+Defines the different types of percentage calculation that can be used in the system.
+
+_Enum representing various percentage types supported in DOTC trades._
+
+```solidity
+enum PercentageType {
+  NoType,
+  Plus,
+  Minus
 }
 ```
 
@@ -80,9 +100,10 @@ enum TakingOfferType {
 Defines the types of validity states an offer can have in the DOTC system.
 
 _Enum representing different states of offer validity, like non-existent or fully taken.
-- NotExist: Indicates the offer does not exist.
-- Partial: Represents a Partial Taking offer type where `taker` can take not the full amount of assets.
-- Fully: Represents a Fully Taking offer type where `taker` should take the full amount of assets._
+- NotTaken: The offer has not been taken.
+- Cancelled: The offer has been cancelled.
+- PartiallyTaken: The offer has been partially taken.
+- FullyTaken: The offer has been fully taken._
 
 ```solidity
 enum OfferFillType {
@@ -97,12 +118,7 @@ enum OfferFillType {
 
 Defines the types of escrow states an offer can have in the DOTC system.
 
-_Enum representing different states of escrow, like offer deposited or fully withdrew.
-- NoType: Represents a state with no specific escrow type.
-- OfferDeposited: Indicates that the offer has been deposited.
-- OfferFullyWithdrawn: Indicates that the offer has been fully withdrawn.
-- OfferPartiallyWithdrawn: Indicates that the offer has been partially withdrawn.
-- OfferCancelled: Indicates that the offer has been cancelled._
+_Enum representing different states of escrow, like offer deposited or fully withdrew._
 
 ```solidity
 enum EscrowOfferStatusType {
@@ -114,11 +130,11 @@ enum EscrowOfferStatusType {
 }
 ```
 
-## Price
+## AssetPrice
 
 Represents the price details in the DOTC trading system.
 
-_Defines the structure for price details including price feed address, min, max, and percentage._
+_Defines the structure for price details including price feed address, offerMaximumPrice, offerMinimumPrice, and percentage._
 
 ### Parameters
 
@@ -126,11 +142,30 @@ _Defines the structure for price details including price feed address, min, max,
 | ---- | ---- | ----------- |
 
 ```solidity
-struct Price {
+struct AssetPrice {
   address priceFeedAddress;
-  uint256 min;
-  uint256 max;
+  uint256 offerMaximumPrice;
+  uint256 offerMinimumPrice;
+}
+```
+
+## OfferPrice
+
+Represents the pricing details of an offer in the DOTC trading system.
+
+_Defines the structure for offer pricing details including pricing type, unit price, percentage, and percentage type._
+
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+
+```solidity
+struct OfferPrice {
+  enum OfferPricingType offerPricingType;
+  uint256 unitPrice;
   uint256 percentage;
+  enum PercentageType percentageType;
 }
 ```
 
@@ -151,7 +186,7 @@ struct Asset {
   address assetAddress;
   uint256 amount;
   uint256 tokenId;
-  struct Price price;
+  struct AssetPrice assetPrice;
 }
 ```
 
@@ -169,10 +204,9 @@ _Structure encapsulating details of an offer, including its type, special condit
 ```solidity
 struct OfferStruct {
   enum TakingOfferType takingOfferType;
-  enum OfferPricingType offerPricingType;
+  struct OfferPrice offerPrice;
   address[] specialAddresses;
   address[] authorizationAddresses;
-  uint256 unitPrice;
   uint256 expiryTimestamp;
   uint256 timelockPeriod;
   string terms;
