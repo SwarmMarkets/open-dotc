@@ -70,50 +70,34 @@ contract DotcV2 is Initializable, Receiver {
      * @notice Emitted when a new trading offer is created.
      * @param maker Address of the user creating the offer.
      * @param offerId Unique identifier of the created offer.
-     * @param depositAsset Asset to be deposited by the maker.
-     * @param withdrawalAsset Asset to be withdrawn by the maker.
-     * @param offer Offer details.
+     * @param dotcOffer TODO
      */
-    event CreatedOffer(
-        address indexed maker,
-        uint256 indexed offerId,
-        Asset depositAsset,
-        Asset withdrawalAsset,
-        OfferStruct offer
-    );
+    event CreatedOffer(address indexed maker, uint256 indexed offerId, DotcOffer dotcOffer);
 
     /**
      * @notice Emitted when an offer is successfully taken.
      * @param offerId Unique identifier of the taken offer.
-     * @param takenBy Address of the user taking the offer.
+     * @param taker Address of the user taking the offer.
      * @param offerFillType Indicates if the offer is fully taken.
-     * @param amountToReceive Amount received in the trade.
-     * @param amountPaid Amount paid to take the offer.
+     * @param depositAssetAmount TODO
+     * @param withdrawalAssetAmount TODO
      * @param affiliate Address of the affiliate involved in the trade.
      */
     event TakenOffer(
         uint256 indexed offerId,
-        address indexed takenBy,
+        address indexed taker,
         OfferFillType indexed offerFillType,
-        uint256 amountToReceive,
-        uint256 amountPaid,
+        uint256 depositAssetAmount,
+        uint256 withdrawalAssetAmount,
         address affiliate
     );
 
     /**
      * @notice Emitted when an offer is canceled.
      * @param offerId Unique identifier of the canceled offer.
-     * @param canceledBy Address of the user who canceled the offer.
-     * @param amountToReceive Amount that was to be received from the offer.
+     * @param depositAssetAmountMakerReceived TODO
      */
-    event CanceledOffer(uint256 indexed offerId, address indexed canceledBy, uint256 amountToReceive);
-
-    /**
-     * @notice Emitted when an existing offer is updated.
-     * @param offerId Unique identifier of the updated offer.
-     * @param newOffer Details of the new offer.
-     */
-    event OfferAmountUpdated(uint256 indexed offerId, uint256 newOffer);
+    event CanceledOffer(uint256 indexed offerId, uint256 depositAssetAmountMakerReceived);
 
     /**
      * @notice Emitted when the expiry time of an offer is updated.
@@ -221,7 +205,7 @@ contract DotcV2 is Initializable, Receiver {
 
         escrow.setDeposit(_currentOfferId, msg.sender, depositAsset);
 
-        emit CreatedOffer(msg.sender, _currentOfferId, depositAsset, withdrawalAsset, offer);
+        emit CreatedOffer(msg.sender, _currentOfferId, dotcOffer);
     }
 
     /**

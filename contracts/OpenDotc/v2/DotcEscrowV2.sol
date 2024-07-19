@@ -47,7 +47,7 @@ contract DotcEscrowV2 is Initializable, Receiver {
      * @param maker Address of the user who made the offer.
      * @param amount Amount of the asset deposited.
      */
-    event OfferDeposited(uint256 indexed offerId, address indexed maker, uint256 indexed amount);
+    event OfferDeposited(uint256 indexed offerId, address indexed maker, uint256 amount);
 
     /**
      * @dev Emitted when assets are withdrawn from escrow for an offer.
@@ -55,7 +55,7 @@ contract DotcEscrowV2 is Initializable, Receiver {
      * @param taker Address of the user who is taking the offer.
      * @param amount Amount of the asset withdrawn.
      */
-    event OfferWithdrawn(uint256 indexed offerId, address indexed taker, uint256 indexed amount);
+    event OfferWithdrawn(uint256 indexed offerId, address indexed taker, uint256 amount);
 
     /**
      * @dev Emitted when an offer is cancelled and its assets are returned.
@@ -63,7 +63,7 @@ contract DotcEscrowV2 is Initializable, Receiver {
      * @param maker Address of the user who made the offer.
      * @param amountToWithdraw Amount of the asset returned to the maker.
      */
-    event OfferCancelled(uint256 indexed offerId, address indexed maker, uint256 indexed amountToWithdraw);
+    event OfferCancelled(uint256 indexed offerId, address indexed maker, uint256 amountToWithdraw);
 
     /**
      * @dev Emitted when fees are withdrawn from the escrow.
@@ -71,7 +71,7 @@ contract DotcEscrowV2 is Initializable, Receiver {
      * @param to Address to which the fees are sent.
      * @param amountToWithdraw Amount of fees withdrawn.
      */
-    event FeesWithdrew(uint256 indexed offerId, address indexed to, uint256 indexed amountToWithdraw);
+    event FeesWithdrew(uint256 indexed offerId, address indexed to, uint256 amountToWithdraw);
 
     /**
      * @dev Address of the manager contract.
