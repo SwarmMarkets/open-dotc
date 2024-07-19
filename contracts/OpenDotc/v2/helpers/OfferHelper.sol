@@ -36,6 +36,7 @@ error UnsupportedPartialOfferForNonERC20AssetsError();
 error IncorrectTimelockPeriodError(uint256 timelock);
 
 /// @notice Thrown when an action is attempted on an offer that has already expired.
+/// @param expiredTime The time when the offer expired.
 error OfferExpiredError(uint256 expiredTime);
 
 /// @notice Thrown when the taking offer type is not specified.
@@ -100,7 +101,6 @@ library OfferHelper {
             );
 
             offer.offerPrice.unitPrice = depositToWithdrawalRate;
-
             dotcOffer.withdrawalAsset.amount = price;
         }
 
@@ -153,19 +153,6 @@ library OfferHelper {
         }
 
         _checkOfferPrice(offer.offerPrice);
-    }
-
-    function _checkOfferPrice(OfferPrice calldata offerPrice) private pure {
-        if (
-            offerPrice.percentageType == PercentageType.NoType &&
-            offerPrice.offerPricingType == OfferPricingType.DynamicPricing
-        ) {
-            revert TypesShouldBeSpecified();
-        }
-
-        if (offerPrice.percentage > AssetHelper.SCALING_FACTOR) {
-            revert IncorrectPercentage(offerPrice.percentage);
-        }
     }
 
     /**
@@ -229,6 +216,23 @@ library OfferHelper {
             unchecked {
                 ++i;
             }
+        }
+    }
+
+    /**
+     * @dev Internal function to check the validity of the offer price.
+     * @param offerPrice The offer price structure to check.
+     */
+    function _checkOfferPrice(OfferPrice calldata offerPrice) private pure {
+        if (
+            offerPrice.percentageType == PercentageType.NoType &&
+            offerPrice.offerPricingType == OfferPricingType.DynamicPricing
+        ) {
+            revert TypesShouldBeSpecified();
+        }
+
+        if (offerPrice.percentage > AssetHelper.SCALING_FACTOR) {
+            revert IncorrectPercentage(offerPrice.percentage);
         }
     }
 }

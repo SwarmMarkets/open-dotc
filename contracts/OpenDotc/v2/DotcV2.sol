@@ -17,30 +17,46 @@ import { Asset, AssetType, OfferFillType, OfferStruct, DotcOffer, OnlyManager } 
 /// @title Errors related to the Dotc contract
 /// @notice Provides error messages for various failure conditions related to Offers and Assets handling
 
-/// @notice Thrown when the call to escrow fails.
+/**
+ * @notice Thrown when the call to escrow fails.
+ */
 error EscrowCallFailedError();
 
-/// @notice Thrown when the amount to pay, excluding fees, is zero or less.
+/**
+ * @notice Thrown when the amount to pay, excluding fees, is zero or less.
+ */
 error AmountWithoutFeesIsZeroError();
 
-/// @notice Thrown when the amount to send does not match the required amount for a full offer.
-/// @param providedAmount The incorrect amount provided for the full offer.
+/**
+ * @notice Thrown when the amount to send does not match the required amount for a full offer.
+ * @param providedAmount The incorrect amount provided for the full offer.
+ */
 error IncorrectFullOfferAmountError(uint256 providedAmount);
 
-/// @notice Thrown when there's an attempt to change the amount of an ERC721 offer.
+/**
+ * @notice Thrown when there's an attempt to change the amount of an ERC721 offer.
+ */
 error ERC721OfferAmountChangeError();
 
-/// @notice Indicates that the operation was attempted by an unauthorized entity, not the Escrow contract.
+/**
+ * @notice Indicates that the operation was attempted by an unauthorized entity, not the Escrow contract.
+ */
 error OnlyEscrow();
 
-/// @notice Indicates that the operation was attempted by an unauthorized entity, not permitted for dynamic pricing.
+/**
+ * @notice Indicates that the operation was attempted by an unauthorized entity, not permitted for dynamic pricing.
+ */
 error OnlyDynamicPricing();
 
+/**
+ * @notice Thrown when the deposit-to-withdrawal rate calculation overflows.
+ */
 error DepositToWithdrawalRateOverflow();
 
 /**
  * @title Open Dotc smart contract (as part of the "SwarmX.eth Protocol")
  * @notice This contract handles decentralized over-the-counter trading.
+ * @dev It uses ERC20, ERC721 and ERC1155 token standards for asset management and trade settlement.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
  * Please read the Disclaimer featured on the SwarmX.eth website ("Terms") carefully before accessing,
  * interacting with, or using the SwarmX.eth Protocol software, consisting of the SwarmX.eth Protocol
@@ -53,7 +69,6 @@ error DepositToWithdrawalRateOverflow();
  * European Union, Switzerland, the United Nations, as well as the USA). If you do not meet these
  * requirements, please refrain from using the SwarmX.eth Protocol.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
- * @dev It uses ERC1155 and ERC721 token standards for asset management and trade settlement.
  * @author Swarm
  */
 contract DotcV2 is Initializable, Receiver {
@@ -72,7 +87,7 @@ contract DotcV2 is Initializable, Receiver {
      * @notice Emitted when a new trading offer is created.
      * @param maker Address of the user creating the offer.
      * @param offerId Unique identifier of the created offer.
-     * @param dotcOffer TODO
+     * @param dotcOffer The details of the created offer.
      */
     event CreatedOffer(address indexed maker, uint256 indexed offerId, DotcOffer dotcOffer);
 
@@ -81,8 +96,8 @@ contract DotcV2 is Initializable, Receiver {
      * @param offerId Unique identifier of the taken offer.
      * @param taker Address of the user taking the offer.
      * @param offerFillType Indicates if the offer is fully taken.
-     * @param depositAssetAmount TODO
-     * @param withdrawalAssetAmount TODO
+     * @param depositAssetAmount The amount of the deposit asset involved in the offer.
+     * @param withdrawalAssetAmount The amount of the withdrawal asset involved in the offer.
      * @param affiliate Address of the affiliate involved in the trade.
      */
     event TakenOffer(
@@ -97,7 +112,7 @@ contract DotcV2 is Initializable, Receiver {
     /**
      * @notice Emitted when an offer is canceled.
      * @param offerId Unique identifier of the canceled offer.
-     * @param depositAssetAmountMakerReceived TODO
+     * @param depositAssetAmountMakerReceived The amount of the deposit asset returned to the maker.
      */
     event CanceledOffer(uint256 indexed offerId, uint256 depositAssetAmountMakerReceived);
 
@@ -116,24 +131,24 @@ contract DotcV2 is Initializable, Receiver {
     event UpdatedTimeLockPeriod(uint256 indexed offerId, uint256 newTimelockPeriod);
 
     /**
-     * @notice Emitted when the Term and Comms links for an offer are updated.
+     * @notice Emitted when the terms and communication links for an offer are updated.
      * @param offerId Unique identifier of the offer with updated links.
      * @param newTerms The new terms for the offer.
-     * @param newCommsLink The new comms link for the offer.
+     * @param newCommsLink The new communication link for the offer.
      */
     event OfferLinksUpdated(uint256 indexed offerId, string newTerms, string newCommsLink);
 
     /**
      * @notice Emitted when the array of special addresses of an offer is updated.
-     * @param offerId Unique identifier of the offer with updated links.
+     * @param offerId Unique identifier of the offer with updated special addresses.
      * @param specialAddresses The new special addresses of the offer.
      */
     event OfferSpecialAddressesUpdated(uint256 indexed offerId, address[] specialAddresses);
 
     /**
-     * @notice Emitted when the array of special addresses of an offer is updated.
-     * @param offerId Unique identifier of the offer with updated links.
-     * @param authAddresses The new auth addresses of the offer.
+     * @notice Emitted when the array of authorization addresses of an offer is updated.
+     * @param offerId Unique identifier of the offer with updated authorization addresses.
+     * @param authAddresses The new authorization addresses of the offer.
      */
     event OfferAuthAddressesUpdated(uint256 indexed offerId, address[] authAddresses);
 
@@ -179,7 +194,7 @@ contract DotcV2 is Initializable, Receiver {
      * @notice Creates a new trading offer with specified assets and conditions.
      * @param depositAsset The asset to be deposited by the maker.
      * @param withdrawalAsset The asset desired by the maker in exchange.
-     * @param offer Offer Struct.
+     * @param offer The offer structure containing the offer details.
      * @dev Validates asset structure and initializes a new offer.
      */
     function makeOffer(
@@ -271,7 +286,7 @@ contract DotcV2 is Initializable, Receiver {
      * @notice Takes a dynamic price offer.
      * @param offerId The ID of the offer to take.
      * @param withdrawalAmountPaid The amount paid to withdraw the asset.
-     * @param maximumDepositToWithdrawalRate TODO description, should be in withdrawal Asset decimals
+     * @param maximumDepositToWithdrawalRate The maximum deposit-to-withdrawal rate, should be in withdrawal Asset decimals
      * @param affiliate The address of the affiliate.
      */
     function takeOfferDynamic(
@@ -353,7 +368,7 @@ contract DotcV2 is Initializable, Receiver {
     /**
      * @notice Updates an existing offer's details.
      * @param offerId The ID of the offer to update.
-     * @param updatedOffer A structure for the update the offer.
+     * @param updatedOffer A structure for the updated offer.
      * @dev Only the maker of the offer can update it.
      */
     function updateOffer(uint256 offerId, OfferStruct calldata updatedOffer) external {

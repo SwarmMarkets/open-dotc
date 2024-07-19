@@ -10,18 +10,26 @@ import { Asset, AssetType, EscrowOfferStatusType, EscrowDeposit, OnlyManager, On
 /// @title Errors related to asset management in the Dotc Escrow contract.
 /// @notice Provides error messages for various failure conditions related to asset handling.
 
-/// @notice Indicates no asset amount was specified where a non-zero value is required.
+/**
+ * @notice Indicates no asset amount was specified where a non-zero value is required.
+ */
 error AssetAmountEqZero();
 
-/// @notice Indicates no amount was specified for cancelling where a non-zero value is required.
+/**
+ * @notice Indicates no amount was specified for cancelling where a non-zero value is required.
+ */
 error AmountToCancelEqZero();
 
-/// @notice Indicates no fee amount was specified where a non-zero value is required.
+/**
+ * @notice Indicates no fee amount was specified where a non-zero value is required.
+ */
 error FeesAmountEqZero();
 
 /**
  * @title Escrow Contract for Dotc (Decentralized Over-The-Counter) Trading (as part of the "SwarmX.eth Protocol")
  * @notice It allows for depositing, withdrawing, and managing of assets in the course of trading.
+ * @dev This contract handles the escrow of assets for DOTC trades, supporting ERC20, ERC721, and ERC1155 assets.
+ * @author Swarm
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
  * Please read the Disclaimer featured on the SwarmX.eth website ("Terms") carefully before accessing,
  * interacting with, or using the SwarmX.eth Protocol software, consisting of the SwarmX.eth Protocol
@@ -34,8 +42,6 @@ error FeesAmountEqZero();
  * European Union, Switzerland, the United Nations, as well as the USA). If you do not meet these
  * requirements, please refrain from using the SwarmX.eth Protocol.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
- * @dev This contract handles the escrow of assets for DOTC trades, supporting ERC20, ERC721, and ERC1155 assets.
- * @author Swarm
  */
 contract DotcEscrowV2 is Initializable, Receiver {
     /// @dev Used for Safe transfer tokens.
@@ -182,6 +188,7 @@ contract DotcEscrowV2 is Initializable, Receiver {
      * @notice Withdraws fee amount from escrow.
      * @param offerId The ID of the offer related to the fees.
      * @param feesAmountToWithdraw The amount of fees to withdraw.
+     * @param to Address to which the fees are sent.
      * @dev Ensures that the fee withdrawal is valid and transfers the fee to the designated receiver.
      */
     function withdrawFees(uint256 offerId, uint256 feesAmountToWithdraw, address to) public onlyDotc {

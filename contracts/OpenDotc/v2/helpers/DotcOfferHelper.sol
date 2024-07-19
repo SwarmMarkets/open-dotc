@@ -15,6 +15,7 @@ error OfferValidityError(OfferFillType offerFillType);
 error OnlyMakerAllowedError(address maker);
 
 /// @notice Thrown when an action is attempted on an offer that is still within its timelock period.
+/// @param currentUnixTime The current Unix timestamp when the error occurred.
 error OfferInTimelockError(uint256 currentUnixTime);
 
 /**

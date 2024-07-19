@@ -4,17 +4,32 @@ pragma solidity 0.8.25;
 /// @title Errors related to offer management in the Dotc Structures.
 /// @notice Provides error messages for various failure conditions related to dotc structures handling.
 
-/// @notice Indicates that the operation was attempted by a non owner address.
+/**
+ * @notice Indicates that the operation was attempted by a non owner address.
+ */
 error OnlyManager();
-/// @notice Indicates that the operation was attempted by an unauthorized entity, not the Dotc contract.
+
+/**
+ * @notice Indicates that the operation was attempted by an unauthorized entity, not the Dotc contract.
+ */
 error OnlyDotc();
-/// @notice Indicates usage of a zero address where an actual address is required.
+
+/**
+ * @notice Indicates usage of a zero address where an actual address is required.
+ */
 error ZeroAddressPassed();
-/// @notice Indicates that pasted not correct percentage amount.
+
+/**
+ * @notice Indicates that an incorrect percentage amount was passed.
+ * @param incorrectRevShare The incorrect percentage amount that was passed.
+ */
 error IncorrectPercentage(uint256 incorrectRevShare);
 
 /**
  * @title Structures for DOTC management (as part of the "SwarmX.eth Protocol")
+ * @notice Contains structures and enumerations for managing offers in the SwarmX.eth Protocol.
+ * @author Swarm
+ * @dev This contract includes multiple enumerations and structures used for managing offers within the DOTC system.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
  * Please read the Disclaimer featured on the SwarmX.eth website ("Terms") carefully before accessing,
  * interacting with, or using the SwarmX.eth Protocol software, consisting of the SwarmX.eth Protocol
@@ -27,7 +42,6 @@ error IncorrectPercentage(uint256 incorrectRevShare);
  * European Union, Switzerland, the United Nations, as well as the USA). If you do not meet these
  * requirements, please refrain from using the SwarmX.eth Protocol.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
- * @author Swarm
  */
 
 /**
@@ -74,17 +88,17 @@ enum OfferPricingType {
 enum TakingOfferType {
     NoType,
     PartialOffer,
-    BlockOffer // BlockOffer
+    BlockOffer
 }
 
 /**
- * @title Offer Types Enum.
- * @notice Defines the different types of taking offers that can be used in the system.
- * @dev Enum representing various taking offer types supported in DOTC trades.
+ * @title Percentage Types Enum.
+ * @notice Defines the different types of percentage calculation that can be used in the system.
+ * @dev Enum representing various percentage types supported in DOTC trades.
  * @author Swarm
- * - NoType: Represents a state with no specific taking offer type.
- * - PartialOffer: Represents a Partial Taking offer type where `taker` can take not the full amount of assets.
- * - BlockOffer: Represents a Fully Taking offer type where `taker` should take the full amount of assets.
+ * - NoType: Represents a state with no specific percentage type.
+ * - Plus: Represents an action of adding a percentage to a value.
+ * - Minus: Represents an action of subtracting a percentage from a value.
  */
 enum PercentageType {
     NoType,
@@ -96,10 +110,10 @@ enum PercentageType {
  * @title Offer Fill Type Enum.
  * @notice Defines the types of validity states an offer can have in the DOTC system.
  * @dev Enum representing different states of offer validity, like non-existent or fully taken.
- * - NotTaken:
- * - Cancelled:
- * - PartiallyTaken:
- * - FullyTaken:
+ * - NotTaken: The offer has not been taken.
+ * - Cancelled: The offer has been cancelled.
+ * - PartiallyTaken: The offer has been partially taken.
+ * - FullyTaken: The offer has been fully taken.
  * @author Swarm
  */
 enum OfferFillType {
@@ -113,12 +127,12 @@ enum OfferFillType {
  * @title Escrow Offer Status Type Enum.
  * @notice Defines the types of escrow states an offer can have in the DOTC system.
  * @dev Enum representing different states of escrow, like offer deposited or fully withdrew.
+ * @author Swarm
  * - NoType: Represents a state with no specific escrow type.
  * - OfferDeposited: Indicates that the offer has been deposited.
  * - OfferFullyWithdrawn: Indicates that the offer has been fully withdrawn.
  * - OfferPartiallyWithdrawn: Indicates that the offer has been partially withdrawn.
  * - OfferCancelled: Indicates that the offer has been cancelled.
- * @author Swarm
  */
 enum EscrowOfferStatusType {
     NoType,
@@ -129,13 +143,13 @@ enum EscrowOfferStatusType {
 }
 
 /**
- * @title Price Structure.
+ * @title Asset Price Structure.
  * @notice Represents the price details in the DOTC trading system.
  * @dev Defines the structure for price details including price feed address, offerMaximumPrice, offerMinimumPrice, and percentage.
+ * @author Swarm
  * @param priceFeedAddress The contract address of the price feed for this asset.
  * @param offerMaximumPrice The maximum price limit.
  * @param offerMinimumPrice The minimum price limit.
- * @author Swarm
  */
 struct AssetPrice {
     address priceFeedAddress;
@@ -143,6 +157,16 @@ struct AssetPrice {
     uint256 offerMinimumPrice;
 }
 
+/**
+ * @title Offer Price Structure.
+ * @notice Represents the pricing details of an offer in the DOTC trading system.
+ * @dev Defines the structure for offer pricing details including pricing type, unit price, percentage, and percentage type.
+ * @author Swarm
+ * @param offerPricingType The type of the offer pricing (FixedPricing, DynamicPricing).
+ * @param unitPrice The unit price of the offer.
+ * @param percentage The percentage to be applied to the unit price.
+ * @param percentageType The type of percentage calculation (Plus, Minus).
+ */
 struct OfferPrice {
     OfferPricingType offerPricingType;
     uint256 unitPrice;
@@ -154,13 +178,12 @@ struct OfferPrice {
  * @title Asset Structure.
  * @notice Represents an asset in the DOTC trading system.
  * @dev Defines the structure for an asset including type, address, amount, and token ID for NFTs.
+ * @author Swarm
  * @param assetType The type of the asset (ERC20, ERC721, ERC1155).
  * @param assetAddress The contract address of the asset.
- * @param assetPriceFeedAddress The contract address of the price feed for this asset.
  * @param amount The amount of the asset (relevant for ERC20 and ERC1155).
  * @param tokenId The token ID (relevant for ERC721 and ERC1155).
- * @param price The price details of the asset.
- * @author Swarm
+ * @param assetPrice The price details of the asset.
  */
 struct Asset {
     AssetType assetType;
@@ -171,9 +194,10 @@ struct Asset {
 }
 
 /**
- * @title Offer Struct for DOTC.
+ * @title Offer Structure for DOTC.
  * @notice Describes the structure of an offer within the DOTC trading system.
  * @dev Structure encapsulating details of an offer, including its type, special conditions, and timing constraints.
+ * @author Swarm
  * @param takingOfferType The type of the offer taking (Partial, Fully).
  * @param offerPricingType The type of the offer pricing (FixedPricing, DynamicPricing).
  * @param specialAddresses Array of addresses with exclusive rights to take the offer.
@@ -182,7 +206,6 @@ struct Asset {
  * @param timelockPeriod Duration in seconds for which the offer is locked from being taken.
  * @param terms String URL pointing to the terms associated with the offer.
  * @param commsLink String URL providing a communication link (e.g., Telegram, email) for discussing the offer.
- * @author Swarm
  */
 struct OfferStruct {
     TakingOfferType takingOfferType;
@@ -199,12 +222,12 @@ struct OfferStruct {
  * @title DOTC Offer Structure.
  * @notice Detailed structure of an offer in the DOTC trading system.
  * @dev Contains comprehensive information about an offer, including assets involved and trade conditions.
+ * @author Swarm
  * @param maker Address of the individual creating the offer.
  * @param offerFillType The type of the dotc offer validation (NotExist, PartiallyTaken, FullyTaken).
  * @param depositAsset Asset offered by the maker.
  * @param withdrawalAsset Asset requested by the maker in exchange.
  * @param offer Detailed structure of the offer including special conditions and timing.
- * @author Swarm
  */
 struct DotcOffer {
     address maker;
@@ -218,9 +241,9 @@ struct DotcOffer {
  * @title Escrow Offer Structure.
  * @notice Represents the escrow details of an offer in the DOTC trading system.
  * @dev Defines the structure for escrow details including escrow type and deposit asset.
+ * @author Swarm
  * @param escrowOfferStatusType The type of the escrow (OfferDeposited, OfferFullyWithdrawn, etc.).
  * @param depositAsset The asset being deposited in the escrow.
- * @author Swarm
  */
 struct EscrowDeposit {
     EscrowOfferStatusType escrowOfferStatusType;

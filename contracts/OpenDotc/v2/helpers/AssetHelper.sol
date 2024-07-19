@@ -121,11 +121,12 @@ library AssetHelper {
                 revert AddressHaveNoERC721(account, asset.assetAddress, asset.tokenId);
             }
         } else if (asset.assetType == AssetType.ERC1155) {
-            uint256 balance = IERC1155(asset.assetAddress).balanceOf(account, asset.tokenId);
-
             if (!IERC165(asset.assetAddress).supportsInterface(type(IERC1155).interfaceId)) {
                 revert IncorrectAssetTypeForAddress(asset.assetAddress, asset.assetType);
             }
+
+            uint256 balance = IERC1155(asset.assetAddress).balanceOf(account, asset.tokenId);
+
             if (balance < asset.amount) {
                 revert AddressHaveNoERC1155(account, asset.assetAddress, asset.tokenId, balance, asset.amount);
             }
@@ -222,6 +223,12 @@ library AssetHelper {
         feesToFeeReceiver = fees - feesToAffiliate;
     }
 
+    /**
+     * @notice Adjusts the rate with a specified percentage.
+     * @param rate The initial rate.
+     * @param offerPrice The offer price data containing percentage and type.
+     * @return rateWithPercentage The adjusted rate.
+     */
     function getRateWithPercentage(
         uint256 rate,
         OfferPrice calldata offerPrice

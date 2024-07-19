@@ -10,6 +10,7 @@ import { OnlyDotc, ZeroAddressPassed, IncorrectPercentage } from "./structures/D
 /**
  * @title DotcManagerV2 (as part of the "SwarmX.eth Protocol")
  * @notice This contract manages DOTC and escrow addresses, fee settings, and other configurations for the SwarmX.eth Protocol.
+ * @dev This contract is upgradable and manages key configurations for the SwarmX.eth Protocol.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
  * Please read the Disclaimer featured on the SwarmX.eth website ("Terms") carefully before accessing,
  * interacting with, or using the SwarmX.eth Protocol software, consisting of the SwarmX.eth Protocol
@@ -22,7 +23,6 @@ import { OnlyDotc, ZeroAddressPassed, IncorrectPercentage } from "./structures/D
  * European Union, Switzerland, the United Nations, as well as the USA). If you do not meet these
  * requirements, please refrain from using the SwarmX.eth Protocol.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
- * @dev This contract is upgradable and manages key configurations for the SwarmX.eth Protocol.
  * @author Swarm
  */
 contract DotcManagerV2 is OwnableUpgradeable {
