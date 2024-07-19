@@ -284,7 +284,22 @@ contract DotcV2 is Initializable, Receiver {
         offer.checkDotcOfferParams();
         offer.offer.checkOfferParams();
 
-        (, uint256 withdrawalPrice) = offer.depositAsset.getRateAndPrice(offer.withdrawalAsset, offer.offer.offerPrice);
+        (uint256 depositToWithdrawalRate, uint256 withdrawalPrice) = offer.depositAsset.getRateAndPrice(
+            offer.withdrawalAsset,
+            offer.offer.offerPrice
+        );
+
+        if (maximumDepositToWithdrawalRate == 0) {
+            maximumDepositToWithdrawalRate = depositToWithdrawalRate;
+        }
+
+        console.log("maximumDepositToWithdrawalRate", maximumDepositToWithdrawalRate);
+
+        console.log("depositToWithdrawalRate", depositToWithdrawalRate);
+
+        if (depositToWithdrawalRate > maximumDepositToWithdrawalRate) {
+            revert DepositToWithdrawalRateOverflow();
+        }
 
         if (withdrawalAmountPaid == 0 || withdrawalAmountPaid > withdrawalPrice) {
             withdrawalAmountPaid = withdrawalPrice;
