@@ -439,19 +439,13 @@ contract DotcV2 is Initializable, Receiver {
      * @return The fees amount.
      */
     function _sendWithdrawalFees(Asset memory asset, uint256 assetAmount, address affiliate) private returns (uint256) {
-        uint256 feeAmount = manager.feeAmount();
+        (uint256 fees, uint256 feesToFeeReceiver, uint256 feesToAffiliate, address feeReceiver) = _validateFees(
+            assetAmount
+        );
 
-        if (feeAmount == 0) {
+        if (fees == 0) {
             return 0;
         }
-
-        address feeReceiver = manager.feeReceiver();
-
-        (uint256 fees, uint256 feesToFeeReceiver, uint256 feesToAffiliate) = AssetHelper.getFees(
-            assetAmount,
-            feeAmount,
-            manager.revSharePercentage()
-        );
 
         if (affiliate != address(0)) {
             _assetTransfer(asset, msg.sender, feeReceiver, feesToFeeReceiver);
@@ -471,17 +465,11 @@ contract DotcV2 is Initializable, Receiver {
      * @return The fees amount.
      */
     function _sendDepositFees(uint256 offerId, uint256 assetAmount, address affiliate) private returns (uint256) {
-        uint256 feeAmount = manager.feeAmount();
+        (uint256 fees, uint256 feesToFeeReceiver, uint256 feesToAffiliate, ) = _validateFees(assetAmount);
 
-        if (feeAmount == 0) {
+        if (fees == 0) {
             return 0;
         }
-
-        (uint256 fees, uint256 feesToFeeReceiver, uint256 feesToAffiliate) = AssetHelper.getFees(
-            assetAmount,
-            feeAmount,
-            manager.revSharePercentage()
-        );
 
         if (affiliate != address(0)) {
             escrow.withdrawFees(offerId, feesToFeeReceiver);
@@ -491,5 +479,22 @@ contract DotcV2 is Initializable, Receiver {
         }
 
         return fees;
+    }
+
+    function _validateFees(
+        uint256 assetAmount
+    ) private view returns (uint256 fees, uint256 feesToFeeReceiver, uint256 feesToAffiliate, address feeReceiver) {
+        uint256 feeAmount = manager.feeAmount();
+        feeReceiver = manager.feeReceiver();
+
+        if (feeAmount == 0 || feeReceiver == address(0)) {
+            return (0, 0, 0, address(0));
+        }
+
+        (fees, feesToFeeReceiver, feesToAffiliate) = AssetHelper.getFees(
+            assetAmount,
+            feeAmount,
+            manager.revSharePercentage()
+        );
     }
 }
