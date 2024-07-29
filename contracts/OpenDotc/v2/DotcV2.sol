@@ -11,9 +11,6 @@ import { DotcManagerV2 } from "./DotcManagerV2.sol";
 
 import { Asset, AssetType, OfferFillType, OfferStruct, DotcOffer, OnlyManager, OfferPricingType, TakingOfferType } from "./structures/DotcStructuresV2.sol";
 
-/// @title Errors related to management in the Dotc contract.
-/// @notice Provides error messages for various failure conditions related to dotc management handling.
-
 /// @title Errors related to the Dotc contract
 /// @notice Provides error messages for various failure conditions related to Offers and Assets handling
 
@@ -22,8 +19,17 @@ import { Asset, AssetType, OfferFillType, OfferStruct, DotcOffer, OnlyManager, O
  */
 error DepositToWithdrawalRateOverflow();
 
+/**
+ * @notice Thrown when the Block offer paid partially.
+ */
 error BlockOfferShouldBePaidFully(uint256 withdrawalAmountPaid);
 
+/**
+ * @notice Thrown when called not correct function.
+ * This could be in two cases:
+ * 1. If an offer with Fixed Pricing type, but called takeOfferDynamic() function.
+ * 2. If an offer with Dynamic Pricing type, but called takeOfferFixed() function.
+ */
 error IncorrectOfferPricingType(OfferPricingType incorrectOfferPricingType);
 
 /**

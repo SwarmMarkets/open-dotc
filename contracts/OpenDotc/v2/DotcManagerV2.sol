@@ -7,6 +7,12 @@ import { DotcV2 } from "./DotcV2.sol";
 import { DotcEscrowV2 } from "./DotcEscrowV2.sol";
 import { OnlyDotc, ZeroAddressPassed, IncorrectPercentage } from "./structures/DotcStructuresV2.sol";
 
+/// @title Errors related to management in the Dotc contract.
+/// @notice Provides error messages for various failure conditions related to dotc management handling.
+
+/**
+ * @notice Thrown when pasted `feeAmount` > 10**27.
+ */
 error IncorrectFeeAmount(uint256 feeAmount);
 
 /**
