@@ -100,9 +100,16 @@ contract DotcManagerV2 is OwnableUpgradeable {
     function initialize(address _newFeeReceiver) public initializer {
         __Ownable_init(msg.sender);
 
+        uint256 defaultFeeAmount = 25 * (10 ** 23);
+        uint256 defaultRevSharePercentage = 8000;
+
         feeReceiver = _newFeeReceiver;
-        feeAmount = 25 * (10 ** 23); // Default fee amount
-        revSharePercentage = 8000; // Default revenue share percentage
+        feeAmount = defaultFeeAmount; // Default fee amount
+        revSharePercentage = defaultRevSharePercentage; // Default revenue share percentage
+
+        emit FeesReceiverSet(msg.sender, _newFeeReceiver);
+        emit FeesAmountSet(msg.sender, defaultFeeAmount);
+        emit RevShareSet(msg.sender, defaultRevSharePercentage);
     }
 
     /**
