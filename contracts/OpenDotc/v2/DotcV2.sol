@@ -9,7 +9,7 @@ import { DotcOfferHelper } from "./helpers/DotcOfferHelper.sol";
 import { DotcEscrowV2 } from "./DotcEscrowV2.sol";
 import { DotcManagerV2 } from "./DotcManagerV2.sol";
 
-import { Asset, AssetType, OfferFillType, OfferStruct, DotcOffer, OnlyManager } from "./structures/DotcStructuresV2.sol";
+import { Asset, AssetType, OfferFillType, OfferStruct, DotcOffer, OnlyManager, OfferPricingType, TakingOfferType } from "./structures/DotcStructuresV2.sol";
 
 /// @title Errors related to management in the Dotc contract.
 /// @notice Provides error messages for various failure conditions related to dotc management handling.
@@ -21,6 +21,10 @@ import { Asset, AssetType, OfferFillType, OfferStruct, DotcOffer, OnlyManager } 
  * @notice Thrown when the deposit-to-withdrawal rate calculation overflows.
  */
 error DepositToWithdrawalRateOverflow();
+
+error BlockOfferShouldBePaidFully(uint256 withdrawalAmountPaid);
+
+error IncorrectOfferPricingType(OfferPricingType incorrectOfferPricingType);
 
 /**
  * @title Open Dotc smart contract (as part of the "SwarmX.eth Protocol")
@@ -205,8 +209,19 @@ contract DotcV2 is Initializable, Receiver {
         offer.checkDotcOfferParams();
         offer.offer.checkOfferParams();
 
+        if (offer.offer.offerPrice.offerPricingType != OfferPricingType.FixedPricing) {
+            revert IncorrectOfferPricingType(offer.offer.offerPrice.offerPricingType);
+        }
+
         if (withdrawalAmountPaid == 0 || withdrawalAmountPaid > offer.withdrawalAsset.amount) {
             withdrawalAmountPaid = offer.withdrawalAsset.amount;
+        }
+
+        if (
+            withdrawalAmountPaid != offer.withdrawalAsset.amount &&
+            offer.offer.takingOfferType == TakingOfferType.BlockOffer
+        ) {
+            revert BlockOfferShouldBePaidFully(withdrawalAmountPaid);
         }
 
         offer.withdrawalAsset.checkAssetOwner(msg.sender, withdrawalAmountPaid);
@@ -268,6 +283,10 @@ contract DotcV2 is Initializable, Receiver {
         offer.checkDotcOfferParams();
         offer.offer.checkOfferParams();
 
+        if (offer.offer.offerPrice.offerPricingType != OfferPricingType.DynamicPricing) {
+            revert IncorrectOfferPricingType(offer.offer.offerPrice.offerPricingType);
+        }
+
         (uint256 depositToWithdrawalRate, uint256 withdrawalPrice) = offer.depositAsset.getRateAndPrice(
             offer.withdrawalAsset,
             offer.offer.offerPrice
@@ -283,6 +302,13 @@ contract DotcV2 is Initializable, Receiver {
 
         if (withdrawalAmountPaid == 0 || withdrawalAmountPaid > withdrawalPrice) {
             withdrawalAmountPaid = withdrawalPrice;
+        }
+
+        if (
+            withdrawalAmountPaid != offer.withdrawalAsset.amount &&
+            offer.offer.takingOfferType == TakingOfferType.BlockOffer
+        ) {
+            revert BlockOfferShouldBePaidFully(withdrawalAmountPaid);
         }
 
         uint256 fullWithdrawalAmountPaid = withdrawalAmountPaid;
