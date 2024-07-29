@@ -179,9 +179,9 @@ contract DotcEscrowV2 is Initializable, Receiver {
         escrowDeposits[offerId].escrowOfferStatusType = EscrowOfferStatusType.OfferCancelled;
         escrowDeposits[offerId].depositAsset.amount = 0;
 
-        _assetTransfer(offer.depositAsset, address(this), maker, offer.depositAsset.amount);
+        _assetTransfer(offer.depositAsset, address(this), maker, amountToCancel);
 
-        emit OfferCancelled(offerId, maker, offer.depositAsset.amount);
+        emit OfferCancelled(offerId, maker, amountToCancel);
     }
 
     /**
