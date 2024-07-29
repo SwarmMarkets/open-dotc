@@ -7,6 +7,8 @@ import { DotcV2 } from "./DotcV2.sol";
 import { DotcEscrowV2 } from "./DotcEscrowV2.sol";
 import { OnlyDotc, ZeroAddressPassed, IncorrectPercentage } from "./structures/DotcStructuresV2.sol";
 
+error IncorrectFeeAmount(uint256 feeAmount);
+
 /**
  * @title DotcManagerV2 (as part of the "SwarmX.eth Protocol")
  * @notice This contract manages DOTC and escrow addresses, fee settings, and other configurations for the SwarmX.eth Protocol.
@@ -157,6 +159,10 @@ contract DotcManagerV2 is OwnableUpgradeable {
     function changeFees(address _newFeeReceiver, uint256 _feeAmount, uint256 _revShare) external onlyOwner {
         if (_revShare > AssetHelper.SCALING_FACTOR) {
             revert IncorrectPercentage(_revShare);
+        }
+
+        if (_feeAmount > AssetHelper.BPS) {
+            revert IncorrectFeeAmount(_feeAmount);
         }
 
         feeReceiver = _newFeeReceiver;
