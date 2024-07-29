@@ -100,16 +100,7 @@ contract DotcManagerV2 is OwnableUpgradeable {
     function initialize(address _newFeeReceiver) public initializer {
         __Ownable_init(msg.sender);
 
-        uint256 defaultFeeAmount = 25 * (10 ** 23);
-        uint256 defaultRevSharePercentage = 8000;
-
-        feeReceiver = _newFeeReceiver;
-        feeAmount = defaultFeeAmount; // Default fee amount
-        revSharePercentage = defaultRevSharePercentage; // Default revenue share percentage
-
-        emit FeesReceiverSet(msg.sender, _newFeeReceiver);
-        emit FeesAmountSet(msg.sender, defaultFeeAmount);
-        emit RevShareSet(msg.sender, defaultRevSharePercentage);
+        _changeFees(_newFeeReceiver, 25 * (10 ** 23), 8000);
     }
 
     /**
@@ -164,6 +155,10 @@ contract DotcManagerV2 is OwnableUpgradeable {
      * @dev Requires caller to be the owner of the contract.
      */
     function changeFees(address _newFeeReceiver, uint256 _feeAmount, uint256 _revShare) external onlyOwner {
+        _changeFees(_newFeeReceiver, _feeAmount, _revShare);
+    }
+
+    function _changeFees(address _newFeeReceiver, uint256 _feeAmount, uint256 _revShare) private {
         if (_revShare > AssetHelper.SCALING_FACTOR) {
             revert IncorrectPercentage(_revShare);
         }
