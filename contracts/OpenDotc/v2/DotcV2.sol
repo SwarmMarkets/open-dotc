@@ -18,37 +18,6 @@ import { Asset, AssetType, OfferFillType, OfferStruct, DotcOffer, OnlyManager } 
 /// @notice Provides error messages for various failure conditions related to Offers and Assets handling
 
 /**
- * @notice Thrown when the call to escrow fails.
- */
-error EscrowCallFailedError();
-
-/**
- * @notice Thrown when the amount to pay, excluding fees, is zero or less.
- */
-error AmountWithoutFeesIsZeroError();
-
-/**
- * @notice Thrown when the amount to send does not match the required amount for a full offer.
- * @param providedAmount The incorrect amount provided for the full offer.
- */
-error IncorrectFullOfferAmountError(uint256 providedAmount);
-
-/**
- * @notice Thrown when there's an attempt to change the amount of an ERC721 offer.
- */
-error ERC721OfferAmountChangeError();
-
-/**
- * @notice Indicates that the operation was attempted by an unauthorized entity, not the Escrow contract.
- */
-error OnlyEscrow();
-
-/**
- * @notice Indicates that the operation was attempted by an unauthorized entity, not permitted for dynamic pricing.
- */
-error OnlyDynamicPricing();
-
-/**
  * @notice Thrown when the deposit-to-withdrawal rate calculation overflows.
  */
 error DepositToWithdrawalRateOverflow();
