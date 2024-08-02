@@ -41,7 +41,7 @@ This contract manages the escrow mechanism essential for secure trading:
 
 # Audit Reports
 
-# [PeckShield](docs/PeckShield-Audit-Report-dOTC-v1.0.pdf)
+## [PeckShield](docs/PeckShield-Audit-Report-dOTC-v1.0.pdf)
 
 ---
 
