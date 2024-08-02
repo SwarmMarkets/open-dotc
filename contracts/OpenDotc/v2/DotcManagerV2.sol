@@ -7,6 +7,14 @@ import { DotcV2 } from "./DotcV2.sol";
 import { DotcEscrowV2 } from "./DotcEscrowV2.sol";
 import { OnlyDotc, ZeroAddressPassed, IncorrectPercentage } from "./structures/DotcStructuresV2.sol";
 
+/// @title Errors related to management in the Dotc contract.
+/// @notice Provides error messages for various failure conditions related to dotc management handling.
+
+/**
+ * @notice Thrown when pasted `feeAmount` > 10**27.
+ */
+error IncorrectFeeAmount(uint256 feeAmount);
+
 /**
  * @title DotcManagerV2 (as part of the "SwarmX.eth Protocol")
  * @notice This contract manages DOTC and escrow addresses, fee settings, and other configurations for the SwarmX.eth Protocol.
@@ -98,9 +106,7 @@ contract DotcManagerV2 is OwnableUpgradeable {
     function initialize(address _newFeeReceiver) public initializer {
         __Ownable_init(msg.sender);
 
-        feeReceiver = _newFeeReceiver;
-        feeAmount = 25 * (10 ** 23); // Default fee amount
-        revSharePercentage = 8000; // Default revenue share percentage
+        _changeFees(_newFeeReceiver, 25 * (10 ** 23), 8000);
     }
 
     /**
@@ -155,8 +161,16 @@ contract DotcManagerV2 is OwnableUpgradeable {
      * @dev Requires caller to be the owner of the contract.
      */
     function changeFees(address _newFeeReceiver, uint256 _feeAmount, uint256 _revShare) external onlyOwner {
+        _changeFees(_newFeeReceiver, _feeAmount, _revShare);
+    }
+
+    function _changeFees(address _newFeeReceiver, uint256 _feeAmount, uint256 _revShare) private {
         if (_revShare > AssetHelper.SCALING_FACTOR) {
             revert IncorrectPercentage(_revShare);
+        }
+
+        if (_feeAmount > AssetHelper.BPS) {
+            revert IncorrectFeeAmount(_feeAmount);
         }
 
         feeReceiver = _newFeeReceiver;

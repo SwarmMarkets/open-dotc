@@ -9,49 +9,28 @@ import { DotcOfferHelper } from "./helpers/DotcOfferHelper.sol";
 import { DotcEscrowV2 } from "./DotcEscrowV2.sol";
 import { DotcManagerV2 } from "./DotcManagerV2.sol";
 
-import { Asset, AssetType, OfferFillType, OfferStruct, DotcOffer, OnlyManager } from "./structures/DotcStructuresV2.sol";
-
-/// @title Errors related to management in the Dotc contract.
-/// @notice Provides error messages for various failure conditions related to dotc management handling.
+import { Asset, AssetType, OfferFillType, OfferStruct, DotcOffer, OnlyManager, OfferPricingType, TakingOfferType } from "./structures/DotcStructuresV2.sol";
 
 /// @title Errors related to the Dotc contract
 /// @notice Provides error messages for various failure conditions related to Offers and Assets handling
 
 /**
- * @notice Thrown when the call to escrow fails.
- */
-error EscrowCallFailedError();
-
-/**
- * @notice Thrown when the amount to pay, excluding fees, is zero or less.
- */
-error AmountWithoutFeesIsZeroError();
-
-/**
- * @notice Thrown when the amount to send does not match the required amount for a full offer.
- * @param providedAmount The incorrect amount provided for the full offer.
- */
-error IncorrectFullOfferAmountError(uint256 providedAmount);
-
-/**
- * @notice Thrown when there's an attempt to change the amount of an ERC721 offer.
- */
-error ERC721OfferAmountChangeError();
-
-/**
- * @notice Indicates that the operation was attempted by an unauthorized entity, not the Escrow contract.
- */
-error OnlyEscrow();
-
-/**
- * @notice Indicates that the operation was attempted by an unauthorized entity, not permitted for dynamic pricing.
- */
-error OnlyDynamicPricing();
-
-/**
  * @notice Thrown when the deposit-to-withdrawal rate calculation overflows.
  */
 error DepositToWithdrawalRateOverflow();
+
+/**
+ * @notice Thrown when the Block offer paid partially.
+ */
+error BlockOfferShouldBePaidFully(uint256 withdrawalAmountPaid);
+
+/**
+ * @notice Thrown when called not correct function.
+ * This could be in two cases:
+ * 1. If an offer with Fixed Pricing type, but called takeOfferDynamic() function.
+ * 2. If an offer with Dynamic Pricing type, but called takeOfferFixed() function.
+ */
+error IncorrectOfferPricingType(OfferPricingType incorrectOfferPricingType);
 
 /**
  * @title Open Dotc smart contract (as part of the "SwarmX.eth Protocol")
@@ -236,8 +215,19 @@ contract DotcV2 is Initializable, Receiver {
         offer.checkDotcOfferParams();
         offer.offer.checkOfferParams();
 
+        if (offer.offer.offerPrice.offerPricingType != OfferPricingType.FixedPricing) {
+            revert IncorrectOfferPricingType(offer.offer.offerPrice.offerPricingType);
+        }
+
         if (withdrawalAmountPaid == 0 || withdrawalAmountPaid > offer.withdrawalAsset.amount) {
             withdrawalAmountPaid = offer.withdrawalAsset.amount;
+        }
+
+        if (
+            withdrawalAmountPaid != offer.withdrawalAsset.amount &&
+            offer.offer.takingOfferType == TakingOfferType.BlockOffer
+        ) {
+            revert BlockOfferShouldBePaidFully(withdrawalAmountPaid);
         }
 
         offer.withdrawalAsset.checkAssetOwner(msg.sender, withdrawalAmountPaid);
@@ -299,6 +289,10 @@ contract DotcV2 is Initializable, Receiver {
         offer.checkDotcOfferParams();
         offer.offer.checkOfferParams();
 
+        if (offer.offer.offerPrice.offerPricingType != OfferPricingType.DynamicPricing) {
+            revert IncorrectOfferPricingType(offer.offer.offerPrice.offerPricingType);
+        }
+
         (uint256 depositToWithdrawalRate, uint256 withdrawalPrice) = offer.depositAsset.getRateAndPrice(
             offer.withdrawalAsset,
             offer.offer.offerPrice
@@ -314,6 +308,13 @@ contract DotcV2 is Initializable, Receiver {
 
         if (withdrawalAmountPaid == 0 || withdrawalAmountPaid > withdrawalPrice) {
             withdrawalAmountPaid = withdrawalPrice;
+        }
+
+        if (
+            withdrawalAmountPaid != offer.withdrawalAsset.amount &&
+            offer.offer.takingOfferType == TakingOfferType.BlockOffer
+        ) {
+            revert BlockOfferShouldBePaidFully(withdrawalAmountPaid);
         }
 
         uint256 fullWithdrawalAmountPaid = withdrawalAmountPaid;
@@ -470,19 +471,13 @@ contract DotcV2 is Initializable, Receiver {
      * @return The fees amount.
      */
     function _sendWithdrawalFees(Asset memory asset, uint256 assetAmount, address affiliate) private returns (uint256) {
-        uint256 feeAmount = manager.feeAmount();
+        (uint256 fees, uint256 feesToFeeReceiver, uint256 feesToAffiliate, address feeReceiver) = _validateFees(
+            assetAmount
+        );
 
-        if (feeAmount == 0) {
+        if (fees == 0) {
             return 0;
         }
-
-        address feeReceiver = manager.feeReceiver();
-
-        (uint256 fees, uint256 feesToFeeReceiver, uint256 feesToAffiliate) = AssetHelper.getFees(
-            assetAmount,
-            feeAmount,
-            manager.revSharePercentage()
-        );
 
         if (affiliate != address(0)) {
             _assetTransfer(asset, msg.sender, feeReceiver, feesToFeeReceiver);
@@ -502,17 +497,11 @@ contract DotcV2 is Initializable, Receiver {
      * @return The fees amount.
      */
     function _sendDepositFees(uint256 offerId, uint256 assetAmount, address affiliate) private returns (uint256) {
-        uint256 feeAmount = manager.feeAmount();
+        (uint256 fees, uint256 feesToFeeReceiver, uint256 feesToAffiliate, ) = _validateFees(assetAmount);
 
-        if (feeAmount == 0) {
+        if (fees == 0) {
             return 0;
         }
-
-        (uint256 fees, uint256 feesToFeeReceiver, uint256 feesToAffiliate) = AssetHelper.getFees(
-            assetAmount,
-            feeAmount,
-            manager.revSharePercentage()
-        );
 
         if (affiliate != address(0)) {
             escrow.withdrawFees(offerId, feesToFeeReceiver);
@@ -522,5 +511,22 @@ contract DotcV2 is Initializable, Receiver {
         }
 
         return fees;
+    }
+
+    function _validateFees(
+        uint256 assetAmount
+    ) private view returns (uint256 fees, uint256 feesToFeeReceiver, uint256 feesToAffiliate, address feeReceiver) {
+        uint256 feeAmount = manager.feeAmount();
+        feeReceiver = manager.feeReceiver();
+
+        if (feeAmount == 0 || feeReceiver == address(0)) {
+            return (0, 0, 0, address(0));
+        }
+
+        (fees, feesToFeeReceiver, feesToAffiliate) = AssetHelper.getFees(
+            assetAmount,
+            feeAmount,
+            manager.revSharePercentage()
+        );
     }
 }

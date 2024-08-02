@@ -1,59 +1,5 @@
 # Solidity API
 
-## EscrowCallFailedError
-
-```solidity
-error EscrowCallFailedError()
-```
-
-Thrown when the call to escrow fails.
-
-## AmountWithoutFeesIsZeroError
-
-```solidity
-error AmountWithoutFeesIsZeroError()
-```
-
-Thrown when the amount to pay, excluding fees, is zero or less.
-
-## IncorrectFullOfferAmountError
-
-```solidity
-error IncorrectFullOfferAmountError(uint256 providedAmount)
-```
-
-Thrown when the amount to send does not match the required amount for a full offer.
-
-### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| providedAmount | uint256 | The incorrect amount provided for the full offer. |
-
-## ERC721OfferAmountChangeError
-
-```solidity
-error ERC721OfferAmountChangeError()
-```
-
-Thrown when there's an attempt to change the amount of an ERC721 offer.
-
-## OnlyEscrow
-
-```solidity
-error OnlyEscrow()
-```
-
-Indicates that the operation was attempted by an unauthorized entity, not the Escrow contract.
-
-## OnlyDynamicPricing
-
-```solidity
-error OnlyDynamicPricing()
-```
-
-Indicates that the operation was attempted by an unauthorized entity, not permitted for dynamic pricing.
-
 ## DepositToWithdrawalRateOverflow
 
 ```solidity
@@ -61,6 +7,25 @@ error DepositToWithdrawalRateOverflow()
 ```
 
 Thrown when the deposit-to-withdrawal rate calculation overflows.
+
+## BlockOfferShouldBePaidFully
+
+```solidity
+error BlockOfferShouldBePaidFully(uint256 withdrawalAmountPaid)
+```
+
+Thrown when the Block offer paid partially.
+
+## IncorrectOfferPricingType
+
+```solidity
+error IncorrectOfferPricingType(enum OfferPricingType incorrectOfferPricingType)
+```
+
+Thrown when called not correct function.
+This could be in two cases:
+1. If an offer with Fixed Pricing type, but called takeOfferDynamic() function.
+2. If an offer with Dynamic Pricing type, but called takeOfferFixed() function.
 
 ## DotcV2
 

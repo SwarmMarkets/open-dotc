@@ -21,11 +21,6 @@ error AssetAmountEqZero();
 error AmountToCancelEqZero();
 
 /**
- * @notice Indicates no fee amount was specified where a non-zero value is required.
- */
-error FeesAmountEqZero();
-
-/**
  * @title Escrow Contract for Dotc (Decentralized Over-The-Counter) Trading (as part of the "SwarmX.eth Protocol")
  * @notice It allows for depositing, withdrawing, and managing of assets in the course of trading.
  * @dev This contract handles the escrow of assets for DOTC trades, supporting ERC20, ERC721, and ERC1155 assets.
@@ -179,9 +174,9 @@ contract DotcEscrowV2 is Initializable, Receiver {
         escrowDeposits[offerId].escrowOfferStatusType = EscrowOfferStatusType.OfferCancelled;
         escrowDeposits[offerId].depositAsset.amount = 0;
 
-        _assetTransfer(offer.depositAsset, address(this), maker, offer.depositAsset.amount);
+        _assetTransfer(offer.depositAsset, address(this), maker, amountToCancel);
 
-        emit OfferCancelled(offerId, maker, offer.depositAsset.amount);
+        emit OfferCancelled(offerId, maker, amountToCancel);
     }
 
     /**

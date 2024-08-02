@@ -16,14 +16,6 @@ error AmountToCancelEqZero()
 
 Indicates no amount was specified for cancelling where a non-zero value is required.
 
-## FeesAmountEqZero
-
-```solidity
-error FeesAmountEqZero()
-```
-
-Indicates no fee amount was specified where a non-zero value is required.
-
 ## DotcEscrowV2
 
 It allows for depositing, withdrawing, and managing of assets in the course of trading.

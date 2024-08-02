@@ -1,5 +1,13 @@
 # Solidity API
 
+## IncorrectFeeAmount
+
+```solidity
+error IncorrectFeeAmount(uint256 feeAmount)
+```
+
+Thrown when pasted `feeAmount` > 10**27.
+
 ## DotcManagerV2
 
 This contract manages DOTC and escrow addresses, fee settings, and other configurations for the SwarmX.eth Protocol.
