@@ -1,12 +1,12 @@
 import { verifyContract } from './helpers/verify-contract';
 
-const assetHelper_address: string = '0xDcE64dA7278c0D5E33b0ECb5423966c542D43a46',
-  offerHelper_address: string = '0x0dFf9718E9BeaB3d3eE243d1a5f5fc7B5fD93951',
-  dotcOfferHelper_address: string = '0x0350A98320487FeB747fa7FCEE2Fea3725D72493';
+const assetHelper_address: string = '0xa8E289653a03c5611E1F6320258C77c574c5F159',
+  offerHelper_address: string = '0xEE6d8763fFbdFA74cd383A1DE6370d336dE224C7',
+  dotcOfferHelper_address: string = '0xaa8E11FCbCadeBBB2301d1dDA51cCfa6F9ac5276';
 
-const dotcManager_address: string = '0x3d47613D6d67757c2c900FFB93D90fE9582B9a40',
-  dotc_address: string = '0x7C31E975fa5795eaFe284383e5F2B979ac946090',
-  escrow_address: string = '0xd7F980c588B7D603B35b5584de22bE34FEf4AF13';
+const dotcManager_address: string = '0xe155a3E42EfcdAB6dDD763F8aecB7160671D6b0f',
+  dotc_address: string = '0x8352819830D8e7aC9Ad47e981De76D0085747253',
+  escrow_address: string = '0x87bf586BB01c161e0d2c1C09ccC8A790de4ddcAC';
 
 async function main(): Promise<void> {
   await verifyContract(assetHelper_address);
