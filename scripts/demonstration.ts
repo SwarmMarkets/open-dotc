@@ -1,9 +1,9 @@
 import { ethers } from 'hardhat';
 import { BigNumber } from 'ethers';
 import { DotcV2 } from 'typechain';
-import { TakingOfferType, OfferPricingType, OfferStruct, AssetType, PriceStruct, AssetStruct } from '../test/helpers/StructuresV2';
+import { TakingOfferType, OfferPricingType, OfferStruct, AssetType, AssetPriceStruct, OfferPriceStruct, AssetStruct, PercentageType } from '../test/helpers/StructuresV2';
 
-const DotcV2: string = '0x1558c15E513E1d99eF9e653bcd5d6F996C1B2F0d';
+const DotcV2: string = '0x8352819830D8e7aC9Ad47e981De76D0085747253';
 
 const AuthTrue: string = '0xd57642925a5E287F90b04CE74bFC1218B41Cd4b8',
 	AuthFalse: string = '0x357A28B3a543bcEB9a2C1Ba795F07D23cD1F1f68';
@@ -19,7 +19,7 @@ const ERC20_6: string = '0xa144F12d9d121474129bba63B6DCEe28CbAf0856',
 
 const Taker: string = '0x811AE8434b584dfde82C14102820570611d47A59';
 
-const time = 1721141948;
+const time = 1726042456;
 
 async function main() {
 	await demonstrateDynamicPricingAgainstERC1155();
@@ -36,24 +36,29 @@ async function demonstrateAuth() {
 	await erc20_6.approve(DotcV2, amountIn);
 	await erc20_18.transfer(Taker, amountOut);
 
-	const DepositPrice: PriceStruct = {
+	const DepositPrice: AssetPriceStruct = {
 		priceFeedAddress: PriceFeed_USDC,
 		offerMaximumPrice: 0,
 		offerMinimumPrice: 0,
-		percentage: 0
 	}
 
-	const WithdrawalPrice: PriceStruct = {
+	const WithdrawalPrice: AssetPriceStruct = {
 		priceFeedAddress: PriceFeed_ETH,
 		offerMaximumPrice: 0,
 		offerMinimumPrice: 0,
-		percentage: 0
+	}
+
+	const OfferPrice: OfferPriceStruct = {
+		offerPricingType: OfferPricingType.FixedPricing,
+		unitPrice: 0,
+		percentage: 0,
+		percentageType: PercentageType.NoType
 	}
 
 	const DepositAsset: AssetStruct = {
 		assetType: 1,
 		assetAddress: ERC20_6,
-		price: DepositPrice,
+		assetPrice: DepositPrice,
 		amount: amountIn,
 		tokenId: 0,
 	};
@@ -61,17 +66,16 @@ async function demonstrateAuth() {
 	const WithdrawalAsset: AssetStruct = {
 		assetType: 1,
 		assetAddress: ERC20_18,
-		price: WithdrawalPrice,
+		assetPrice: WithdrawalPrice,
 		amount: amountOut,
 		tokenId: 0,
 	};
 
 	const Offer: OfferStruct = {
 		takingOfferType: TakingOfferType.BlockOffer,
-		offerPricingType: OfferPricingType.FixedPricing,
-		unitPrice: 0,
+		offerPrice: OfferPrice,
 		specialAddresses: [],
-		authorizationAddresses: [AuthFalse],
+		authorizationAddresses: [AuthTrue],
 		expiryTimestamp: time + 20000,
 		timelockPeriod: 0,
 		terms: "tbd",
@@ -93,24 +97,29 @@ async function demonstrateAffiliate() {
 	await erc20_6.approve(DotcV2, amountIn_asset);
 	await erc721['safeTransferFrom(address,address,uint256)'](maker.address, Taker, withdrawalTokenId);
 
-	const DepositPrice: PriceStruct = {
+	const DepositPrice: AssetPriceStruct = {
 		priceFeedAddress: PriceFeed_USDC,
 		offerMaximumPrice: 0, // OfferMaximumPrice
 		offerMinimumPrice: 0, // OfferMinimumPrice
-		percentage: 0
 	}
 
-	const WithdrawalPrice: PriceStruct = {
+	const WithdrawalPrice: AssetPriceStruct = {
 		priceFeedAddress: PriceFeed_Gold,
 		offerMaximumPrice: 0,
 		offerMinimumPrice: 0,
-		percentage: 0
+	}
+
+	const OfferPrice: OfferPriceStruct = {
+		offerPricingType: OfferPricingType.FixedPricing,
+		unitPrice: 0,
+		percentage: 0,
+		percentageType: PercentageType.NoType
 	}
 
 	const DepositAsset: AssetStruct = {
 		assetType: 1,
 		assetAddress: ERC20_6,
-		price: DepositPrice,
+		assetPrice: DepositPrice,
 		amount: amountIn_asset,
 		tokenId: 0,
 	};
@@ -118,15 +127,14 @@ async function demonstrateAffiliate() {
 	const WithdrawalAsset: AssetStruct = {
 		assetType: 2,
 		assetAddress: ERC721,
-		price: WithdrawalPrice,
+		assetPrice: WithdrawalPrice,
 		amount: 1,
 		tokenId: 4,
 	};
 
 	const Offer: OfferStruct = {
 		takingOfferType: TakingOfferType.BlockOffer,
-		offerPricingType: OfferPricingType.FixedPricing,
-		unitPrice: 0,
+		offerPrice: OfferPrice,
 		specialAddresses: [],
 		authorizationAddresses: [],
 		expiryTimestamp: time + 20000,
@@ -149,24 +157,29 @@ async function demonstrateDynamicPricingAgainstERC20() {
 	await erc20_18.approve(DotcV2, amountIn);
 	await erc20_6.transfer(Taker, amountOut.mul(2));
 
-	const PriceDeposit: PriceStruct = {
+	const PriceDeposit: AssetPriceStruct = {
 		priceFeedAddress: PriceFeed_ETH,
 		offerMaximumPrice: 0,
 		offerMinimumPrice: 314097411980,
-		percentage: 100
 	}
 
-	const PriceWithdrawal: PriceStruct = {
+	const PriceWithdrawal: AssetPriceStruct = {
 		priceFeedAddress: PriceFeed_USDC,
 		offerMaximumPrice: 0,
 		offerMinimumPrice: 100000000,
-		percentage: 100
+	}
+
+	const OfferPrice: OfferPriceStruct = {
+		offerPricingType: OfferPricingType.DynamicPricing,
+		unitPrice: 0,
+		percentage: 100,
+		percentageType: PercentageType.Plus
 	}
 
 	const DepositAsset: AssetStruct = {
 		assetType: AssetType.ERC20,
 		assetAddress: erc20_18.address,
-		price: PriceDeposit,
+		assetPrice: PriceDeposit,
 		amount: amountIn,
 		tokenId: 0,
 	};
@@ -174,15 +187,14 @@ async function demonstrateDynamicPricingAgainstERC20() {
 	const WithdrawalAsset: AssetStruct = {
 		assetType: AssetType.ERC20,
 		assetAddress: erc20_6.address,
-		price: PriceWithdrawal,
+		assetPrice: PriceWithdrawal,
 		amount: amountOut,
 		tokenId: 0,
 	};
 
 	const Offer: OfferStruct = {
 		takingOfferType: TakingOfferType.BlockOffer,
-		offerPricingType: OfferPricingType.DynamicPricing,
-		unitPrice: 0,
+		offerPrice: OfferPrice,
 		specialAddresses: [],
 		authorizationAddresses: [],
 		expiryTimestamp: time + 20000,
@@ -205,27 +217,32 @@ async function demonstrateDynamicPricingAgainstERC1155() {
 	const tokenOutId = 3;
 	const amountIn = BigNumber.from(15000).mul(BigNumber.from(10).pow(await erc20_6.decimals()));
 
-	// await erc20_6.approve(DotcV2, amountIn);
+	await erc20_6.approve(DotcV2, amountIn);
 	await erc1155.safeTransferFrom(maker.address, Taker, tokenOutId, amountOut, '0x00');
 
-	const PriceDeposit: PriceStruct = {
+	const PriceDeposit: AssetPriceStruct = {
 		priceFeedAddress: PriceFeed_USDC,
 		offerMaximumPrice: 0,
 		offerMinimumPrice: 100000000,
-		percentage: 100
 	}
 
-	const PriceWithdrawal: PriceStruct = {
+	const PriceWithdrawal: AssetPriceStruct = {
 		priceFeedAddress: PriceFeed_Gold,
 		offerMaximumPrice: 0,
 		offerMinimumPrice: 240000000000,
-		percentage: 100
+	}
+
+	const OfferPrice: OfferPriceStruct = {
+		offerPricingType: OfferPricingType.DynamicPricing,
+		unitPrice: 0,
+		percentage: 100,
+		percentageType: PercentageType.Plus
 	}
 
 	const DepositAsset: AssetStruct = {
 		assetType: AssetType.ERC20,
 		assetAddress: erc20_6.address,
-		price: PriceDeposit,
+		assetPrice: PriceDeposit,
 		amount: amountIn,
 		tokenId: 0,
 	};
@@ -233,15 +250,14 @@ async function demonstrateDynamicPricingAgainstERC1155() {
 	const WithdrawalAsset: AssetStruct = {
 		assetType: AssetType.ERC1155,
 		assetAddress: erc1155.address,
-		price: PriceWithdrawal,
+		assetPrice: PriceWithdrawal,
 		amount: amountOut,
 		tokenId: tokenOutId,
 	};
 
 	const Offer: OfferStruct = {
 		takingOfferType: TakingOfferType.BlockOffer,
-		offerPricingType: OfferPricingType.DynamicPricing,
-		unitPrice: 0,
+		offerPrice: OfferPrice,
 		specialAddresses: [],
 		authorizationAddresses: [],
 		expiryTimestamp: time + 20000,
