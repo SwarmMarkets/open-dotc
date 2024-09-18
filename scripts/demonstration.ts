@@ -19,7 +19,7 @@ const ERC20_6: string = '0xa144F12d9d121474129bba63B6DCEe28CbAf0856',
 
 const Taker: string = '0x811AE8434b584dfde82C14102820570611d47A59';
 
-const time = 1726042456;
+const time = 1758177729;
 
 async function main() {
 	await demonstrateDynamicPricingAgainstERC1155();
@@ -76,7 +76,7 @@ async function demonstrateAuth() {
 		offerPrice: OfferPrice,
 		specialAddresses: [],
 		authorizationAddresses: [AuthTrue],
-		expiryTimestamp: time + 20000,
+		expiryTimestamp: time,
 		timelockPeriod: 0,
 		terms: "tbd",
 		commsLink: "tbd",
@@ -137,7 +137,7 @@ async function demonstrateAffiliate() {
 		offerPrice: OfferPrice,
 		specialAddresses: [],
 		authorizationAddresses: [],
-		expiryTimestamp: time + 20000,
+		expiryTimestamp: time,
 		timelockPeriod: 0,
 		terms: "tbd",
 		commsLink: "tbd",
@@ -197,7 +197,7 @@ async function demonstrateDynamicPricingAgainstERC20() {
 		offerPrice: OfferPrice,
 		specialAddresses: [],
 		authorizationAddresses: [],
-		expiryTimestamp: time + 20000,
+		expiryTimestamp: time,
 		timelockPeriod: 0,
 		terms: 'tbd',
 		commsLink: 'tbd',
@@ -260,7 +260,7 @@ async function demonstrateDynamicPricingAgainstERC1155() {
 		offerPrice: OfferPrice,
 		specialAddresses: [],
 		authorizationAddresses: [],
-		expiryTimestamp: time + 20000,
+		expiryTimestamp: time,
 		timelockPeriod: 0,
 		terms: 'tbd',
 		commsLink: 'tbd',
