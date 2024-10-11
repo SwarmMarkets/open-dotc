@@ -1,0 +1,9 @@
+{
+  "name": "AAVE",
+  "description": "AAVE / USD",
+  "decimals": 8,
+  "address": {
+    "ethereum": "0x547a514d5e3769680Ce22B2361c10Ea13619e8a9",
+    "polygon": "0x72484B12719E23115761D5DA1646945632979bB6"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "COIN",
+  "description": "COIN/USD Swarm Price Feed",
+  "decimals": 8,
+  "address": {
+    "polygon": "0xa545653F48aD29Aa6EDc2c976229Ef875a32c3d2"
+  }
+}

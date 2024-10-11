@@ -1,0 +1,8 @@
+{
+  "name": "BLK",
+  "description": "BLK/USD Swarm Price Feed",
+  "decimals": 8,
+  "address": {
+    "polygon": "0x1Bfc5714bb9F4bd6071fF1A0DbC0497b860fFB23"
+  }
+}

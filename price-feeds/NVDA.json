@@ -1,0 +1,8 @@
+{
+  "name": "NVDA",
+  "description": "NVDA/USD Swarm Price Feed",
+  "decimals": 8,
+  "address": {
+    "polygon": "0x676a7e31A4dcedcfB8c9fbaB07595ea8A7d9Cb81"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "INTC",
+  "description": "INTC/USD Swarm Price Feed",
+  "decimals": 8,
+  "address": {
+    "polygon": "0x1a12AE5A267b64984BF05De191b205eD13e68B8F"
+  }
+}

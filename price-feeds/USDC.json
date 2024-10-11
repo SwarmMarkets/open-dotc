@@ -1,0 +1,9 @@
+{
+  "name": "USDC",
+  "description": "USDC / USD",
+  "decimals": 8,
+  "address": {
+    "ethereum": "0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6",
+    "polygon": "0xfE4A8cc5b5B2366C1B58Bea3858e81843581b2F7"
+  }
+}

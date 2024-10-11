@@ -1,0 +1,8 @@
+{
+  "name": "CPNG",
+  "description": "CPNG/USD Swarm Price Feed",
+  "decimals": 8,
+  "address": {
+    "polygon": "0x5D576EEE7Ad37982bA44673ed2af92ACBaEa9Fe1"
+  }
+}

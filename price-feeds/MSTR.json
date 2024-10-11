@@ -1,0 +1,8 @@
+{
+  "name": "MSTR",
+  "description": "MSTR/USD Swarm Price Feed",
+  "decimals": 8,
+  "address": {
+    "polygon": "0xb270c107C5C97412943790E20923ffA4ad1C53B6"
+  }
+}

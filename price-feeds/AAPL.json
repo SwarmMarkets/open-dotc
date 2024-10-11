@@ -1,0 +1,8 @@
+{
+  "name": "AAPL",
+  "description": "AAPL / USD",
+  "decimals": 8,
+  "address": {
+    "polygon": "0x7E7B45b08F68EC69A99AAb12e42FcCB078e10094"
+  }
+}

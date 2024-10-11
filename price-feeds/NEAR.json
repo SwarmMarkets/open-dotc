@@ -1,0 +1,8 @@
+{
+  "name": "NEAR",
+  "description": "NEAR Swarm Price Feed",
+  "decimals": 8,
+  "address": {
+    "polygon": "0x353aBEB0381F45fFB8C5d7112d4a6cbC13a4bFAf"
+  }
+}

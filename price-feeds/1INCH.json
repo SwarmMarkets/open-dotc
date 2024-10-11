@@ -1,0 +1,9 @@
+{
+  "name": "1INCH",
+  "description": "1INCH / USD",
+  "decimals": 8,
+  "address": {
+    "ethereum": "0xc929ad75B72593967DE83E7F7Cda0493458261D9",
+    "polygon": "0x443C5116CdF663Eb387e72C688D276e702135C87"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "BTC",
+  "description": "BTC / USD",
+  "decimals": 8,
+  "address": {
+    "ethereum": "0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c",
+    "polygon": "0xc907E116054Ad103354f2D350FD2514433D57F6f"
+  }
+}
