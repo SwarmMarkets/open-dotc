@@ -1,0 +1,8 @@
+{
+  "name": "MSFT",
+  "description": "MSFT/USD Swarm Price Feed",
+  "decimals": 8,
+  "address": {
+    "polygon": "0x1c70A93D17253d4b14eA6845F5D446804f5009f2"
+  }
+}

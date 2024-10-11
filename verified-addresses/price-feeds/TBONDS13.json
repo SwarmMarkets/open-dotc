@@ -1,0 +1,8 @@
+{
+  "name": "TBONDS13",
+  "description": "TBONDS13 Swarm Price Feed",
+  "decimals": 8,
+  "address": {
+    "polygon": "0x7CaEc52a59349E789f2E25Eb4412001Cf001d874"
+  }
+}
