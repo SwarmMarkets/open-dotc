@@ -6,7 +6,7 @@ import sys
 def validate_name(data, file):
     name = data.get("name", "")
     if len(name) > 20:
-        print(f"::error file={file}::'name' exceeds 20 characters.")
+        print(f"::error file={file}::'name' in file '{file}' exceeds 20 characters.")
         return False
     else:
         print(f"::notice file={file}::name check passed ✅")
@@ -16,7 +16,7 @@ def validate_name(data, file):
 def validate_description(data, file):
     description = data.get("description", None)  # Ensure None check
     if description is not None and len(description) > 100:
-        print(f"::error file={file}::'description' exceeds 100 characters.")
+        print(f"::error file={file}::'description' in file '{file}' exceeds 100 characters.")
         return False
     else:
         print(f"::notice file={file}::description check passed ✅")
@@ -29,7 +29,7 @@ def validate_address(data, file):
 
     for network, address in addresses.items():
         if len(address) > 42:
-            print(f"::error file={file}::'address.{network}' exceeds 42 characters.")
+            print(f"::error file={file}::'address.{network}' in file '{file}' exceeds 42 characters.")
             valid = False
         else:
             print(f"::notice file={file}::address.{network} check passed ✅")
