@@ -1,6 +1,6 @@
 # Solidity API
 
-## IDotc
+## IDotcCompatiblePriceFeed
 
 This interface is implemented by the Dotc contract to interact with the DotcManager.
 ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
@@ -16,27 +16,5 @@ European Union, Switzerland, the United Nations, as well as the USA). If you do 
 requirements, please refrain from using the SwarmX.eth Protocol.
 ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
 
-_Defines the interface for the Dotc contract, outlining key functions and behaviors._
-
-### changeManager
-
-```solidity
-function changeManager(contract IDotcManager _manager) external returns (bool status)
-```
-
-Changes the manager of the Dotc contract.
-
-_Allows updating the DotcManager address linked to the Dotc contract._
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| _manager | contract IDotcManager | The new manager's address to be set. |
-
-#### Return Values
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| status | bool | Boolean indicating whether the manager was successfully changed. |
+_Specifies the interface for the Dotc-compatible price feeds contracts._
 

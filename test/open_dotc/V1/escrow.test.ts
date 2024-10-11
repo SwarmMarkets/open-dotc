@@ -1,7 +1,13 @@
 import { ethers, upgrades } from 'hardhat';
 import { BigNumber, ContractFactory } from 'ethers';
 import { expect } from 'chai';
-import { DotcManager, DotcEscrow, ERC20Mock_2, ERC721Mock, ERC1155Mock } from '../../../typechain';
+import {
+  DotcManager,
+  DotcEscrow,
+  ERC20Mock_2,
+  ERC721Mock,
+  ERC1155Mock,
+} from '../../../typechain';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { AssetStruct } from '../../helpers/Structures';
 
@@ -54,8 +60,11 @@ describe.skip('DotcEscrow_Open', () => {
     it('Should be initialized', async () => {
       const { dotcManager, escrow } = await loadFixture(fixture);
 
-      await expect(dotcManager.initialize(escrow.address)).to.be.revertedWith('Initializable: contract is already initialized');
-      await expect(escrow.initialize(escrow.address)).to.be.revertedWith('Initializable: contract is already initialized');
+      await expect(dotcManager.initialize(escrow.address)).to.be.revertedWithCustomError(
+        dotcManager,
+        'InvalidInitialization',
+      );
+      await expect(escrow.initialize(escrow.address)).to.be.revertedWithCustomError(escrow, 'InvalidInitialization');
     });
 
     it('Should support interface', async () => {
@@ -99,7 +108,10 @@ describe.skip('DotcEscrow_Open', () => {
 
       await escrow.connect(otherAcc).setDeposit(offerId, otherAcc.address, AssetERC20);
 
-      await expect(escrow.connect(otherAcc).withdrawFees(offerId, 1)).to.be.revertedWith('Escrow: fees amount = 0');
+      await expect(escrow.connect(otherAcc).withdrawFees(offerId, 1)).to.be.revertedWithCustomError(
+        escrow,
+        'FeesAmountEqZero',
+      );
     });
 
     it('Should withdraw deposit', async () => {
@@ -169,9 +181,9 @@ describe.skip('DotcEscrow_Open', () => {
 
       await escrow.connect(otherAcc).setDeposit(offerId, otherAcc.address, AssetERC20);
 
-      await expect(escrow.connect(otherAcc).withdrawDeposit(offerId, 1, otherAcc.address)).to.be.revertedWith(
-        'Escrow: assets amount = 0',
-      );
+      await expect(
+        escrow.connect(otherAcc).withdrawDeposit(offerId, 1, otherAcc.address),
+      ).to.be.revertedWithCustomError(escrow, 'AssetAmountEqZero');
 
       ++offerId;
 
@@ -184,9 +196,9 @@ describe.skip('DotcEscrow_Open', () => {
 
       await escrow.connect(otherAcc).setDeposit(offerId, otherAcc.address, AssetERC20);
 
-      await expect(escrow.connect(otherAcc).withdrawDeposit(offerId, 1, otherAcc.address)).to.be.revertedWith(
-        'Escrow: amount to withdraw = 0',
-      );
+      await expect(
+        escrow.connect(otherAcc).withdrawDeposit(offerId, 1, otherAcc.address),
+      ).to.be.revertedWithCustomError(escrow, 'AmountToWithdrawEqZero');
 
       ++offerId;
 
@@ -273,8 +285,9 @@ describe.skip('DotcEscrow_Open', () => {
 
       await escrow.connect(otherAcc).setDeposit(offerId, otherAcc.address, AssetERC20);
 
-      await expect(escrow.connect(otherAcc).cancelDeposit(offerId, otherAcc.address)).to.be.revertedWith(
-        'Escrow: amount to cancel = 0',
+      await expect(escrow.connect(otherAcc).cancelDeposit(offerId, otherAcc.address)).to.be.revertedWithCustomError(
+        escrow,
+        'AmountToCancelEqZero',
       );
 
       ++offerId;
@@ -314,7 +327,7 @@ describe.skip('DotcEscrow_Open', () => {
     it('Only dotc', async () => {
       const { escrow, otherAcc } = await loadFixture(fixture);
 
-      const errorMsg = 'Escrow: Dotc calls only';
+      const errorMsg = 'OnlyDotc';
 
       const AssetERC20: AssetStruct = {
         assetType: 1,
@@ -323,16 +336,16 @@ describe.skip('DotcEscrow_Open', () => {
         tokenId: 0,
       };
 
-      await expect(escrow.setDeposit(0, otherAcc.address, AssetERC20)).to.be.revertedWith(errorMsg);
-      await expect(escrow.withdrawDeposit(0, 20, otherAcc.address)).to.be.revertedWith(errorMsg);
-      await expect(escrow.cancelDeposit(0, otherAcc.address)).to.be.revertedWith(errorMsg);
-      await expect(escrow.withdrawFees(0, otherAcc.address)).to.be.revertedWith(errorMsg);
+      await expect(escrow.setDeposit(0, otherAcc.address, AssetERC20)).to.be.revertedWithCustomError(escrow, errorMsg);
+      await expect(escrow.withdrawDeposit(0, 20, otherAcc.address)).to.be.revertedWithCustomError(escrow, errorMsg);
+      await expect(escrow.cancelDeposit(0, otherAcc.address)).to.be.revertedWithCustomError(escrow, errorMsg);
+      await expect(escrow.withdrawFees(0, otherAcc.address)).to.be.revertedWithCustomError(escrow, errorMsg);
     });
 
     it('Change Manager calls', async () => {
       const { escrow, otherAcc } = await loadFixture(fixture);
 
-      await expect(escrow.changeManager(otherAcc.address)).to.be.revertedWith('Escrow: Manager calls only');
+      await expect(escrow.changeManager(otherAcc.address)).to.be.revertedWithCustomError(escrow, 'OnlyManager');
     });
   });
 });
@@ -341,10 +354,4 @@ function standardizeNumber(amount: BigNumber, decimals: number) {
   const BPS = BigNumber.from('1000000000000000000000000000');
   const dec = BigNumber.from(10).pow(decimals);
   return BPS.mul(amount).div(dec);
-}
-
-function unstandardizeNumber(amount: BigNumber, decimals: number) {
-  const BPS = BigNumber.from('1000000000000000000000000000');
-  const dec = BigNumber.from(10).pow(decimals);
-  return dec.mul(amount).div(BPS);
 }

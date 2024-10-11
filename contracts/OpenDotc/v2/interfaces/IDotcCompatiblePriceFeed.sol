@@ -1,10 +1,10 @@
 //SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
-import { IDotcManager } from "./IDotcManager.sol";
+import { AggregatorV2V3Interface } from "../exports/ExternalExports.sol";
 
 /**
- * @title Interface for DOTC contract (as part of the "SwarmX.eth Protocol")
+ * @title DOTC Price Feeds Interface (as part of the "SwarmX.eth Protocol")
  * @notice This interface is implemented by the Dotc contract to interact with the DotcManager.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
  * Please read the Disclaimer featured on the SwarmX.eth website ("Terms") carefully before accessing,
@@ -18,15 +18,7 @@ import { IDotcManager } from "./IDotcManager.sol";
  * European Union, Switzerland, the United Nations, as well as the USA). If you do not meet these
  * requirements, please refrain from using the SwarmX.eth Protocol.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
- * @dev Defines the interface for the Dotc contract, outlining key functions and behaviors.
+ * @dev Specifies the interface for the Dotc-compatible price feeds contracts.
  * @author Swarm
  */
-interface IDotc {
-    /**
-     * @notice Changes the manager of the Dotc contract.
-     * @dev Allows updating the DotcManager address linked to the Dotc contract.
-     * @param _manager The new manager's address to be set.
-     * @return status Boolean indicating whether the manager was successfully changed.
-     */
-    function changeManager(IDotcManager _manager) external returns (bool status);
-}
+interface IDotcCompatiblePriceFeed is AggregatorV2V3Interface {}

@@ -1,10 +1,8 @@
 //SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.25;
 
-import { IDotcManager } from "./IDotcManager.sol";
-
 /**
- * @title Interface for DOTC contract (as part of the "SwarmX.eth Protocol")
+ * @title Interface for DOTC Authorizations Contracts (as part of the "SwarmX.eth Protocol")
  * @notice This interface is implemented by the Dotc contract to interact with the DotcManager.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
  * Please read the Disclaimer featured on the SwarmX.eth website ("Terms") carefully before accessing,
@@ -18,15 +16,14 @@ import { IDotcManager } from "./IDotcManager.sol";
  * European Union, Switzerland, the United Nations, as well as the USA). If you do not meet these
  * requirements, please refrain from using the SwarmX.eth Protocol.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
- * @dev Defines the interface for the Dotc contract, outlining key functions and behaviors.
+ * @dev Defines the interface for the Dotc's Authorization contracts.
  * @author Swarm
  */
-interface IDotc {
+interface IDotcCompatibleAuthorization {
     /**
-     * @notice Changes the manager of the Dotc contract.
-     * @dev Allows updating the DotcManager address linked to the Dotc contract.
-     * @param _manager The new manager's address to be set.
-     * @return status Boolean indicating whether the manager was successfully changed.
+     * @notice Returns true if the provided `account` is authorized in the Swarm Ecosystem.
+     * @param _account The address to be checked for authorization.
+     * @return bool True if the `account` is authorized, false otherwise.
      */
-    function changeManager(IDotcManager _manager) external returns (bool status);
+    function isAccountAuthorized(address _account) external view returns (bool);
 }

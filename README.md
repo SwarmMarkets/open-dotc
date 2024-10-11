@@ -33,9 +33,15 @@ This contract manages the escrow mechanism essential for secure trading:
 
 ---
 
+# Requirements
+
 ## [Functional requirements here](docs/FunctionalRequirements)
 
 ## [Technical requirements here](docs/TechnicalRequirements/OpenDotc/v2)
+
+# Audit Reports
+
+## [PeckShield](docs/PeckShield-Audit-Report-dOTC-v1.0.pdf)
 
 ---
 

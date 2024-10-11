@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.25;
 
-import { IDotcManager } from "../OpenDotc/v2/interfaces/IDotcManager.sol";
+import { IDotcManager } from "../OpenDotc/v1/interfaces/IDotcManager.sol";
 
 contract DotcFalseMock {
     /**

@@ -1,12 +1,58 @@
 //SPDX-License-Identifier: GPL-3.0-only
-pragma solidity ^0.8.19;
+pragma solidity 0.8.25;
+import { OwnableUpgradeable, IERC20Metadata, IERC20, IERC721, IERC1155, IERC165 } from "./exports/Exports.sol";
 
-import { OwnableUpgradeable, IERC20MetadataUpgradeable, IERC20Upgradeable, IERC721Upgradeable, IERC1155Upgradeable, IERC165Upgradeable } from "./exports/Exports.sol";
-
-import { Asset, AssetType } from "./structures/DotcStructures.sol";
+import { Asset, AssetType, UnsupportedAssetType } from "./structures/DotcStructures.sol";
 import { IDotcManager } from "./interfaces/IDotcManager.sol";
 import { IDotcEscrow } from "./interfaces/IDotcEscrow.sol";
 import { IDotc } from "./interfaces/IDotc.sol";
+
+/// @title Errors related to asset transfers and validations in DotcManager
+/// @notice Provides error messages for asset-related operations
+
+/// @notice Indicates an operation with zero amount which is not allowed
+error ZeroAmountPassed();
+
+/// @notice Indicates usage of a zero address where an actual address is required
+error ZeroAddressPassed();
+
+/// @notice Indicates the account does not have enough ERC20 tokens required
+/// @param account The account in question
+/// @param erc20Token The ERC20 token address
+/// @param currentAmount The current amount the account holds
+/// @param requiredAmount The required amount that was not met
+error AddressHaveNoERC20(address account, address erc20Token, uint256 currentAmount, uint256 requiredAmount);
+
+/// @notice Indicates the account does not own the specified ERC721 token
+/// @param account The account in question
+/// @param erc721Token The ERC721 token address
+/// @param tokenId The token ID that the account does not own
+error AddressHaveNoERC721(address account, address erc721Token, uint256 tokenId);
+
+/// @notice Indicates the account does not have enough of the specified ERC1155 token
+/// @param account The account in question
+/// @param erc1155Token The ERC1155 token address
+/// @param tokenId The token ID in question
+/// @param currentAmount The current amount the account holds
+/// @param requiredAmount The required amount that was not met
+error AddressHaveNoERC1155(
+    address account,
+    address erc1155Token,
+    uint256 tokenId,
+    uint256 currentAmount,
+    uint256 requiredAmount
+);
+
+/// @notice Indicates that the token address does not match the expected asset type
+/// @param token The token address
+/// @param incorrectType The incorrect asset type provided
+error IncorrectAssetTypeForAddress(address token, AssetType incorrectType);
+
+/// @notice Indicates when an unauthorized attempt is made to change the escrow manager
+error ChangeEscrowManagerError();
+
+/// @notice Indicates when an unauthorized attempt is made to change the DOTC manager
+error ChangeDotcManagerError();
 
 /**
  * @title DotcManager contract for Dotc management (as part of the "SwarmX.eth Protocol")
@@ -27,7 +73,6 @@ import { IDotc } from "./interfaces/IDotc.sol";
  * @dev Manages configurations and settings for the DOTC trading platform, including fee settings and escrow management.
  * @author Swarm
  */
-
 contract DotcManager is OwnableUpgradeable, IDotcManager {
     /**
      * @dev Emitted when the escrow address is updated.
@@ -90,7 +135,9 @@ contract DotcManager is OwnableUpgradeable, IDotcManager {
      * @param _address The address to check.
      */
     modifier zeroAddressCheck(address _address) {
-        require(_address != address(0), "DotcManager: zero address error");
+        if (_address == address(0)) {
+            revert ZeroAddressPassed();
+        }
         _;
     }
     /**
@@ -98,7 +145,9 @@ contract DotcManager is OwnableUpgradeable, IDotcManager {
      * @param amount The amount to check.
      */
     modifier zeroAmountCheck(uint256 amount) {
-        require(amount > 0, "DotcManager: amount less or eq zero");
+        if (amount <= 0) {
+            revert ZeroAmountPassed();
+        }
         _;
     }
 
@@ -113,7 +162,7 @@ contract DotcManager is OwnableUpgradeable, IDotcManager {
      * @dev Sets up the contract with default values and fee receiver.
      */
     function initialize(address _newFeeReceiver) public initializer {
-        __Ownable_init();
+        __Ownable_init(msg.sender);
         feeReceiver = _newFeeReceiver;
         feeAmount = 25 * (10 ** 23);
     }
@@ -188,8 +237,12 @@ contract DotcManager is OwnableUpgradeable, IDotcManager {
     function changeManagerInContracts(
         IDotcManager _manager
     ) external onlyOwner zeroAddressCheck(address(_manager)) returns (bool status) {
-        dotc.changeManager(_manager);
-        escrow.changeManager(_manager);
+        if (!dotc.changeManager(_manager)) {
+            revert ChangeDotcManagerError();
+        }
+        if (!escrow.changeManager(_manager)) {
+            revert ChangeEscrowManagerError();
+        }
 
         emit ManagerAddressSet(msg.sender, _manager);
 
@@ -257,7 +310,7 @@ contract DotcManager is OwnableUpgradeable, IDotcManager {
         uint256 amount,
         address token
     ) public view zeroAddressCheck(token) zeroAmountCheck(amount) returns (uint256) {
-        uint8 decimals = IERC20MetadataUpgradeable(token).decimals();
+        uint8 decimals = IERC20Metadata(token).decimals();
         return _standardize(amount, decimals);
     }
 
@@ -284,7 +337,7 @@ contract DotcManager is OwnableUpgradeable, IDotcManager {
         uint256 amount,
         address token
     ) public view zeroAddressCheck(token) zeroAmountCheck(amount) returns (uint256) {
-        uint8 decimals = IERC20MetadataUpgradeable(token).decimals();
+        uint8 decimals = IERC20Metadata(token).decimals();
         return _unstandardize(amount, decimals);
     }
 
@@ -336,28 +389,28 @@ contract DotcManager is OwnableUpgradeable, IDotcManager {
         assetType = asset.assetType;
 
         if (assetType == AssetType.ERC20) {
-            require(
-                IERC20Upgradeable(asset.assetAddress).balanceOf(account) >= amount,
-                "DotcManager: You have not enough assets (ERC20)"
-            );
+            uint256 balance = IERC20(asset.assetAddress).balanceOf(account);
+            if (balance < amount) {
+                revert AddressHaveNoERC20(account, asset.assetAddress, balance, amount);
+            }
         } else if (assetType == AssetType.ERC721) {
-            require(
-                IERC165Upgradeable(asset.assetAddress).supportsInterface(type(IERC721Upgradeable).interfaceId),
-                "DotcManager: incorrect asset type"
-            );
-            require(
-                IERC721Upgradeable(asset.assetAddress).ownerOf(asset.tokenId) == account,
-                "DotcManager: You are not an owner of asset (ERC721)"
-            );
+            if (!IERC165(asset.assetAddress).supportsInterface(type(IERC721).interfaceId)) {
+                revert IncorrectAssetTypeForAddress(asset.assetAddress, assetType);
+            }
+            if (IERC721(asset.assetAddress).ownerOf(asset.tokenId) != account) {
+                revert AddressHaveNoERC721(account, asset.assetAddress, asset.tokenId);
+            }
         } else if (assetType == AssetType.ERC1155) {
-            require(
-                IERC165Upgradeable(asset.assetAddress).supportsInterface(type(IERC1155Upgradeable).interfaceId),
-                "DotcManager: incorrect asset type"
-            );
-            require(
-                IERC1155Upgradeable(asset.assetAddress).balanceOf(account, asset.tokenId) >= asset.amount,
-                "DotcManager: You have not enough assets (ERC1155)"
-            );
+            uint256 balance = IERC1155(asset.assetAddress).balanceOf(account, asset.tokenId);
+
+            if (!IERC165(asset.assetAddress).supportsInterface(type(IERC1155).interfaceId)) {
+                revert IncorrectAssetTypeForAddress(asset.assetAddress, assetType);
+            }
+            if (balance < asset.amount) {
+                revert AddressHaveNoERC1155(account, asset.assetAddress, asset.tokenId, balance, asset.amount);
+            }
+        } else {
+            revert UnsupportedAssetType(assetType);
         }
     }
 }

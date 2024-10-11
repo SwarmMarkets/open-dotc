@@ -1,6 +1,10 @@
 // solhint-disable
 //SPDX-License-Identifier: GPL-3.0-only
-pragma solidity ^0.8.19;
+pragma solidity 0.8.25;
+
+/// @notice Indicates the asset type provided is not supported by this contract
+/// @param unsupportedType The unsupported asset type provided
+error UnsupportedAssetType(AssetType unsupportedType);
 
 /**
  * @title Structures for DOTC management (as part of the "SwarmX.eth Protocol")
@@ -16,6 +20,7 @@ pragma solidity ^0.8.19;
  * European Union, Switzerland, the United Nations, as well as the USA). If you do not meet these
  * requirements, please refrain from using the SwarmX.eth Protocol.
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
+ * @author Swarm
  */
 
 /**
@@ -53,30 +58,91 @@ struct Asset {
 }
 
 /**
+ * @title Escrow Call Type Enum
+ * @notice Defines the different types of calls that can be made to the escrow in the DOTC system.
+ * @dev Enum representing various escrow call types such as deposit, withdraw, and cancel operations.
+ * - Deposit: Represents a call to deposit assets into escrow.
+ * - Withdraw: Represents a call to withdraw assets from escrow.
+ * - Cancel: Represents a call to cancel an operation in the escrow.
+ * @author Swarm
+ */
+enum EscrowCallType {
+    Deposit,
+    Withdraw,
+    WithdrawFees,
+    Cancel
+}
+
+/**
+ * @title Validity Type Enum
+ * @notice Defines the types of validity states an offer can have in the DOTC system.
+ * @dev Enum representing different states of offer validity, like non-existent or fully taken.
+ * - NotExist: Indicates the offer does not exist.
+ * - FullyTaken: Indicates the offer has been fully taken.
+ * @author Swarm
+ */
+enum ValidityType {
+    NotExist,
+    FullyTaken
+}
+
+/**
+ * @title Time Constraint Type Enum
+ * @notice Defines the types of time constraints an offer can have in the DOTC system.
+ * @dev Enum representing different time-related constraints for offers.
+ * - Expired: Indicates the offer has expired.
+ * - TimelockGreaterThanExpirationTime: Indicates the timelock is greater than the offer's expiration time.
+ * - InTimelock: Indicates the offer is currently in its timelock period.
+ * - IncorrectTimelock: Indicates an incorrect setting of the timelock period.
+ * @author Swarm
+ */
+enum TimeConstraintType {
+    Expired,
+    TimelockGreaterThanExpirationTime,
+    InTimelock,
+    IncorrectTimelock
+}
+
+/**
+ * @title Offer Struct for DOTC
+ * @notice Describes the structure of an offer within the DOTC trading system.
+ * @dev Structure encapsulating details of an offer, including its type, special conditions, and timing constraints.
+ * @param isFullType Boolean indicating if the offer is for the full amount of the deposit asset.
+ * @param specialAddresses Array of addresses with exclusive rights to take the offer.
+ * @param expiryTimestamp Unix timestamp marking the offer's expiration.
+ * @param timelockPeriod Duration in seconds for which the offer is locked from being taken.
+ * @param terms String URL pointing to the terms associated with the offer.
+ * @param commsLink String URL providing a communication link (e.g., Telegram, email) for discussing the offer.
+ * @author Swarm
+ */
+struct OfferStruct {
+    bool isFullType;
+    address[] specialAddresses;
+    uint256 expiryTimestamp;
+    uint256 timelockPeriod;
+    string terms;
+    string commsLink;
+}
+
+/**
  * @title DOTC Offer Structure
- * @notice Represents an offer in the DOTC trading system.
- * @dev Structure containing details of an offer including maker, assets involved, and trading conditions.
- * @param maker The address of the offer creator.
- * @param isFullType Indicates whether the offer is for the full amount of the deposit asset.
- * @param isFullyTaken Indicates whether the offer has been completely taken.
- * @param depositAsset The asset being offered by the maker.
- * @param withdrawalAsset The asset requested by the maker in exchange.
- * @param availableAmount The amount of the deposit asset that is currently available for trading.
- * @param unitPrice The price per unit of the deposit asset in terms of the withdrawal asset.
- * @param specialAddress An optional address that can exclusively take the offer.
- * @param expiryTime The timestamp when the offer expires.
- * @param timelockPeriod The period for which the offer is locked before it can be taken.
+ * @notice Detailed structure of an offer in the DOTC trading system.
+ * @dev Contains comprehensive information about an offer, including assets involved and trade conditions.
+ * @param maker Address of the individual creating the offer.
+ * @param isFullyTaken Boolean indicating whether the offer has been completely accepted.
+ * @param depositAsset Asset offered by the maker.
+ * @param withdrawalAsset Asset requested by the maker in exchange.
+ * @param availableAmount Quantity of the deposit asset available for trade.
+ * @param unitPrice Price per unit of the deposit asset in terms of the withdrawal asset.
+ * @param offer Detailed structure of the offer including special conditions and timing.
  * @author Swarm
  */
 struct DotcOffer {
     address maker;
-    bool isFullType;
     bool isFullyTaken;
-    Asset depositAsset; // assets in
-    Asset withdrawalAsset; // assets out
-    uint256 availableAmount; // available amount
+    uint256 availableAmount;
     uint256 unitPrice;
-    address specialAddress; // makes the offer avaiable for specified addresses.
-    uint256 expiryTime;
-    uint256 timelockPeriod;
+    Asset depositAsset;
+    Asset withdrawalAsset;
+    OfferStruct offer;
 }
