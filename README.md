@@ -128,4 +128,3 @@ If there is no desired authorization, add a file to the folder called `{Authoriz
 ```
 
 Please include the authorization addresses for _all_ of the supported chains by Swarm.
-
