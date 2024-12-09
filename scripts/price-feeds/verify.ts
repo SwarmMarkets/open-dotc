@@ -1,18 +1,18 @@
 import { verifyContract } from '../helpers/verify-contract';
 
-const price_feed: string = '0x1F954Dc24a49708C26E0C1777f16750B5C6d5a2c';
+const goldOz_address: string = '0xa896410401bF4759e1476ef196fe92824898E12E';
 
-const pf: string = '0xdbE01287763d37fC2d660f13cda9B25b6c73739f';
+const goldKg_address: string = '0x0969C4233120ea77f3F54B9FD5143c61E2CDd2eE';
 
 async function main(): Promise<void> {
-	await verifyContract(pf, [price_feed]);
+  await verifyContract(goldKg_address, [goldOz_address]);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
 main()
-	.then(() => process.exit(0))
-	.catch((error: Error) => {
-		console.error(error);
-		process.exit(1);
-	});
+  .then(() => process.exit(0))
+  .catch((error: Error) => {
+    console.error(error);
+    process.exit(1);
+  });
