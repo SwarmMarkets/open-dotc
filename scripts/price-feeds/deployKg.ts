@@ -1,7 +1,7 @@
 import { ethers } from 'hardhat';
 import { ContractFactory } from 'ethers';
 
-const price_feed: string = '';
+const price_feed: string = '0x0a103eE32F4209926D8ba7e528AFf8a831Ed3daE';
 
 async function main() {
   const GoldKiloPriceFeed: ContractFactory = await ethers.getContractFactory('GoldKiloPriceFeed');

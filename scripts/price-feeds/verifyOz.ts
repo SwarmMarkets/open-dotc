@@ -1,11 +1,9 @@
 import { verifyContract } from '../helpers/verify-contract';
 
-const goldOz_address: string = '0xa896410401bF4759e1476ef196fe92824898E12E';
-
-const goldKg_address: string = '0x0969C4233120ea77f3F54B9FD5143c61E2CDd2eE';
+const goldOz_address: string = '0x0a103eE32F4209926D8ba7e528AFf8a831Ed3daE';
 
 async function main(): Promise<void> {
-  await verifyContract(goldKg_address, [goldOz_address]);
+  await verifyContract(goldOz_address, [8, 'XAU Ounce / USD', 1]);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
