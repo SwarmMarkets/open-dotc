@@ -1,0 +1,11 @@
+{
+  "name": "XAU",
+  "description": "XAU / USD",
+  "decimals": 8,
+  "address": {
+    "ethereum": "0x214eD9Da11D2fbe465a6fc601a91E62EbEc1a0D6",
+    "polygon": "0x0C466540B2ee1a31b441671eac0ca886e051E410",
+    "arbitrum": "0x1F954Dc24a49708C26E0C1777f16750B5C6d5a2c",
+    "base": "0x0a103eE32F4209926D8ba7e528AFf8a831Ed3daE"
+  }
+}

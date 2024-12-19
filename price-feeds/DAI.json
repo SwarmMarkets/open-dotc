@@ -1,0 +1,9 @@
+{
+  "name": "DAI",
+  "description": "DAI / USD",
+  "decimals": 8,
+  "address": {
+    "ethereum": "0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9",
+    "polygon": "0x4746DeC9e833A82EC7C2C1356372CcF2cfcD2F3D"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "TSLA",
+  "description": "TSLA / USD",
+  "decimals": 8,
+  "address": {
+    "polygon": "0x567E67f456c7453c583B6eFA6F18452cDee1F5a8"
+  }
+}

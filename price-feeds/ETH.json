@@ -1,0 +1,9 @@
+{
+  "name": "ETH",
+  "description": "ETH / USD",
+  "decimals": 8,
+  "address": {
+    "ethereum": "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419",
+    "polygon": "0xF9680D99D6C9589e2a93a78A04A279e509205945"
+  }
+}

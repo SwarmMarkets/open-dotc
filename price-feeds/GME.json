@@ -1,0 +1,8 @@
+{
+  "name": "GME",
+  "description": "GME/USD Swarm Price Feed",
+  "decimals": 8,
+  "address": {
+    "polygon": "0x958FB129102D72256bf76eE2D35aBFFE681b60e9"
+  }
+}

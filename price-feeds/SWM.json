@@ -1,0 +1,9 @@
+{
+  "name": "SWM",
+  "description": "SWM/USD Swarm Price Feed",
+  "decimals": 8,
+  "address": {
+    "ethereum": "0x5E812717126EA8290D6d62589e364cdA48aE99eE",
+    "polygon": "0xCE3D8F5F81C6a1ad19Ee507C45D8Ffc1EAB2E161"
+  }
+}
