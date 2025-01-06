@@ -3,7 +3,7 @@ import { BigNumber, ContractFactory, Signer } from 'ethers';
 import { expect } from 'chai';
 import {
   DotcEscrowV2,
-  DotcV2,
+  DotcV2_1 as DotcV2,
   ERC20MockV2,
   ERC721MockV2,
   ERC1155MockV2,
@@ -13,7 +13,7 @@ import {
   DotcManagerV2,
   AuthorizationMock,
   PriceFeedV1Mock,
-  PriceFeedV3Mock
+  PriceFeedV3Mock,
 } from '../../../typechain';
 import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
 import {
@@ -27,9 +27,8 @@ import {
   TakingOfferType,
   OfferFillType,
   OfferPricingType,
-  PercentageType
+  PercentageType,
 } from '../../helpers/StructuresV2';
-
 
 const WAD = ethers.utils.parseUnits('1', 27);
 const SCALING_FACTOR = 10000;
@@ -54,7 +53,7 @@ describe('OpenDotcV2', () => {
 
     // Deploy AssetHelper library
     const AssetHelper: ContractFactory = await ethers.getContractFactory('AssetHelper');
-    const assetHelper = await AssetHelper.deploy() as AssetHelper;
+    const assetHelper = (await AssetHelper.deploy()) as AssetHelper;
     await assetHelper.deployed();
 
     // Deploy DotcOfferHelper library
@@ -63,12 +62,12 @@ describe('OpenDotcV2', () => {
         AssetHelper: assetHelper.address,
       },
     });
-    const offerHelper = await OfferHelper.deploy() as OfferHelper;
+    const offerHelper = (await OfferHelper.deploy()) as OfferHelper;
     await offerHelper.deployed();
 
     // Deploy DotcOfferHelper library
     const DotcOfferHelper: ContractFactory = await ethers.getContractFactory('DotcOfferHelper');
-    const dotcOfferHelper = await DotcOfferHelper.deploy() as DotcOfferHelper;
+    const dotcOfferHelper = (await DotcOfferHelper.deploy()) as DotcOfferHelper;
     await dotcOfferHelper.deployed();
 
     const DotcManager: ContractFactory = await ethers.getContractFactory('DotcManagerV2');
@@ -76,17 +75,21 @@ describe('OpenDotcV2', () => {
     await dotcManager.deployed();
 
     const DotcEscrow: ContractFactory = await ethers.getContractFactory('DotcEscrowV2');
-    const escrow = await upgrades.deployProxy(DotcEscrow, [dotcManager.address], { unsafeAllowLinkedLibraries: true }) as DotcEscrowV2;
+    const escrow = (await upgrades.deployProxy(DotcEscrow, [dotcManager.address], {
+      unsafeAllowLinkedLibraries: true,
+    })) as DotcEscrowV2;
     await escrow.deployed();
 
-    const Dotc = await ethers.getContractFactory('DotcV2', {
+    const Dotc = await ethers.getContractFactory('DotcV2_1', {
       libraries: {
         AssetHelper: assetHelper.address,
         OfferHelper: offerHelper.address,
         DotcOfferHelper: dotcOfferHelper.address,
       },
     });
-    const dotc = await upgrades.deployProxy(Dotc, [dotcManager.address], { unsafeAllowLinkedLibraries: true }) as DotcV2;
+    const dotc = (await upgrades.deployProxy(Dotc, [dotcManager.address], {
+      unsafeAllowLinkedLibraries: true,
+    })) as DotcV2;
     await dotc.deployed();
 
     const ERC20: ContractFactory = await ethers.getContractFactory('ERC20MockV2');
@@ -136,14 +139,14 @@ describe('OpenDotcV2', () => {
       priceFeedAddress: priceFeed_fake.address,
       offerMaximumPrice: 0,
       offerMinimumPrice: 0,
-    }
+    };
 
     OfferPrice = {
       offerPricingType: OfferPricingType.FixedPricing,
       unitPrice: 0,
       percentage: 100,
-      percentageType: PercentageType.NoType
-    }
+      percentageType: PercentageType.NoType,
+    };
 
     return {
       deployer,
@@ -167,7 +170,7 @@ describe('OpenDotcV2', () => {
       priceFeed_6,
       priceFeed_1155,
       priceFeed_721,
-      priceFeed_fake
+      priceFeed_fake,
     };
   }
 
@@ -182,10 +185,7 @@ describe('OpenDotcV2', () => {
     it('Should be initialized', async () => {
       const { dotc, escrow } = await loadFixture(fixture);
 
-      await expect(escrow.initialize(dotc.address)).to.be.revertedWithCustomError(
-        escrow,
-        'InvalidInitialization',
-      );
+      await expect(escrow.initialize(dotc.address)).to.be.revertedWithCustomError(escrow, 'InvalidInitialization');
       await expect(dotc.initialize(escrow.address)).to.be.revertedWithCustomError(dotc, 'InvalidInitialization');
     });
   });
@@ -194,16 +194,28 @@ describe('OpenDotcV2', () => {
     it('Only Manager can change Escrow', async () => {
       const { dotc, escrow } = await loadFixture(fixture);
 
-      await expect(dotc.changeEscrow(escrow.address)).to.be.revertedWithCustomError(dotc, "OnlyManager");
+      await expect(dotc.changeEscrow(escrow.address)).to.be.revertedWithCustomError(dotc, 'OnlyManager');
     });
   });
 
   describe('Make offer', () => {
     describe('Fixed assetPrice', () => {
       it('Should make full offer (erc20 => erc20)', async () => {
-        const { dotc, escrow, offerHelper, assetHelper, erc20_18, erc20_6, erc721, authorization_false, authorization_true, acc1, acc2, acc3, deployer } = await loadFixture(
-          fixture,
-        );
+        const {
+          dotc,
+          escrow,
+          offerHelper,
+          assetHelper,
+          erc20_18,
+          erc20_6,
+          erc721,
+          authorization_false,
+          authorization_true,
+          acc1,
+          acc2,
+          acc3,
+          deployer,
+        } = await loadFixture(fixture);
 
         let offerId = 0;
 
@@ -283,11 +295,15 @@ describe('OpenDotcV2', () => {
         expect((await dotc.allOffers(0)).offer.commsLink).to.eq(AwaitingOffer.offer.commsLink);
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(DepositAssetERC20.amount);
-        expect((await escrow.escrowDeposits(offerId)).depositAsset.assetAddress).to.be.eq(DepositAssetERC20.assetAddress);
+        expect((await escrow.escrowDeposits(offerId)).depositAsset.assetAddress).to.be.eq(
+          DepositAssetERC20.assetAddress,
+        );
         expect((await escrow.escrowDeposits(offerId)).depositAsset.assetType).to.be.eq(DepositAssetERC20.assetType);
         expect((await escrow.escrowDeposits(offerId)).depositAsset.tokenId).to.be.eq(DepositAssetERC20.tokenId);
 
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferDeposited);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferDeposited,
+        );
 
         expect(await dotc.offersFromAddress(await acc1.getAddress(), 0)).to.eq(0);
         expect((await dotc.allOffers(0)).maker).to.eq(await acc1.getAddress());
@@ -331,15 +347,13 @@ describe('OpenDotcV2', () => {
 
         await erc20_18.approve(dotc.address, ethers.utils.parseEther('1000000'));
 
-        await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC721_false, Offer)).to.be.revertedWithCustomError(
-          offerHelper,
-          'UnsupportedPartialOfferForNonERC20AssetsError',
-        );
+        await expect(
+          dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC721_false, Offer),
+        ).to.be.revertedWithCustomError(offerHelper, 'UnsupportedPartialOfferForNonERC20AssetsError');
 
-        await expect(dotc.makeOffer(WithdrawalAssetERC721_false, DepositAssetERC20, Offer)).to.be.revertedWithCustomError(
-          offerHelper,
-          'UnsupportedPartialOfferForNonERC20AssetsError',
-        );
+        await expect(
+          dotc.makeOffer(WithdrawalAssetERC721_false, DepositAssetERC20, Offer),
+        ).to.be.revertedWithCustomError(offerHelper, 'UnsupportedPartialOfferForNonERC20AssetsError');
 
         let DepositAssetERC20_false: AssetStruct = {
           assetType: 0,
@@ -351,10 +365,9 @@ describe('OpenDotcV2', () => {
 
         Offer.takingOfferType = TakingOfferType.BlockOffer;
 
-        await expect(dotc.makeOffer(DepositAssetERC20_false, WithdrawalAssetERC20, Offer)).to.be.revertedWithCustomError(
-          assetHelper,
-          'AssetTypeUndefinedError',
-        );
+        await expect(
+          dotc.makeOffer(DepositAssetERC20_false, WithdrawalAssetERC20, Offer),
+        ).to.be.revertedWithCustomError(assetHelper, 'AssetTypeUndefinedError');
 
         DepositAssetERC20_false = {
           assetType: 1,
@@ -364,10 +377,9 @@ describe('OpenDotcV2', () => {
           tokenId: 0,
         };
 
-        await expect(dotc.makeOffer(DepositAssetERC20_false, WithdrawalAssetERC20, Offer)).to.be.revertedWithCustomError(
-          assetHelper,
-          'AssetAddressIsZeroError',
-        );
+        await expect(
+          dotc.makeOffer(DepositAssetERC20_false, WithdrawalAssetERC20, Offer),
+        ).to.be.revertedWithCustomError(assetHelper, 'AssetAddressIsZeroError');
 
         DepositAssetERC20_false = {
           assetType: 1,
@@ -377,10 +389,9 @@ describe('OpenDotcV2', () => {
           tokenId: 0,
         };
 
-        await expect(dotc.makeOffer(DepositAssetERC20_false, WithdrawalAssetERC20, Offer)).to.be.revertedWithCustomError(
-          assetHelper,
-          'AssetAmountIsZeroError',
-        );
+        await expect(
+          dotc.makeOffer(DepositAssetERC20_false, WithdrawalAssetERC20, Offer),
+        ).to.be.revertedWithCustomError(assetHelper, 'AssetAmountIsZeroError');
 
         let WithdrawalAssetERC20_false: AssetStruct = {
           assetType: 0,
@@ -390,10 +401,9 @@ describe('OpenDotcV2', () => {
           tokenId: 0,
         };
 
-        await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20_false, Offer)).to.be.revertedWithCustomError(
-          assetHelper,
-          'AssetTypeUndefinedError',
-        );
+        await expect(
+          dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20_false, Offer),
+        ).to.be.revertedWithCustomError(assetHelper, 'AssetTypeUndefinedError');
 
         WithdrawalAssetERC20_false = {
           assetType: 1,
@@ -403,10 +413,9 @@ describe('OpenDotcV2', () => {
           tokenId: 0,
         };
 
-        await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20_false, Offer)).to.be.revertedWithCustomError(
-          assetHelper,
-          'AssetAddressIsZeroError',
-        );
+        await expect(
+          dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20_false, Offer),
+        ).to.be.revertedWithCustomError(assetHelper, 'AssetAddressIsZeroError');
 
         WithdrawalAssetERC20_false = {
           assetType: 1,
@@ -416,10 +425,9 @@ describe('OpenDotcV2', () => {
           tokenId: 0,
         };
 
-        await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20_false, Offer)).to.be.revertedWithCustomError(
-          assetHelper,
-          'AssetAmountIsZeroError',
-        );
+        await expect(
+          dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20_false, Offer),
+        ).to.be.revertedWithCustomError(assetHelper, 'AssetAmountIsZeroError');
 
         Offer.specialAddresses = [addressZero];
         await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer)).to.be.revertedWithCustomError(
@@ -447,10 +455,9 @@ describe('OpenDotcV2', () => {
         Offer.authorizationAddresses = [];
 
         Offer.authorizationAddresses = [authorization_false.address];
-        await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer)).to.be.revertedWithCustomError(
-          offerHelper,
-          'NotAuthorizedAccountError',
-        ).withArgs(await deployer.getAddress());
+        await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer))
+          .to.be.revertedWithCustomError(offerHelper, 'NotAuthorizedAccountError')
+          .withArgs(await deployer.getAddress());
         Offer.authorizationAddresses = [authorization_true.address];
 
         Offer.takingOfferType = TakingOfferType.NoType;
@@ -468,23 +475,20 @@ describe('OpenDotcV2', () => {
         Offer.offerPrice.offerPricingType = OfferPricingType.FixedPricing;
 
         WithdrawalAssetERC20.assetPrice.offerMaximumPrice = 1;
-        await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer)).to.be.revertedWithCustomError(
-          assetHelper,
-          'PriceShouldNotBeSpecifiedFor',
-        ).withArgs(Offer.offerPrice.offerPricingType);
+        await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer))
+          .to.be.revertedWithCustomError(assetHelper, 'PriceShouldNotBeSpecifiedFor')
+          .withArgs(Offer.offerPrice.offerPricingType);
         WithdrawalAssetERC20.assetPrice.offerMaximumPrice = 0;
 
         DepositAssetERC20.assetPrice.offerMinimumPrice = 1;
-        await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer)).to.be.revertedWithCustomError(
-          assetHelper,
-          'PriceShouldNotBeSpecifiedFor',
-        ).withArgs(Offer.offerPrice.offerPricingType);
+        await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer))
+          .to.be.revertedWithCustomError(assetHelper, 'PriceShouldNotBeSpecifiedFor')
+          .withArgs(Offer.offerPrice.offerPricingType);
         DepositAssetERC20.assetPrice.offerMinimumPrice = 0;
 
-        await expect(dotc.connect(acc3).makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer)).to.be.revertedWithCustomError(
-          assetHelper,
-          'AddressHaveNoERC20',
-        ).withArgs(await acc3.getAddress(), DepositAssetERC20.assetAddress, 0, DepositAssetERC20.amount);
+        await expect(dotc.connect(acc3).makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer))
+          .to.be.revertedWithCustomError(assetHelper, 'AddressHaveNoERC20')
+          .withArgs(await acc3.getAddress(), DepositAssetERC20.assetAddress, 0, DepositAssetERC20.amount);
 
         DepositAssetERC20.assetType = 5;
         await expect(dotc.connect(acc3).makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer)).to.be.reverted;
@@ -588,11 +592,15 @@ describe('OpenDotcV2', () => {
         expect((await dotc.allOffers(0)).offer.commsLink).to.eq(AwaitingOffer.offer.commsLink);
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(DepositAssetERC20.amount);
-        expect((await escrow.escrowDeposits(offerId)).depositAsset.assetAddress).to.be.eq(DepositAssetERC20.assetAddress);
+        expect((await escrow.escrowDeposits(offerId)).depositAsset.assetAddress).to.be.eq(
+          DepositAssetERC20.assetAddress,
+        );
         expect((await escrow.escrowDeposits(offerId)).depositAsset.assetType).to.be.eq(DepositAssetERC20.assetType);
         expect((await escrow.escrowDeposits(offerId)).depositAsset.tokenId).to.be.eq(DepositAssetERC20.tokenId);
 
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferDeposited);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferDeposited,
+        );
       });
 
       it('Should make full offer (erc20 => erc721)', async () => {
@@ -605,7 +613,11 @@ describe('OpenDotcV2', () => {
         const amountIn_asset = BigNumber.from(amountIn).mul(BigNumber.from(10).pow(decimals_18));
 
         await erc20_18.transfer(await acc1.getAddress(), amountIn_asset);
-        await erc721['safeTransferFrom(address,address,uint256)'](await deployer.getAddress(), await acc2.getAddress(), 4);
+        await erc721['safeTransferFrom(address,address,uint256)'](
+          await deployer.getAddress(),
+          await acc2.getAddress(),
+          4,
+        );
 
         await erc20_18.connect(acc1).approve(dotc.address, amountIn_asset);
         await erc721.connect(acc2).setApprovalForAll(dotc.address, true);
@@ -674,15 +686,21 @@ describe('OpenDotcV2', () => {
         expect((await dotc.allOffers(0)).offer.commsLink).to.eq(AwaitingOffer.offer.commsLink);
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(DepositAssetERC20.amount);
-        expect((await escrow.escrowDeposits(offerId)).depositAsset.assetAddress).to.be.eq(DepositAssetERC20.assetAddress);
+        expect((await escrow.escrowDeposits(offerId)).depositAsset.assetAddress).to.be.eq(
+          DepositAssetERC20.assetAddress,
+        );
         expect((await escrow.escrowDeposits(offerId)).depositAsset.assetType).to.be.eq(DepositAssetERC20.assetType);
         expect((await escrow.escrowDeposits(offerId)).depositAsset.tokenId).to.be.eq(DepositAssetERC20.tokenId);
 
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferDeposited);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferDeposited,
+        );
       });
 
       it('Should make full offer (erc721 => erc20)', async () => {
-        const { dotc, escrow, assetHelper, erc20_18, erc721, erc1155, acc1, acc2, acc3, deployer } = await loadFixture(fixture);
+        const { dotc, escrow, assetHelper, erc20_18, erc721, erc1155, acc1, acc2, acc3, deployer } = await loadFixture(
+          fixture,
+        );
 
         const offerId = 0;
 
@@ -691,7 +709,11 @@ describe('OpenDotcV2', () => {
         const amountIn_asset = BigNumber.from(amountIn).mul(BigNumber.from(10).pow(decimals_18));
 
         await erc20_18.transfer(await acc1.getAddress(), amountIn_asset);
-        await erc721['safeTransferFrom(address,address,uint256)'](await deployer.getAddress(), await acc2.getAddress(), 4);
+        await erc721['safeTransferFrom(address,address,uint256)'](
+          await deployer.getAddress(),
+          await acc2.getAddress(),
+          4,
+        );
 
         await erc20_18.connect(acc1).approve(dotc.address, amountIn_asset);
         await erc721.connect(acc2).setApprovalForAll(dotc.address, true);
@@ -760,23 +782,24 @@ describe('OpenDotcV2', () => {
         expect((await dotc.allOffers(0)).offer.commsLink).to.eq(AwaitingOffer.offer.commsLink);
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(WithdrawalAssetERC721.amount);
-        expect((await escrow.escrowDeposits(offerId)).depositAsset.assetAddress).to.be.eq(WithdrawalAssetERC721.assetAddress);
+        expect((await escrow.escrowDeposits(offerId)).depositAsset.assetAddress).to.be.eq(
+          WithdrawalAssetERC721.assetAddress,
+        );
         expect((await escrow.escrowDeposits(offerId)).depositAsset.assetType).to.be.eq(WithdrawalAssetERC721.assetType);
         expect((await escrow.escrowDeposits(offerId)).depositAsset.tokenId).to.be.eq(WithdrawalAssetERC721.tokenId);
 
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferDeposited);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferDeposited,
+        );
 
-        await expect(dotc.connect(acc3).makeOffer(WithdrawalAssetERC721, DepositAssetERC20, Offer)).to.be.revertedWithCustomError(
-          assetHelper,
-          'AddressHaveNoERC721',
-        ).withArgs(await acc3.getAddress(), WithdrawalAssetERC721.assetAddress, WithdrawalAssetERC721.tokenId);
-
+        await expect(dotc.connect(acc3).makeOffer(WithdrawalAssetERC721, DepositAssetERC20, Offer))
+          .to.be.revertedWithCustomError(assetHelper, 'AddressHaveNoERC721')
+          .withArgs(await acc3.getAddress(), WithdrawalAssetERC721.assetAddress, WithdrawalAssetERC721.tokenId);
 
         WithdrawalAssetERC721.assetAddress = erc1155.address;
-        await expect(dotc.connect(acc3).makeOffer(WithdrawalAssetERC721, DepositAssetERC20, Offer)).to.be.revertedWithCustomError(
-          assetHelper,
-          'IncorrectAssetTypeForAddress',
-        ).withArgs(WithdrawalAssetERC721.assetAddress, WithdrawalAssetERC721.assetType);
+        await expect(dotc.connect(acc3).makeOffer(WithdrawalAssetERC721, DepositAssetERC20, Offer))
+          .to.be.revertedWithCustomError(assetHelper, 'IncorrectAssetTypeForAddress')
+          .withArgs(WithdrawalAssetERC721.assetAddress, WithdrawalAssetERC721.assetType);
       });
 
       it('Should make full offer (erc20 => erc1155)', async () => {
@@ -858,15 +881,21 @@ describe('OpenDotcV2', () => {
         expect((await dotc.allOffers(0)).offer.commsLink).to.eq(AwaitingOffer.offer.commsLink);
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(DepositAssetERC20.amount);
-        expect((await escrow.escrowDeposits(offerId)).depositAsset.assetAddress).to.be.eq(DepositAssetERC20.assetAddress);
+        expect((await escrow.escrowDeposits(offerId)).depositAsset.assetAddress).to.be.eq(
+          DepositAssetERC20.assetAddress,
+        );
         expect((await escrow.escrowDeposits(offerId)).depositAsset.assetType).to.be.eq(DepositAssetERC20.assetType);
         expect((await escrow.escrowDeposits(offerId)).depositAsset.tokenId).to.be.eq(DepositAssetERC20.tokenId);
 
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferDeposited);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferDeposited,
+        );
       });
 
       it('Should make full offer (erc1155 => erc20)', async () => {
-        const { dotc, escrow, assetHelper, erc20_18, erc1155, erc721, acc1, acc2, acc3, deployer } = await loadFixture(fixture);
+        const { dotc, escrow, assetHelper, erc20_18, erc1155, erc721, acc1, acc2, acc3, deployer } = await loadFixture(
+          fixture,
+        );
 
         const offerId = 0;
 
@@ -946,22 +975,32 @@ describe('OpenDotcV2', () => {
         expect((await dotc.allOffers(0)).offer.commsLink).to.eq(AwaitingOffer.offer.commsLink);
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(WithdrawalAssetERC1155.amount);
-        expect((await escrow.escrowDeposits(offerId)).depositAsset.assetAddress).to.be.eq(WithdrawalAssetERC1155.assetAddress);
-        expect((await escrow.escrowDeposits(offerId)).depositAsset.assetType).to.be.eq(WithdrawalAssetERC1155.assetType);
+        expect((await escrow.escrowDeposits(offerId)).depositAsset.assetAddress).to.be.eq(
+          WithdrawalAssetERC1155.assetAddress,
+        );
+        expect((await escrow.escrowDeposits(offerId)).depositAsset.assetType).to.be.eq(
+          WithdrawalAssetERC1155.assetType,
+        );
         expect((await escrow.escrowDeposits(offerId)).depositAsset.tokenId).to.be.eq(WithdrawalAssetERC1155.tokenId);
 
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferDeposited);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferDeposited,
+        );
 
-        await expect(dotc.connect(acc3).makeOffer(WithdrawalAssetERC1155, DepositAssetERC20, Offer)).to.be.revertedWithCustomError(
-          assetHelper,
-          'AddressHaveNoERC1155',
-        ).withArgs(await acc3.getAddress(), WithdrawalAssetERC1155.assetAddress, WithdrawalAssetERC1155.tokenId, 0, WithdrawalAssetERC1155.amount);
+        await expect(dotc.connect(acc3).makeOffer(WithdrawalAssetERC1155, DepositAssetERC20, Offer))
+          .to.be.revertedWithCustomError(assetHelper, 'AddressHaveNoERC1155')
+          .withArgs(
+            await acc3.getAddress(),
+            WithdrawalAssetERC1155.assetAddress,
+            WithdrawalAssetERC1155.tokenId,
+            0,
+            WithdrawalAssetERC1155.amount,
+          );
 
         WithdrawalAssetERC1155.assetAddress = erc721.address;
-        await expect(dotc.connect(acc3).makeOffer(WithdrawalAssetERC1155, DepositAssetERC20, Offer)).to.be.revertedWithCustomError(
-          assetHelper,
-          'IncorrectAssetTypeForAddress',
-        ).withArgs(WithdrawalAssetERC1155.assetAddress, WithdrawalAssetERC1155.assetType);
+        await expect(dotc.connect(acc3).makeOffer(WithdrawalAssetERC1155, DepositAssetERC20, Offer))
+          .to.be.revertedWithCustomError(assetHelper, 'IncorrectAssetTypeForAddress')
+          .withArgs(WithdrawalAssetERC1155.assetAddress, WithdrawalAssetERC1155.assetType);
       });
 
       it('Should make full offer (erc721 => erc721)', async () => {
@@ -969,8 +1008,16 @@ describe('OpenDotcV2', () => {
 
         const offerId = 0;
 
-        await erc721['safeTransferFrom(address,address,uint256)'](await deployer.getAddress(), await acc1.getAddress(), 2);
-        await erc721['safeTransferFrom(address,address,uint256)'](await deployer.getAddress(), await acc2.getAddress(), 4);
+        await erc721['safeTransferFrom(address,address,uint256)'](
+          await deployer.getAddress(),
+          await acc1.getAddress(),
+          2,
+        );
+        await erc721['safeTransferFrom(address,address,uint256)'](
+          await deployer.getAddress(),
+          await acc2.getAddress(),
+          4,
+        );
 
         await erc721.connect(acc1).setApprovalForAll(dotc.address, true);
         await erc721.connect(acc2).setApprovalForAll(dotc.address, true);
@@ -1039,11 +1086,15 @@ describe('OpenDotcV2', () => {
         expect((await dotc.allOffers(0)).offer.commsLink).to.eq(AwaitingOffer.offer.commsLink);
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(DepositAssetERC721.amount);
-        expect((await escrow.escrowDeposits(offerId)).depositAsset.assetAddress).to.be.eq(DepositAssetERC721.assetAddress);
+        expect((await escrow.escrowDeposits(offerId)).depositAsset.assetAddress).to.be.eq(
+          DepositAssetERC721.assetAddress,
+        );
         expect((await escrow.escrowDeposits(offerId)).depositAsset.assetType).to.be.eq(DepositAssetERC721.assetType);
         expect((await escrow.escrowDeposits(offerId)).depositAsset.tokenId).to.be.eq(DepositAssetERC721.tokenId);
 
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferDeposited);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferDeposited,
+        );
       });
 
       it('Should make full offer (erc1155 => erc1155)', async () => {
@@ -1121,11 +1172,15 @@ describe('OpenDotcV2', () => {
         expect((await dotc.allOffers(0)).offer.commsLink).to.eq(AwaitingOffer.offer.commsLink);
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(DepositAssetERC1155.amount);
-        expect((await escrow.escrowDeposits(offerId)).depositAsset.assetAddress).to.be.eq(DepositAssetERC1155.assetAddress);
+        expect((await escrow.escrowDeposits(offerId)).depositAsset.assetAddress).to.be.eq(
+          DepositAssetERC1155.assetAddress,
+        );
         expect((await escrow.escrowDeposits(offerId)).depositAsset.assetType).to.be.eq(DepositAssetERC1155.assetType);
         expect((await escrow.escrowDeposits(offerId)).depositAsset.tokenId).to.be.eq(DepositAssetERC1155.tokenId);
 
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferDeposited);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferDeposited,
+        );
       });
 
       it('Should not revert making offer', async () => {
@@ -1194,10 +1249,9 @@ describe('OpenDotcV2', () => {
           commsLink,
         };
 
-        await expect(dotc.makeOffer(DepositAssetERC20_false, WithdrawalAssetERC20, Offer)).to.be.revertedWithCustomError(
-          assetHelper,
-          'AssetTypeUndefinedError',
-        );
+        await expect(
+          dotc.makeOffer(DepositAssetERC20_false, WithdrawalAssetERC20, Offer),
+        ).to.be.revertedWithCustomError(assetHelper, 'AssetTypeUndefinedError');
 
         DepositAssetERC20_false = {
           assetType: 1,
@@ -1207,10 +1261,9 @@ describe('OpenDotcV2', () => {
           tokenId: 0,
         };
 
-        await expect(dotc.makeOffer(DepositAssetERC20_false, WithdrawalAssetERC20, Offer)).to.be.revertedWithCustomError(
-          assetHelper,
-          'AssetAddressIsZeroError',
-        );
+        await expect(
+          dotc.makeOffer(DepositAssetERC20_false, WithdrawalAssetERC20, Offer),
+        ).to.be.revertedWithCustomError(assetHelper, 'AssetAddressIsZeroError');
 
         DepositAssetERC20_false = {
           assetType: 1,
@@ -1220,15 +1273,13 @@ describe('OpenDotcV2', () => {
           tokenId: 0,
         };
 
-        await expect(dotc.makeOffer(DepositAssetERC20_false, WithdrawalAssetERC20, Offer)).to.be.revertedWithCustomError(
-          assetHelper,
-          'AssetAmountIsZeroError',
-        );
+        await expect(
+          dotc.makeOffer(DepositAssetERC20_false, WithdrawalAssetERC20, Offer),
+        ).to.be.revertedWithCustomError(assetHelper, 'AssetAmountIsZeroError');
 
-        await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20_false, Offer)).to.be.revertedWithCustomError(
-          assetHelper,
-          'AssetTypeUndefinedError',
-        );
+        await expect(
+          dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20_false, Offer),
+        ).to.be.revertedWithCustomError(assetHelper, 'AssetTypeUndefinedError');
 
         WithdrawalAssetERC20_false = {
           assetType: 1,
@@ -1238,10 +1289,9 @@ describe('OpenDotcV2', () => {
           tokenId: 0,
         };
 
-        await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20_false, Offer)).to.be.revertedWithCustomError(
-          assetHelper,
-          'AssetAddressIsZeroError',
-        );
+        await expect(
+          dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20_false, Offer),
+        ).to.be.revertedWithCustomError(assetHelper, 'AssetAddressIsZeroError');
 
         WithdrawalAssetERC20_false = {
           assetType: 1,
@@ -1251,27 +1301,33 @@ describe('OpenDotcV2', () => {
           tokenId: 0,
         };
 
-        await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20_false, Offer)).to.be.revertedWithCustomError(
-          assetHelper,
-          'AssetAmountIsZeroError',
-        );
+        await expect(
+          dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20_false, Offer),
+        ).to.be.revertedWithCustomError(assetHelper, 'AssetAmountIsZeroError');
 
-        await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC721_false, Offer)).to.be.revertedWithCustomError(
-          assetHelper,
-          'ERC721AmountExceedsOneError',
-        );
-        await expect(dotc.makeOffer(WithdrawalAssetERC721_false, DepositAssetERC20, Offer)).to.be.revertedWithCustomError(
-          assetHelper,
-          'ERC721AmountExceedsOneError',
-        );
+        await expect(
+          dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC721_false, Offer),
+        ).to.be.revertedWithCustomError(assetHelper, 'ERC721AmountExceedsOneError');
+        await expect(
+          dotc.makeOffer(WithdrawalAssetERC721_false, DepositAssetERC20, Offer),
+        ).to.be.revertedWithCustomError(assetHelper, 'ERC721AmountExceedsOneError');
       });
     });
 
     describe('Dynamic assetPrice', () => {
       it('Should make dynamic price offer (erc20 => erc20)', async () => {
-        const { dotc, assetHelper, offerHelper, priceFeed_fake, priceFeed_6, priceFeed_18, erc20_18, erc20_6, acc1, acc2 } = await loadFixture(
-          fixture,
-        );
+        const {
+          dotc,
+          assetHelper,
+          offerHelper,
+          priceFeed_fake,
+          priceFeed_6,
+          priceFeed_18,
+          erc20_18,
+          erc20_6,
+          acc1,
+          acc2,
+        } = await loadFixture(fixture);
 
         let offerId = 0;
 
@@ -1285,26 +1341,26 @@ describe('OpenDotcV2', () => {
         await erc20_6.connect(acc2).approve(dotc.address, amountOut);
 
         const depositAssetPrice = await priceFeed_18.latestAnswer();
-        const [, withdrawalAssetPrice,] = await priceFeed_6.latestRoundData();
+        const [, withdrawalAssetPrice] = await priceFeed_6.latestRoundData();
 
         const OfferPrice: OfferPriceStruct = {
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           percentage: 100,
-          percentageType: PercentageType.Plus
-        }
+          percentageType: PercentageType.Plus,
+        };
 
         const PriceDeposit: AssetPriceStruct = {
           priceFeedAddress: priceFeed_18.address,
           offerMaximumPrice: 0,
           offerMinimumPrice: depositAssetPrice,
-        }
+        };
 
         const PriceWithdrawal: AssetPriceStruct = {
           priceFeedAddress: priceFeed_6.address,
           offerMaximumPrice: 0,
           offerMinimumPrice: withdrawalAssetPrice,
-        }
+        };
 
         const DepositAssetERC20: AssetStruct = {
           assetType: AssetType.ERC20,
@@ -1341,16 +1397,18 @@ describe('OpenDotcV2', () => {
           offer: Offer,
         };
 
-        await dotc
-          .connect(acc1)
-          .makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
+        await dotc.connect(acc1).makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
 
         const standardizedDepositPrice = standardizeNumber(depositAssetPrice, priceFeed_decimals);
         const standardizedWithdrawalPrice = standardizeNumber(withdrawalAssetPrice, priceFeed_decimals);
-        let depositToWithdrawalRate = standardizedDepositPrice.mul(BigNumber.from(10).pow(decimals_6)).div(standardizedWithdrawalPrice);
+        let depositToWithdrawalRate = standardizedDepositPrice
+          .mul(BigNumber.from(10).pow(decimals_6))
+          .div(standardizedWithdrawalPrice);
         depositToWithdrawalRate = getRateWithPercentage(depositToWithdrawalRate, Offer.offerPrice);
 
-        const withdrawalAmount = depositToWithdrawalRate.mul(DepositAssetERC20.amount).div(BigNumber.from(10).pow(decimals_18));
+        const withdrawalAmount = depositToWithdrawalRate
+          .mul(DepositAssetERC20.amount)
+          .div(BigNumber.from(10).pow(decimals_18));
 
         expect((await dotc.allOffers(offerId)).offer.offerPrice.unitPrice).to.eq(depositToWithdrawalRate);
 
@@ -1360,31 +1418,26 @@ describe('OpenDotcV2', () => {
         offerId++;
 
         Offer.takingOfferType = TakingOfferType.PartialOffer;
-        await dotc
-          .connect(acc1)
-          .makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
+        await dotc.connect(acc1).makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
         expect((await dotc.allOffers(offerId)).offer.takingOfferType).to.eq(Offer.takingOfferType);
         Offer.takingOfferType = TakingOfferType.BlockOffer;
 
         OfferPrice.percentage = 10001;
-        await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer)).to.be.revertedWithCustomError(
-          offerHelper,
-          'IncorrectPercentage',
-        ).withArgs(OfferPrice.percentage);
+        await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer))
+          .to.be.revertedWithCustomError(offerHelper, 'IncorrectPercentage')
+          .withArgs(OfferPrice.percentage);
         OfferPrice.percentage = SCALING_FACTOR;
 
         DepositAssetERC20.assetPrice.priceFeedAddress = priceFeed_fake.address;
-        await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer)).to.be.revertedWithCustomError(
-          assetHelper,
-          'IncorrectPriceFeed',
-        ).withArgs(DepositAssetERC20.assetPrice.priceFeedAddress);
+        await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer))
+          .to.be.revertedWithCustomError(assetHelper, 'IncorrectPriceFeed')
+          .withArgs(DepositAssetERC20.assetPrice.priceFeedAddress);
         DepositAssetERC20.assetPrice.priceFeedAddress = priceFeed_18.address;
 
         WithdrawalAssetERC20.assetPrice.priceFeedAddress = priceFeed_fake.address;
-        await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer)).to.be.revertedWithCustomError(
-          assetHelper,
-          'IncorrectPriceFeed',
-        ).withArgs(WithdrawalAssetERC20.assetPrice.priceFeedAddress);
+        await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer))
+          .to.be.revertedWithCustomError(assetHelper, 'IncorrectPriceFeed')
+          .withArgs(WithdrawalAssetERC20.assetPrice.priceFeedAddress);
         WithdrawalAssetERC20.assetPrice.priceFeedAddress = priceFeed_6.address;
 
         WithdrawalAssetERC20.assetPrice.priceFeedAddress = dotc.address;
@@ -1392,10 +1445,9 @@ describe('OpenDotcV2', () => {
         WithdrawalAssetERC20.assetPrice.priceFeedAddress = priceFeed_6.address;
 
         WithdrawalAssetERC20.assetPrice.offerMaximumPrice = 1;
-        await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer)).to.be.revertedWithCustomError(
-          assetHelper,
-          'BothMinMaxCanNotBeSpecifiedFor',
-        ).withArgs(Offer.offerPrice.offerPricingType);
+        await expect(dotc.makeOffer(DepositAssetERC20, WithdrawalAssetERC20, Offer))
+          .to.be.revertedWithCustomError(assetHelper, 'BothMinMaxCanNotBeSpecifiedFor')
+          .withArgs(Offer.offerPrice.offerPricingType);
         WithdrawalAssetERC20.assetPrice.offerMaximumPrice = 0;
 
         Offer.offerPrice.percentageType = PercentageType.NoType;
@@ -1447,8 +1499,22 @@ describe('OpenDotcV2', () => {
   describe('Take Offer', () => {
     describe('Fixed AssetPrice', () => {
       it('Should take full offer (erc20 => erc20)', async () => {
-        const { dotc, escrow, dotcManager, assetHelper, offerHelper, dotcOfferHelper, erc20_18, erc20_6, authorization_false, authorization_true, acc1, acc2, acc3, deployer } =
-          await loadFixture(fixture);
+        const {
+          dotc,
+          escrow,
+          dotcManager,
+          assetHelper,
+          offerHelper,
+          dotcOfferHelper,
+          erc20_18,
+          erc20_6,
+          authorization_false,
+          authorization_true,
+          acc1,
+          acc2,
+          acc3,
+          deployer,
+        } = await loadFixture(fixture);
 
         let offerId = 0;
 
@@ -1464,7 +1530,7 @@ describe('OpenDotcV2', () => {
         await erc20_18.connect(acc1).approve(dotc.address, amountIn_asset);
         await erc20_6.connect(acc2).approve(dotc.address, amountOut_asset);
 
-        const DepositAssetERC20: AssetStruct = {
+        const DepositAssetERC20 = {
           assetType: 1,
           assetAddress: erc20_18.address,
           assetPrice: AssetPrice,
@@ -1472,7 +1538,7 @@ describe('OpenDotcV2', () => {
           tokenId: 0,
         };
 
-        const WithdrawalAssetERC20: AssetStruct = {
+        const WithdrawalAssetERC20 = {
           assetType: 1,
           assetAddress: erc20_6.address,
           assetPrice: AssetPrice,
@@ -1480,7 +1546,7 @@ describe('OpenDotcV2', () => {
           tokenId: 0,
         };
 
-        const Offer: OfferStruct = {
+        const Offer = {
           takingOfferType: TakingOfferType.BlockOffer,
           offerPrice: OfferPrice,
           specialAddresses: [await acc2.getAddress(), await deployer.getAddress()],
@@ -1491,7 +1557,7 @@ describe('OpenDotcV2', () => {
           commsLink,
         };
 
-        const AwaitingOffer: DotcOfferStruct = {
+        const AwaitingOffer = {
           maker: await acc1.getAddress(),
           offerFillType: OfferFillType.FullyTaken,
           depositAsset: DepositAssetERC20,
@@ -1499,30 +1565,50 @@ describe('OpenDotcV2', () => {
           offer: Offer,
         };
 
-        const [fees, ,] = await assetHelper.getFees(WithdrawalAssetERC20.amount, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
+        const [fees, ,] = await assetHelper.getFees(
+          WithdrawalAssetERC20.amount,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
 
         const deployerBalance_2 = await erc20_6.balanceOf(await deployer.getAddress());
 
         await dotc.connect(acc1).makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
 
-        await expect(dotc.connect(acc3).takeOfferFixed(offerId, 0, addressZero)).to.be.revertedWithCustomError(
-          offerHelper,
-          'NotSpecialAddressError',
-        ).withArgs(await acc3.getAddress());
+        await expect(dotc.connect(acc3).takeOfferFixed(offerId, 0, addressZero))
+          .to.be.revertedWithCustomError(offerHelper, 'NotSpecialAddressError')
+          .withArgs(await acc3.getAddress());
+        await expect(dotc.connect(acc2).takeOfferFixed(offerId, 1, addressZero))
+          .to.be.revertedWithCustomError(dotc, 'BlockOfferShouldBePaidFully')
+          .withArgs(1);
+        await expect(dotc.connect(acc2).takeOfferDynamic(offerId, 0, 2, addressZero))
+          .to.be.revertedWithCustomError(dotc, 'IncorrectOfferPricingType')
+          .withArgs(Offer.offerPrice.offerPricingType);
 
         const take_offer = await dotc.connect(acc2).takeOfferFixed(offerId, 0, addressZero);
 
         await expect(take_offer)
           .to.emit(dotc, 'TakenOffer')
-          .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.offerFillType, DepositAssetERC20.amount, WithdrawalAssetERC20.amount, addressZero);
+          .withArgs(
+            offerId,
+            await acc2.getAddress(),
+            AwaitingOffer.offerFillType,
+            DepositAssetERC20.amount,
+            WithdrawalAssetERC20.amount,
+            addressZero,
+          );
         await expect(take_offer)
           .to.emit(escrow, 'OfferWithdrawn')
           .withArgs(offerId, await acc2.getAddress(), DepositAssetERC20.amount);
 
         expect(await erc20_18.balanceOf(escrow.address)).to.eq(0);
         expect(await erc20_18.balanceOf(await acc2.getAddress())).to.eq(DepositAssetERC20.amount);
-        expect(await erc20_6.balanceOf(await acc1.getAddress())).to.eq(BigNumber.from(WithdrawalAssetERC20.amount).sub(BigNumber.from(fees)));
-        expect(await erc20_6.balanceOf(await deployer.getAddress())).to.eq(BigNumber.from(deployerBalance_2).add(BigNumber.from(fees)));
+        expect(await erc20_6.balanceOf(await acc1.getAddress())).to.eq(
+          BigNumber.from(WithdrawalAssetERC20.amount).sub(BigNumber.from(fees)),
+        );
+        expect(await erc20_6.balanceOf(await deployer.getAddress())).to.eq(
+          BigNumber.from(deployerBalance_2).add(BigNumber.from(fees)),
+        );
 
         expect((await dotc.allOffers(0)).withdrawalAsset.amount).to.eq(0);
         expect((await dotc.allOffers(0)).offerFillType).to.eq(AwaitingOffer.offerFillType);
@@ -1530,22 +1616,23 @@ describe('OpenDotcV2', () => {
         expect(await dotc.offersFromAddress(await acc1.getAddress(), 0)).to.eq(offerId);
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(0);
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferFullyWithdrawn,
+        );
 
-        await expect(dotc.connect(acc2).takeOfferFixed(50, 0, addressZero)).to.be.revertedWithCustomError(
-          dotcOfferHelper,
-          'OfferValidityError',
-        ).withArgs(OfferFillType.NotTaken);
-        await expect(dotc.connect(acc2).takeOfferFixed(offerId, 0, addressZero)).to.be.revertedWithCustomError(
-          dotcOfferHelper,
-          'OfferValidityError',
-        ).withArgs(OfferFillType.FullyTaken);
+        await expect(dotc.connect(acc2).takeOfferFixed(50, 0, addressZero))
+          .to.be.revertedWithCustomError(dotcOfferHelper, 'OfferValidityError')
+          .withArgs(OfferFillType.NotTaken);
+        await expect(dotc.connect(acc2).takeOfferFixed(offerId, 0, addressZero))
+          .to.be.revertedWithCustomError(dotcOfferHelper, 'OfferValidityError')
+          .withArgs(OfferFillType.FullyTaken);
 
-        await expect(dotc.connect(acc1).updateOffer(offerId, Offer)).to.be.revertedWithCustomError(
-          dotcOfferHelper,
-          'OfferValidityError',
-        ).withArgs(OfferFillType.FullyTaken);
-        await expect(dotc.connect(acc1).cancelOffer(offerId)).to.be.revertedWithCustomError(dotcOfferHelper, 'OfferValidityError').withArgs(OfferFillType.FullyTaken);
+        await expect(dotc.connect(acc1).updateOffer(offerId, Offer))
+          .to.be.revertedWithCustomError(dotcOfferHelper, 'OfferValidityError')
+          .withArgs(OfferFillType.FullyTaken);
+        await expect(dotc.connect(acc1).cancelOffer(offerId))
+          .to.be.revertedWithCustomError(dotcOfferHelper, 'OfferValidityError')
+          .withArgs(OfferFillType.FullyTaken);
 
         offerId++;
 
@@ -1573,8 +1660,9 @@ describe('OpenDotcV2', () => {
       });
 
       it('Should take full offer (erc20 => erc20) (affiliate program)', async () => {
-        const { dotc, dotcManager, assetHelper, erc20_18, erc20_6, acc1, acc2, acc3, deployer } =
-          await loadFixture(fixture);
+        const { dotc, dotcManager, assetHelper, erc20_18, erc20_6, acc1, acc2, acc3, deployer } = await loadFixture(
+          fixture,
+        );
 
         const amountIn = 43;
         const amountOut = 104;
@@ -1623,7 +1711,11 @@ describe('OpenDotcV2', () => {
           offer: Offer,
         };
 
-        const [fees, feesToFeeReceiver, feesToAffiliate] = await assetHelper.getFees(WithdrawalAssetERC20.amount, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
+        const [fees, feesToFeeReceiver, feesToAffiliate] = await assetHelper.getFees(
+          WithdrawalAssetERC20.amount,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
 
         const deployerBalance = await erc20_6.balanceOf(await deployer.getAddress());
         const acc3Balance = await erc20_6.balanceOf(await acc3.getAddress());
@@ -1632,13 +1724,21 @@ describe('OpenDotcV2', () => {
 
         await dotc.connect(acc2).takeOfferFixed(0, 0, await acc3.getAddress());
 
-        expect(await erc20_6.balanceOf(await acc1.getAddress())).to.eq(BigNumber.from(WithdrawalAssetERC20.amount).sub(BigNumber.from(fees)));
-        expect(await erc20_6.balanceOf(await deployer.getAddress())).to.eq(BigNumber.from(deployerBalance).add(BigNumber.from(feesToFeeReceiver)));
-        expect(await erc20_6.balanceOf(await acc3.getAddress())).to.eq(BigNumber.from(acc3Balance).add(BigNumber.from(feesToAffiliate)));
+        expect(await erc20_6.balanceOf(await acc1.getAddress())).to.eq(
+          BigNumber.from(WithdrawalAssetERC20.amount).sub(BigNumber.from(fees)),
+        );
+        expect(await erc20_6.balanceOf(await deployer.getAddress())).to.eq(
+          BigNumber.from(deployerBalance).add(BigNumber.from(feesToFeeReceiver)),
+        );
+        expect(await erc20_6.balanceOf(await acc3.getAddress())).to.eq(
+          BigNumber.from(acc3Balance).add(BigNumber.from(feesToAffiliate)),
+        );
       });
 
       it('Should take partial offer (erc20 => erc20)', async () => {
-        const { dotc, escrow, dotcManager, assetHelper, erc20_18, erc20_6, acc1, acc2, deployer } = await loadFixture(fixture);
+        const { dotc, escrow, dotcManager, assetHelper, erc20_18, erc20_6, acc1, acc2, deployer } = await loadFixture(
+          fixture,
+        );
 
         const offerId = 0;
 
@@ -1713,13 +1813,15 @@ describe('OpenDotcV2', () => {
           .mul(WAD)
           .div(BigNumber.from(DepositAssetERC20_standardized.amount));
 
-        const [fees, ,] = await assetHelper.getFees(amountOut_to_take, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
+        const [fees, ,] = await assetHelper.getFees(
+          amountOut_to_take,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
 
         const deployerBalance_2 = await erc20_6.balanceOf(await deployer.getAddress());
 
-        const amountToWithdraw = standardized_amountOut_to_take
-          .mul(WAD)
-          .div(unitPrice);
+        const amountToWithdraw = standardized_amountOut_to_take.mul(WAD).div(unitPrice);
 
         const realAmount = unstandardizeNumber(amountToWithdraw, await erc20_18.decimals());
 
@@ -1731,28 +1833,44 @@ describe('OpenDotcV2', () => {
 
         await expect(take_offer)
           .to.emit(dotc, 'TakenOffer')
-          .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.offerFillType, realAmount, amountOut_to_take, addressZero);
-        await expect(take_offer).to.emit(escrow, 'OfferWithdrawn').withArgs(offerId, await acc2.getAddress(), realAmount);
+          .withArgs(
+            offerId,
+            await acc2.getAddress(),
+            AwaitingOffer.offerFillType,
+            realAmount,
+            amountOut_to_take,
+            addressZero,
+          );
+        await expect(take_offer)
+          .to.emit(escrow, 'OfferWithdrawn')
+          .withArgs(offerId, await acc2.getAddress(), realAmount);
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(balance.sub(realAmount));
         expect(await erc20_18.balanceOf(escrow.address)).to.eq(balance.sub(realAmount));
         expect(await erc20_18.balanceOf(await acc2.getAddress())).to.eq(realAmount);
-        expect(await erc20_6.balanceOf(await acc1.getAddress())).to.eq(BigNumber.from(amountOut_to_take).sub(BigNumber.from(fees)));
-        expect(await erc20_6.balanceOf(await deployer.getAddress())).to.eq(BigNumber.from(deployerBalance_2).add(BigNumber.from(fees)));
+        expect(await erc20_6.balanceOf(await acc1.getAddress())).to.eq(
+          BigNumber.from(amountOut_to_take).sub(BigNumber.from(fees)),
+        );
+        expect(await erc20_6.balanceOf(await deployer.getAddress())).to.eq(
+          BigNumber.from(deployerBalance_2).add(BigNumber.from(fees)),
+        );
 
         expect((await dotc.allOffers(0)).withdrawalAsset.amount).to.eq(
-          BigNumber.from(50).mul(BigNumber.from(10).pow(decimals_6))
+          BigNumber.from(50).mul(BigNumber.from(10).pow(decimals_6)),
         );
         expect((await dotc.allOffers(0)).offerFillType).to.eq(AwaitingOffer.offerFillType);
 
         expect(await dotc.offersFromAddress(await acc1.getAddress(), 0)).to.eq(offerId);
 
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferPartiallyWithdrawn);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferPartiallyWithdrawn,
+        );
       });
 
       it('Should take full offer (erc20 => erc20) (affiliate program)', async () => {
-        const { dotc, dotcManager, assetHelper, erc20_18, erc20_6, acc1, acc2, acc3, deployer } =
-          await loadFixture(fixture);
+        const { dotc, dotcManager, assetHelper, erc20_18, erc20_6, acc1, acc2, acc3, deployer } = await loadFixture(
+          fixture,
+        );
 
         const amountIn = 43;
         const amountOut = 104;
@@ -1819,7 +1937,11 @@ describe('OpenDotcV2', () => {
           offer: Offer,
         };
 
-        const [fees, feesToFeeReceiver, feesToAffiliate] = await assetHelper.getFees(amountOut_to_take, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
+        const [fees, feesToFeeReceiver, feesToAffiliate] = await assetHelper.getFees(
+          amountOut_to_take,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
 
         const deployerBalance = await erc20_6.balanceOf(await deployer.getAddress());
         const acc3Balance = await erc20_6.balanceOf(await acc3.getAddress());
@@ -1828,13 +1950,21 @@ describe('OpenDotcV2', () => {
 
         await dotc.connect(acc2).takeOfferFixed(0, amountOut_to_take, await acc3.getAddress());
 
-        expect(await erc20_6.balanceOf(await acc1.getAddress())).to.eq(BigNumber.from(amountOut_to_take).sub(BigNumber.from(fees)));
-        expect(await erc20_6.balanceOf(await deployer.getAddress())).to.eq(BigNumber.from(deployerBalance).add(BigNumber.from(feesToFeeReceiver)));
-        expect(await erc20_6.balanceOf(await acc3.getAddress())).to.eq(BigNumber.from(acc3Balance).add(BigNumber.from(feesToAffiliate)));
+        expect(await erc20_6.balanceOf(await acc1.getAddress())).to.eq(
+          BigNumber.from(amountOut_to_take).sub(BigNumber.from(fees)),
+        );
+        expect(await erc20_6.balanceOf(await deployer.getAddress())).to.eq(
+          BigNumber.from(deployerBalance).add(BigNumber.from(feesToFeeReceiver)),
+        );
+        expect(await erc20_6.balanceOf(await acc3.getAddress())).to.eq(
+          BigNumber.from(acc3Balance).add(BigNumber.from(feesToAffiliate)),
+        );
       });
 
       it('Should take partial offer fully (erc20 => erc20)', async () => {
-        const { dotc, escrow, dotcManager, assetHelper, erc20_18, erc20_6, acc1, acc2, deployer } = await loadFixture(fixture);
+        const { dotc, escrow, dotcManager, assetHelper, erc20_18, erc20_6, acc1, acc2, deployer } = await loadFixture(
+          fixture,
+        );
 
         const offerId = 0;
 
@@ -1901,7 +2031,11 @@ describe('OpenDotcV2', () => {
           offer: Offer,
         };
 
-        const [fees, ,] = await assetHelper.getFees(amountOut_asset, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
+        const [fees, ,] = await assetHelper.getFees(
+          amountOut_asset,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
 
         const deployerBalance_2 = await erc20_6.balanceOf(await deployer.getAddress());
 
@@ -1913,7 +2047,14 @@ describe('OpenDotcV2', () => {
 
         await expect(take_offer)
           .to.emit(dotc, 'TakenOffer')
-          .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.offerFillType, DepositAssetERC20.amount, WithdrawalAssetERC20.amount, addressZero);
+          .withArgs(
+            offerId,
+            await acc2.getAddress(),
+            AwaitingOffer.offerFillType,
+            DepositAssetERC20.amount,
+            WithdrawalAssetERC20.amount,
+            addressZero,
+          );
 
         await expect(take_offer)
           .to.emit(escrow, 'OfferWithdrawn')
@@ -1924,15 +2065,21 @@ describe('OpenDotcV2', () => {
         ); //0
         expect(await erc20_18.balanceOf(escrow.address)).to.eq(balance.sub(BigNumber.from(DepositAssetERC20.amount))); //0
         expect(await erc20_18.balanceOf(await acc2.getAddress())).to.eq(DepositAssetERC20.amount);
-        expect(await erc20_6.balanceOf(await acc1.getAddress())).to.eq(BigNumber.from(amountOut_asset).sub(BigNumber.from(fees)));
-        expect(await erc20_6.balanceOf(await deployer.getAddress())).to.eq(BigNumber.from(deployerBalance_2).add(BigNumber.from(fees)));
+        expect(await erc20_6.balanceOf(await acc1.getAddress())).to.eq(
+          BigNumber.from(amountOut_asset).sub(BigNumber.from(fees)),
+        );
+        expect(await erc20_6.balanceOf(await deployer.getAddress())).to.eq(
+          BigNumber.from(deployerBalance_2).add(BigNumber.from(fees)),
+        );
 
         expect((await dotc.allOffers(0)).withdrawalAsset.amount).to.eq(0);
         expect((await dotc.allOffers(0)).offerFillType).to.eq(AwaitingOffer.offerFillType);
 
         expect(await dotc.offersFromAddress(await acc1.getAddress(), 0)).to.eq(offerId);
 
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferFullyWithdrawn,
+        );
       });
 
       it('Should take full offer (erc20 => erc721)', async () => {
@@ -1947,7 +2094,11 @@ describe('OpenDotcV2', () => {
         const amountIn_asset = BigNumber.from(amountIn).mul(BigNumber.from(10).pow(decimals_18));
 
         await erc20_18.transfer(await acc1.getAddress(), amountIn_asset);
-        await erc721['safeTransferFrom(address,address,uint256)'](await deployer.getAddress(), await acc2.getAddress(), 4);
+        await erc721['safeTransferFrom(address,address,uint256)'](
+          await deployer.getAddress(),
+          await acc2.getAddress(),
+          4,
+        );
 
         await erc20_18.connect(acc1).approve(dotc.address, amountIn_asset);
         await erc721.connect(acc2).setApprovalForAll(dotc.address, true);
@@ -1989,9 +2140,12 @@ describe('OpenDotcV2', () => {
 
         await dotcManager.changeFees(addressZero, 0, 0);
 
-        const [fees, ,] = await assetHelper.getFees(DepositAssetERC20.amount, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
-        const outAmount =
-          BigNumber.from(DepositAssetERC20.amount).sub(BigNumber.from(fees));
+        const [fees, ,] = await assetHelper.getFees(
+          DepositAssetERC20.amount,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
+        const outAmount = BigNumber.from(DepositAssetERC20.amount).sub(BigNumber.from(fees));
 
         const deployerBalance_2 = await erc20_18.balanceOf(await deployer.getAddress());
 
@@ -2002,7 +2156,9 @@ describe('OpenDotcV2', () => {
         await expect(take_offer)
           .to.emit(dotc, 'TakenOffer')
           .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.offerFillType, outAmount, 1, addressZero);
-        await expect(take_offer).to.emit(escrow, 'OfferWithdrawn').withArgs(offerId, await acc2.getAddress(), outAmount);
+        await expect(take_offer)
+          .to.emit(escrow, 'OfferWithdrawn')
+          .withArgs(offerId, await acc2.getAddress(), outAmount);
 
         expect(await erc20_18.balanceOf(escrow.address)).to.eq(0);
         expect(await erc20_18.balanceOf(await acc2.getAddress())).to.eq(outAmount);
@@ -2018,19 +2174,26 @@ describe('OpenDotcV2', () => {
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(0);
 
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferFullyWithdrawn,
+        );
       });
 
       it('Should take full offer (erc20 => erc721) (affiliate program)', async () => {
-        const { dotc, dotcManager, assetHelper, erc20_18, erc721, acc1, acc2, acc3, deployer } =
-          await loadFixture(fixture);
+        const { dotc, dotcManager, assetHelper, erc20_18, erc721, acc1, acc2, acc3, deployer } = await loadFixture(
+          fixture,
+        );
 
         const amountIn = 43;
 
         const amountIn_asset = BigNumber.from(amountIn).mul(BigNumber.from(10).pow(decimals_18));
 
         await erc20_18.transfer(await acc1.getAddress(), amountIn_asset);
-        await erc721['safeTransferFrom(address,address,uint256)'](await deployer.getAddress(), await acc2.getAddress(), 4);
+        await erc721['safeTransferFrom(address,address,uint256)'](
+          await deployer.getAddress(),
+          await acc2.getAddress(),
+          4,
+        );
 
         await erc20_18.connect(acc1).approve(dotc.address, amountIn_asset);
         await erc721.connect(acc2).setApprovalForAll(dotc.address, true);
@@ -2070,10 +2233,13 @@ describe('OpenDotcV2', () => {
           offer: Offer,
         };
 
-        const [fees, feesToFeeReceiver, feesToAffiliate] = await assetHelper.getFees(DepositAssetERC20.amount, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
+        const [fees, feesToFeeReceiver, feesToAffiliate] = await assetHelper.getFees(
+          DepositAssetERC20.amount,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
 
-        const outAmount =
-          BigNumber.from(DepositAssetERC20.amount).sub(BigNumber.from(fees));
+        const outAmount = BigNumber.from(DepositAssetERC20.amount).sub(BigNumber.from(fees));
 
         const deployerBalance = await erc20_18.balanceOf(await deployer.getAddress());
         const acc3Balance = await erc20_18.balanceOf(await acc3.getAddress());
@@ -2083,12 +2249,18 @@ describe('OpenDotcV2', () => {
         await dotc.connect(acc2).takeOfferFixed(0, 0, await acc3.getAddress());
 
         expect(await erc20_18.balanceOf(await acc2.getAddress())).to.eq(outAmount);
-        expect(await erc20_18.balanceOf(await deployer.getAddress())).to.eq(BigNumber.from(deployerBalance).add(BigNumber.from(feesToFeeReceiver)));
-        expect(await erc20_18.balanceOf(await acc3.getAddress())).to.eq(BigNumber.from(acc3Balance).add(BigNumber.from(feesToAffiliate)));
+        expect(await erc20_18.balanceOf(await deployer.getAddress())).to.eq(
+          BigNumber.from(deployerBalance).add(BigNumber.from(feesToFeeReceiver)),
+        );
+        expect(await erc20_18.balanceOf(await acc3.getAddress())).to.eq(
+          BigNumber.from(acc3Balance).add(BigNumber.from(feesToAffiliate)),
+        );
       });
 
       it('Should take full offer (erc721 => erc20)', async () => {
-        const { dotc, escrow, dotcManager, assetHelper, erc20_18, erc721, acc1, acc2, deployer } = await loadFixture(fixture);
+        const { dotc, escrow, dotcManager, assetHelper, erc20_18, erc721, acc1, acc2, deployer } = await loadFixture(
+          fixture,
+        );
 
         const offerId = 0;
 
@@ -2097,7 +2269,11 @@ describe('OpenDotcV2', () => {
         const amountIn_asset = BigNumber.from(amountIn).mul(BigNumber.from(10).pow(decimals_18));
 
         await erc20_18.transfer(await acc1.getAddress(), amountIn_asset);
-        await erc721['safeTransferFrom(address,address,uint256)'](await deployer.getAddress(), await acc2.getAddress(), 4);
+        await erc721['safeTransferFrom(address,address,uint256)'](
+          await deployer.getAddress(),
+          await acc2.getAddress(),
+          4,
+        );
 
         await erc20_18.connect(acc1).approve(dotc.address, amountIn_asset);
         await erc721.connect(acc2).setApprovalForAll(dotc.address, true);
@@ -2137,7 +2313,11 @@ describe('OpenDotcV2', () => {
           offer: Offer,
         };
 
-        const [fees, ,] = await assetHelper.getFees(DepositAssetERC20.amount, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
+        const [fees, ,] = await assetHelper.getFees(
+          DepositAssetERC20.amount,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
 
         const deployerBalance_2 = await erc20_18.balanceOf(await deployer.getAddress());
 
@@ -2147,14 +2327,27 @@ describe('OpenDotcV2', () => {
 
         await expect(take_offer)
           .to.emit(dotc, 'TakenOffer')
-          .withArgs(offerId, await acc1.getAddress(), AwaitingOffer.offerFillType, 1, DepositAssetERC20.amount, addressZero);
-        await expect(take_offer).to.emit(escrow, 'OfferWithdrawn').withArgs(offerId, await acc1.getAddress(), 1);
+          .withArgs(
+            offerId,
+            await acc1.getAddress(),
+            AwaitingOffer.offerFillType,
+            1,
+            DepositAssetERC20.amount,
+            addressZero,
+          );
+        await expect(take_offer)
+          .to.emit(escrow, 'OfferWithdrawn')
+          .withArgs(offerId, await acc1.getAddress(), 1);
 
         expect(await erc721.balanceOf(escrow.address)).to.eq(0);
         expect(await erc721.ownerOf(WithdrawalAssetERC721.tokenId)).to.eq(await acc1.getAddress());
 
-        expect(await erc20_18.balanceOf(await acc2.getAddress())).to.eq(BigNumber.from(DepositAssetERC20.amount).sub(BigNumber.from(fees)));
-        expect(await erc20_18.balanceOf(await deployer.getAddress())).to.eq(BigNumber.from(deployerBalance_2).add(BigNumber.from(fees)));
+        expect(await erc20_18.balanceOf(await acc2.getAddress())).to.eq(
+          BigNumber.from(DepositAssetERC20.amount).sub(BigNumber.from(fees)),
+        );
+        expect(await erc20_18.balanceOf(await deployer.getAddress())).to.eq(
+          BigNumber.from(deployerBalance_2).add(BigNumber.from(fees)),
+        );
 
         expect((await dotc.allOffers(0)).withdrawalAsset.amount).to.eq(0);
         expect((await dotc.allOffers(0)).offerFillType).to.eq(AwaitingOffer.offerFillType);
@@ -2165,8 +2358,9 @@ describe('OpenDotcV2', () => {
       });
 
       it('Should take full offer (erc721 => erc20) (affiliate program)', async () => {
-        const { dotc, dotcManager, assetHelper, erc20_18, erc721, acc1, acc2, acc3, deployer } =
-          await loadFixture(fixture);
+        const { dotc, dotcManager, assetHelper, erc20_18, erc721, acc1, acc2, acc3, deployer } = await loadFixture(
+          fixture,
+        );
 
         const offerId = 0;
 
@@ -2175,7 +2369,11 @@ describe('OpenDotcV2', () => {
         const amountIn_asset = BigNumber.from(amountIn).mul(BigNumber.from(10).pow(decimals_18));
 
         await erc20_18.transfer(await acc1.getAddress(), amountIn_asset);
-        await erc721['safeTransferFrom(address,address,uint256)'](await deployer.getAddress(), await acc2.getAddress(), 4);
+        await erc721['safeTransferFrom(address,address,uint256)'](
+          await deployer.getAddress(),
+          await acc2.getAddress(),
+          4,
+        );
 
         await erc20_18.connect(acc1).approve(dotc.address, amountIn_asset);
         await erc721.connect(acc2).setApprovalForAll(dotc.address, true);
@@ -2215,10 +2413,13 @@ describe('OpenDotcV2', () => {
           offer: Offer,
         };
 
-        const [fees, feesToFeeReceiver, feesToAffiliate] = await assetHelper.getFees(DepositAssetERC20.amount, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
+        const [fees, feesToFeeReceiver, feesToAffiliate] = await assetHelper.getFees(
+          DepositAssetERC20.amount,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
 
-        const outAmount =
-          BigNumber.from(DepositAssetERC20.amount).sub(BigNumber.from(fees));
+        const outAmount = BigNumber.from(DepositAssetERC20.amount).sub(BigNumber.from(fees));
 
         const deployerBalance = await erc20_18.balanceOf(await deployer.getAddress());
         const acc3Balance = await erc20_18.balanceOf(await acc3.getAddress());
@@ -2228,13 +2429,18 @@ describe('OpenDotcV2', () => {
         await dotc.connect(acc1).takeOfferFixed(offerId, 0, await acc3.getAddress());
 
         expect(await erc20_18.balanceOf(await acc2.getAddress())).to.eq(outAmount);
-        expect(await erc20_18.balanceOf(await deployer.getAddress())).to.eq(BigNumber.from(deployerBalance).add(BigNumber.from(feesToFeeReceiver)));
-        expect(await erc20_18.balanceOf(await acc3.getAddress())).to.eq(BigNumber.from(acc3Balance).add(BigNumber.from(feesToAffiliate)));
+        expect(await erc20_18.balanceOf(await deployer.getAddress())).to.eq(
+          BigNumber.from(deployerBalance).add(BigNumber.from(feesToFeeReceiver)),
+        );
+        expect(await erc20_18.balanceOf(await acc3.getAddress())).to.eq(
+          BigNumber.from(acc3Balance).add(BigNumber.from(feesToAffiliate)),
+        );
       });
 
       it('Should take full offer (erc20 => erc1155) (affiliate program)', async () => {
-        const { dotc, dotcManager, assetHelper, erc20_18, erc1155, acc1, acc2, acc3, deployer } =
-          await loadFixture(fixture);
+        const { dotc, dotcManager, assetHelper, erc20_18, erc1155, acc1, acc2, acc3, deployer } = await loadFixture(
+          fixture,
+        );
 
         const amountIn = 43;
 
@@ -2281,10 +2487,13 @@ describe('OpenDotcV2', () => {
           offer: Offer,
         };
 
-        const [fees, feesToFeeReceiver, feesToAffiliate] = await assetHelper.getFees(DepositAssetERC20.amount, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
+        const [fees, feesToFeeReceiver, feesToAffiliate] = await assetHelper.getFees(
+          DepositAssetERC20.amount,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
 
-        const outAmount =
-          BigNumber.from(DepositAssetERC20.amount).sub(BigNumber.from(fees));
+        const outAmount = BigNumber.from(DepositAssetERC20.amount).sub(BigNumber.from(fees));
 
         const deployerBalance = await erc20_18.balanceOf(await deployer.getAddress());
         const acc3Balance = await erc20_18.balanceOf(await acc3.getAddress());
@@ -2295,12 +2504,18 @@ describe('OpenDotcV2', () => {
 
         expect(await erc20_18.balanceOf(await acc2.getAddress())).to.eq(outAmount);
 
-        expect(await erc20_18.balanceOf(await deployer.getAddress())).to.eq(BigNumber.from(deployerBalance).add(BigNumber.from(feesToFeeReceiver)));
-        expect(await erc20_18.balanceOf(await acc3.getAddress())).to.eq(BigNumber.from(acc3Balance).add(BigNumber.from(feesToAffiliate)));
+        expect(await erc20_18.balanceOf(await deployer.getAddress())).to.eq(
+          BigNumber.from(deployerBalance).add(BigNumber.from(feesToFeeReceiver)),
+        );
+        expect(await erc20_18.balanceOf(await acc3.getAddress())).to.eq(
+          BigNumber.from(acc3Balance).add(BigNumber.from(feesToAffiliate)),
+        );
       });
 
       it('Should take full offer (erc1155 => erc20)', async () => {
-        const { dotc, escrow, dotcManager, assetHelper, erc20_18, erc1155, acc1, acc2, deployer } = await loadFixture(fixture);
+        const { dotc, escrow, dotcManager, assetHelper, erc20_18, erc1155, acc1, acc2, deployer } = await loadFixture(
+          fixture,
+        );
 
         const offerId = 0;
 
@@ -2351,7 +2566,11 @@ describe('OpenDotcV2', () => {
 
         await dotcManager.changeFees(addressZero, 0, 0);
 
-        const [fees, ,] = await assetHelper.getFees(DepositAssetERC20.amount, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
+        const [fees, ,] = await assetHelper.getFees(
+          DepositAssetERC20.amount,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
 
         const deployerBalance_2 = await erc20_18.balanceOf(await deployer.getAddress());
 
@@ -2361,7 +2580,14 @@ describe('OpenDotcV2', () => {
 
         await expect(take_offer)
           .to.emit(dotc, 'TakenOffer')
-          .withArgs(offerId, await acc1.getAddress(), AwaitingOffer.offerFillType, WithdrawalAssetERC1155.amount, DepositAssetERC20.amount, addressZero);
+          .withArgs(
+            offerId,
+            await acc1.getAddress(),
+            AwaitingOffer.offerFillType,
+            WithdrawalAssetERC1155.amount,
+            DepositAssetERC20.amount,
+            addressZero,
+          );
         await expect(take_offer)
           .to.emit(escrow, 'OfferWithdrawn')
           .withArgs(offerId, await acc1.getAddress(), WithdrawalAssetERC1155.amount);
@@ -2371,8 +2597,12 @@ describe('OpenDotcV2', () => {
           WithdrawalAssetERC1155.amount,
         );
 
-        expect(await erc20_18.balanceOf(await acc2.getAddress())).to.eq(BigNumber.from(DepositAssetERC20.amount).sub(BigNumber.from(fees)));
-        expect(await erc20_18.balanceOf(await deployer.getAddress())).to.eq(BigNumber.from(deployerBalance_2).add(BigNumber.from(fees)));
+        expect(await erc20_18.balanceOf(await acc2.getAddress())).to.eq(
+          BigNumber.from(DepositAssetERC20.amount).sub(BigNumber.from(fees)),
+        );
+        expect(await erc20_18.balanceOf(await deployer.getAddress())).to.eq(
+          BigNumber.from(deployerBalance_2).add(BigNumber.from(fees)),
+        );
 
         expect((await dotc.allOffers(0)).withdrawalAsset.amount).to.eq(0);
         expect((await dotc.allOffers(0)).offerFillType).to.eq(AwaitingOffer.offerFillType);
@@ -2381,17 +2611,26 @@ describe('OpenDotcV2', () => {
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(0);
 
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferFullyWithdrawn,
+        );
       });
 
       it('Should take full offer (erc721 => erc721)', async () => {
         const { dotc, escrow, erc721, acc1, acc2, deployer } = await loadFixture(fixture);
 
-
         const offerId = 0;
 
-        await erc721['safeTransferFrom(address,address,uint256)'](await deployer.getAddress(), await acc1.getAddress(), 2);
-        await erc721['safeTransferFrom(address,address,uint256)'](await deployer.getAddress(), await acc2.getAddress(), 4);
+        await erc721['safeTransferFrom(address,address,uint256)'](
+          await deployer.getAddress(),
+          await acc1.getAddress(),
+          2,
+        );
+        await erc721['safeTransferFrom(address,address,uint256)'](
+          await deployer.getAddress(),
+          await acc2.getAddress(),
+          4,
+        );
 
         await erc721.connect(acc1).setApprovalForAll(dotc.address, true);
         await erc721.connect(acc2).setApprovalForAll(dotc.address, true);
@@ -2437,8 +2676,17 @@ describe('OpenDotcV2', () => {
 
         await expect(take_offer)
           .to.emit(dotc, 'TakenOffer')
-          .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.offerFillType, AwaitingOffer.depositAsset.amount, 1, addressZero);
-        await expect(take_offer).to.emit(escrow, 'OfferWithdrawn').withArgs(offerId, await acc2.getAddress(), 1);
+          .withArgs(
+            offerId,
+            await acc2.getAddress(),
+            AwaitingOffer.offerFillType,
+            AwaitingOffer.depositAsset.amount,
+            1,
+            addressZero,
+          );
+        await expect(take_offer)
+          .to.emit(escrow, 'OfferWithdrawn')
+          .withArgs(offerId, await acc2.getAddress(), 1);
 
         expect(await erc721.balanceOf(escrow.address)).to.eq(0);
         expect(await erc721.ownerOf(DepositAssetERC721.tokenId)).to.eq(await acc2.getAddress());
@@ -2451,7 +2699,9 @@ describe('OpenDotcV2', () => {
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(0);
 
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferFullyWithdrawn,
+        );
       });
 
       it('Should take full offer (erc1155 => erc1155)', async () => {
@@ -2506,7 +2756,14 @@ describe('OpenDotcV2', () => {
 
         await expect(take_offer)
           .to.emit(dotc, 'TakenOffer')
-          .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.offerFillType, AwaitingOffer.depositAsset.amount, AwaitingOffer.withdrawalAsset.amount, addressZero);
+          .withArgs(
+            offerId,
+            await acc2.getAddress(),
+            AwaitingOffer.offerFillType,
+            AwaitingOffer.depositAsset.amount,
+            AwaitingOffer.withdrawalAsset.amount,
+            addressZero,
+          );
         await expect(take_offer)
           .to.emit(escrow, 'OfferWithdrawn')
           .withArgs(offerId, await acc2.getAddress(), DepositAssetERC1155.amount);
@@ -2515,7 +2772,9 @@ describe('OpenDotcV2', () => {
         expect(await erc1155.balanceOf(await acc1.getAddress(), WithdrawalAssetERC1155.tokenId)).to.eq(
           WithdrawalAssetERC1155.amount,
         );
-        expect(await erc1155.balanceOf(await acc2.getAddress(), DepositAssetERC1155.tokenId)).to.eq(DepositAssetERC1155.amount);
+        expect(await erc1155.balanceOf(await acc2.getAddress(), DepositAssetERC1155.tokenId)).to.eq(
+          DepositAssetERC1155.amount,
+        );
 
         expect((await dotc.allOffers(0)).withdrawalAsset.amount).to.eq(0);
         expect((await dotc.allOffers(0)).offerFillType).to.eq(AwaitingOffer.offerFillType);
@@ -2524,15 +2783,27 @@ describe('OpenDotcV2', () => {
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(0);
 
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferFullyWithdrawn,
+        );
       });
     });
 
     describe('Dynamic AssetPrice', () => {
-      it('Should take full dynamic price offer (offerMinimumPrice) (erc20 => erc20)', async () => {
-        const { dotc, escrow, assetHelper, dotcManager, priceFeed_6, priceFeed_18, erc20_18, erc20_6, deployer, acc1, acc2 } = await loadFixture(
-          fixture,
-        );
+      it.only('Should take full dynamic price offer (offerMinimumPrice) (erc20 => erc20)', async () => {
+        const {
+          dotc,
+          escrow,
+          assetHelper,
+          dotcManager,
+          priceFeed_6,
+          priceFeed_18,
+          erc20_18,
+          erc20_6,
+          deployer,
+          acc1,
+          acc2,
+        } = await loadFixture(fixture);
 
         const offerId = 0;
 
@@ -2546,26 +2817,26 @@ describe('OpenDotcV2', () => {
         await erc20_6.connect(acc2).approve(dotc.address, amountOut.mul(2));
 
         const depositAssetPrice = await priceFeed_18.latestAnswer();
-        const [, withdrawalAssetPrice,] = await priceFeed_6.latestRoundData();
+        const [, withdrawalAssetPrice] = await priceFeed_6.latestRoundData();
 
         const OfferPrice: OfferPriceStruct = {
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           percentage: 100,
-          percentageType: PercentageType.Plus
-        }
+          percentageType: PercentageType.Plus,
+        };
 
         const PriceDeposit: AssetPriceStruct = {
           priceFeedAddress: priceFeed_18.address,
           offerMaximumPrice: 0,
           offerMinimumPrice: depositAssetPrice,
-        }
+        };
 
         const PriceWithdrawal: AssetPriceStruct = {
           priceFeedAddress: priceFeed_6.address,
           offerMaximumPrice: 0,
           offerMinimumPrice: withdrawalAssetPrice,
-        }
+        };
 
         const DepositAssetERC20: AssetStruct = {
           assetType: AssetType.ERC20,
@@ -2602,30 +2873,61 @@ describe('OpenDotcV2', () => {
           offer: Offer,
         };
 
-        await dotc
-          .connect(acc1)
-          .makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
+        await dotc.connect(acc1).makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
 
         const standardizedDepositPrice = standardizeNumber(depositAssetPrice, priceFeed_decimals);
         const standardizedWithdrawalPrice = standardizeNumber(withdrawalAssetPrice, priceFeed_decimals);
-        let depositToWithdrawalRate = standardizedDepositPrice.mul(BigNumber.from(10).pow(decimals_6)).div(standardizedWithdrawalPrice);
+        let depositToWithdrawalRate = standardizedDepositPrice
+          .mul(BigNumber.from(10).pow(decimals_6))
+          .div(standardizedWithdrawalPrice);
         depositToWithdrawalRate = getRateWithPercentage(depositToWithdrawalRate, Offer.offerPrice);
 
-        const withdrawalAmount = depositToWithdrawalRate.mul(DepositAssetERC20.amount).div(BigNumber.from(10).pow(decimals_18));
+        const withdrawalAmount = depositToWithdrawalRate
+          .mul(DepositAssetERC20.amount)
+          .div(BigNumber.from(10).pow(decimals_18));
 
         const depositAmount = withdrawalAmount.mul(BigNumber.from(10).pow(decimals_18)).div(depositToWithdrawalRate);
 
-        const [fees, ,] = await assetHelper.getFees(withdrawalAmount, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
+        const [fees, ,] = await assetHelper.getFees(
+          withdrawalAmount,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
 
         const deployerBalance_before = await erc20_6.balanceOf(await deployer.getAddress());
 
-        await expect(dotc.connect(acc2).takeOfferDynamic(offerId, withdrawalAmount, depositToWithdrawalRate.sub(1), addressZero)).to.be.revertedWithCustomError(dotc, 'DepositToWithdrawalRateOverflow');
+        await expect(
+          dotc.connect(acc2).takeOfferDynamic(offerId, withdrawalAmount, depositToWithdrawalRate.sub(1), addressZero),
+        ).to.be.revertedWithCustomError(dotc, 'DepositToWithdrawalRateOverflow');
+        await expect(
+          dotc
+            .connect(acc2)
+            .takeOfferDynamic(offerId, withdrawalAmount.sub(1), depositToWithdrawalRate.add(50000000), addressZero),
+        )
+          .to.be.revertedWithCustomError(dotc, 'BlockOfferShouldBePaidFully')
+          .withArgs(withdrawalAmount.sub(1));
+        await expect(dotc.connect(acc2).takeOfferFixed(offerId, withdrawalAmount, addressZero))
+          .to.be.revertedWithCustomError(dotc, 'IncorrectOfferPricingType')
+          .withArgs(Offer.offerPrice.offerPricingType);
 
-        const take_offer = await dotc.connect(acc2).takeOfferDynamic(offerId, withdrawalAmount, depositToWithdrawalRate.add(50000000), addressZero);
+        const [rate, price] = await dotc.getRateAndPrice(offerId);
+        console.log('rate', rate);
+        console.log('price', price);
+
+        const take_offer = await dotc
+          .connect(acc2)
+          .takeOfferDynamic(offerId, withdrawalAmount, depositToWithdrawalRate.add(50000000), addressZero);
 
         await expect(take_offer)
           .to.emit(dotc, 'TakenOffer')
-          .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.offerFillType, depositAmount, withdrawalAmount, addressZero);
+          .withArgs(
+            offerId,
+            await acc2.getAddress(),
+            AwaitingOffer.offerFillType,
+            depositAmount,
+            withdrawalAmount,
+            addressZero,
+          );
         await expect(take_offer)
           .to.emit(escrow, 'OfferWithdrawn')
           .withArgs(offerId, await acc2.getAddress(), depositAmount);
@@ -2633,20 +2935,34 @@ describe('OpenDotcV2', () => {
         expect(await erc20_18.balanceOf(escrow.address)).to.eq(0);
         expect(await erc20_18.balanceOf(await acc2.getAddress())).to.eq(depositAmount);
         expect(await erc20_6.balanceOf(await acc1.getAddress())).to.eq(withdrawalAmount.sub(fees));
-        expect(await erc20_6.balanceOf(await deployer.getAddress())).to.eq(BigNumber.from(deployerBalance_before).add(fees));
+        expect(await erc20_6.balanceOf(await deployer.getAddress())).to.eq(
+          BigNumber.from(deployerBalance_before).add(fees),
+        );
 
         expect((await dotc.allOffers(0)).withdrawalAsset.amount).to.eq(0);
         expect((await dotc.allOffers(0)).depositAsset.amount).to.eq(0);
         expect((await dotc.allOffers(0)).offerFillType).to.eq(AwaitingOffer.offerFillType);
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(0);
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferFullyWithdrawn,
+        );
       });
 
       it('Should take partial dynamic price offer fully (offerMinimumPrice) (erc20 => erc20)', async () => {
-        const { dotc, escrow, assetHelper, dotcManager, priceFeed_6, priceFeed_18, erc20_18, erc20_6, deployer, acc1, acc2 } = await loadFixture(
-          fixture,
-        );
+        const {
+          dotc,
+          escrow,
+          assetHelper,
+          dotcManager,
+          priceFeed_6,
+          priceFeed_18,
+          erc20_18,
+          erc20_6,
+          deployer,
+          acc1,
+          acc2,
+        } = await loadFixture(fixture);
 
         const offerId = 0;
 
@@ -2660,26 +2976,26 @@ describe('OpenDotcV2', () => {
         await erc20_6.connect(acc2).approve(dotc.address, amountOut.mul(2));
 
         const depositAssetPrice = await priceFeed_18.latestAnswer();
-        const [, withdrawalAssetPrice,] = await priceFeed_6.latestRoundData();
+        const [, withdrawalAssetPrice] = await priceFeed_6.latestRoundData();
 
         const OfferPrice: OfferPriceStruct = {
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           percentage: 100,
-          percentageType: PercentageType.Plus
-        }
+          percentageType: PercentageType.Plus,
+        };
 
         const PriceDeposit: AssetPriceStruct = {
           priceFeedAddress: priceFeed_18.address,
           offerMaximumPrice: 0,
           offerMinimumPrice: depositAssetPrice,
-        }
+        };
 
         const PriceWithdrawal: AssetPriceStruct = {
           priceFeedAddress: priceFeed_6.address,
           offerMaximumPrice: 0,
           offerMinimumPrice: withdrawalAssetPrice,
-        }
+        };
 
         const DepositAssetERC20: AssetStruct = {
           assetType: AssetType.ERC20,
@@ -2716,18 +3032,24 @@ describe('OpenDotcV2', () => {
           offer: Offer,
         };
 
-        await dotc
-          .connect(acc1)
-          .makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
+        await dotc.connect(acc1).makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
 
         const standardizedDepositPrice = standardizeNumber(depositAssetPrice, priceFeed_decimals);
         const standardizedWithdrawalPrice = standardizeNumber(withdrawalAssetPrice, priceFeed_decimals);
-        let depositToWithdrawalRate = standardizedDepositPrice.mul(BigNumber.from(10).pow(decimals_6)).div(standardizedWithdrawalPrice);
+        let depositToWithdrawalRate = standardizedDepositPrice
+          .mul(BigNumber.from(10).pow(decimals_6))
+          .div(standardizedWithdrawalPrice);
         depositToWithdrawalRate = getRateWithPercentage(depositToWithdrawalRate, Offer.offerPrice);
 
-        const withdrawalAmount = depositToWithdrawalRate.mul(DepositAssetERC20.amount).div(BigNumber.from(10).pow(decimals_18));
+        const withdrawalAmount = depositToWithdrawalRate
+          .mul(DepositAssetERC20.amount)
+          .div(BigNumber.from(10).pow(decimals_18));
 
-        const [fees, ,] = await assetHelper.getFees(withdrawalAmount, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
+        const [fees, ,] = await assetHelper.getFees(
+          withdrawalAmount,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
 
         const deployerBalance_before = await erc20_6.balanceOf(await deployer.getAddress());
 
@@ -2735,7 +3057,14 @@ describe('OpenDotcV2', () => {
 
         await expect(take_offer)
           .to.emit(dotc, 'TakenOffer')
-          .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.offerFillType, DepositAssetERC20.amount, withdrawalAmount, addressZero);
+          .withArgs(
+            offerId,
+            await acc2.getAddress(),
+            AwaitingOffer.offerFillType,
+            DepositAssetERC20.amount,
+            withdrawalAmount,
+            addressZero,
+          );
         await expect(take_offer)
           .to.emit(escrow, 'OfferWithdrawn')
           .withArgs(offerId, await acc2.getAddress(), DepositAssetERC20.amount);
@@ -2743,20 +3072,34 @@ describe('OpenDotcV2', () => {
         expect(await erc20_18.balanceOf(escrow.address)).to.eq(0);
         expect(await erc20_18.balanceOf(await acc2.getAddress())).to.eq(DepositAssetERC20.amount);
         expect(await erc20_6.balanceOf(await acc1.getAddress())).to.eq(withdrawalAmount.sub(fees));
-        expect(await erc20_6.balanceOf(await deployer.getAddress())).to.eq(BigNumber.from(deployerBalance_before).add(fees));
+        expect(await erc20_6.balanceOf(await deployer.getAddress())).to.eq(
+          BigNumber.from(deployerBalance_before).add(fees),
+        );
 
         expect((await dotc.allOffers(0)).withdrawalAsset.amount).to.eq(0);
         expect((await dotc.allOffers(0)).depositAsset.amount).to.eq(0);
         expect((await dotc.allOffers(0)).offerFillType).to.eq(AwaitingOffer.offerFillType);
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(0);
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferFullyWithdrawn,
+        );
       });
 
       it('Should take partial dynamic price offer partially (offerMinimumPrice) (erc20 => erc20)', async () => {
-        const { dotc, escrow, assetHelper, dotcManager, priceFeed_6, priceFeed_18, erc20_18, erc20_6, deployer, acc1, acc2 } = await loadFixture(
-          fixture,
-        );
+        const {
+          dotc,
+          escrow,
+          assetHelper,
+          dotcManager,
+          priceFeed_6,
+          priceFeed_18,
+          erc20_18,
+          erc20_6,
+          deployer,
+          acc1,
+          acc2,
+        } = await loadFixture(fixture);
 
         const offerId = 0;
 
@@ -2770,26 +3113,26 @@ describe('OpenDotcV2', () => {
         await erc20_6.connect(acc2).approve(dotc.address, amountOut.mul(2));
 
         const depositAssetPrice = await priceFeed_18.latestAnswer();
-        const [, withdrawalAssetPrice,] = await priceFeed_6.latestRoundData();
+        const [, withdrawalAssetPrice] = await priceFeed_6.latestRoundData();
 
         const OfferPrice: OfferPriceStruct = {
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           percentage: 100,
-          percentageType: PercentageType.Plus
-        }
+          percentageType: PercentageType.Plus,
+        };
 
         const PriceDeposit: AssetPriceStruct = {
           priceFeedAddress: priceFeed_18.address,
           offerMaximumPrice: 0,
           offerMinimumPrice: depositAssetPrice,
-        }
+        };
 
         const PriceWithdrawal: AssetPriceStruct = {
           priceFeedAddress: priceFeed_6.address,
           offerMaximumPrice: 0,
           offerMinimumPrice: withdrawalAssetPrice,
-        }
+        };
 
         const DepositAssetERC20: AssetStruct = {
           assetType: AssetType.ERC20,
@@ -2826,22 +3169,31 @@ describe('OpenDotcV2', () => {
           offer: Offer,
         };
 
-        await dotc
-          .connect(acc1)
-          .makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
+        await dotc.connect(acc1).makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
 
         const standardizedDepositPrice = standardizeNumber(depositAssetPrice, priceFeed_decimals);
         const standardizedWithdrawalPrice = standardizeNumber(withdrawalAssetPrice, priceFeed_decimals);
-        let depositToWithdrawalRate = standardizedDepositPrice.mul(BigNumber.from(10).pow(decimals_6)).div(standardizedWithdrawalPrice);
+        let depositToWithdrawalRate = standardizedDepositPrice
+          .mul(BigNumber.from(10).pow(decimals_6))
+          .div(standardizedWithdrawalPrice);
         depositToWithdrawalRate = getRateWithPercentage(depositToWithdrawalRate, Offer.offerPrice);
 
-        const withdrawalAmount = depositToWithdrawalRate.mul(DepositAssetERC20.amount).div(BigNumber.from(10).pow(decimals_18));
+        const withdrawalAmount = depositToWithdrawalRate
+          .mul(DepositAssetERC20.amount)
+          .div(BigNumber.from(10).pow(decimals_18));
 
         const withdrawalAmountPaid = withdrawalAmount.div(3);
 
-        const depositAmount = calculatePercentage(BigNumber.from(DepositAssetERC20.amount), getPartPercentage(withdrawalAmountPaid, withdrawalAmount));
+        const depositAmount = calculatePercentage(
+          BigNumber.from(DepositAssetERC20.amount),
+          getPartPercentage(withdrawalAmountPaid, withdrawalAmount),
+        );
 
-        const [fees, ,] = await assetHelper.getFees(withdrawalAmountPaid, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
+        const [fees, ,] = await assetHelper.getFees(
+          withdrawalAmountPaid,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
 
         const deployerBalance_before = await erc20_6.balanceOf(await deployer.getAddress());
         const escrow_balance = await erc20_18.balanceOf(escrow.address);
@@ -2850,7 +3202,14 @@ describe('OpenDotcV2', () => {
 
         await expect(take_offer)
           .to.emit(dotc, 'TakenOffer')
-          .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.offerFillType, depositAmount, withdrawalAmountPaid, addressZero);
+          .withArgs(
+            offerId,
+            await acc2.getAddress(),
+            AwaitingOffer.offerFillType,
+            depositAmount,
+            withdrawalAmountPaid,
+            addressZero,
+          );
         await expect(take_offer)
           .to.emit(escrow, 'OfferWithdrawn')
           .withArgs(offerId, await acc2.getAddress(), depositAmount);
@@ -2858,20 +3217,34 @@ describe('OpenDotcV2', () => {
         expect(await erc20_18.balanceOf(escrow.address)).to.eq(escrow_balance.sub(depositAmount));
         expect(await erc20_18.balanceOf(await acc2.getAddress())).to.eq(depositAmount);
         expect(await erc20_6.balanceOf(await acc1.getAddress())).to.eq(withdrawalAmountPaid.sub(fees));
-        expect(await erc20_6.balanceOf(await deployer.getAddress())).to.eq(BigNumber.from(deployerBalance_before).add(fees));
+        expect(await erc20_6.balanceOf(await deployer.getAddress())).to.eq(
+          BigNumber.from(deployerBalance_before).add(fees),
+        );
 
         expect((await dotc.allOffers(0)).withdrawalAsset.amount).to.eq(withdrawalAmount.sub(withdrawalAmountPaid));
         expect((await dotc.allOffers(0)).depositAsset.amount).to.eq(escrow_balance.sub(depositAmount));
         expect((await dotc.allOffers(0)).offerFillType).to.eq(AwaitingOffer.offerFillType);
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(escrow_balance.sub(depositAmount));
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferPartiallyWithdrawn);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferPartiallyWithdrawn,
+        );
       });
 
       it('Should take full dynamic price offer (offerMaximumPrice) (erc20 => erc20)', async () => {
-        const { dotc, escrow, assetHelper, dotcManager, priceFeed_6, priceFeed_18, erc20_18, erc20_6, deployer, acc1, acc2 } = await loadFixture(
-          fixture,
-        );
+        const {
+          dotc,
+          escrow,
+          assetHelper,
+          dotcManager,
+          priceFeed_6,
+          priceFeed_18,
+          erc20_18,
+          erc20_6,
+          deployer,
+          acc1,
+          acc2,
+        } = await loadFixture(fixture);
 
         const offerId = 0;
 
@@ -2885,26 +3258,26 @@ describe('OpenDotcV2', () => {
         await erc20_18.connect(acc2).approve(dotc.address, amountOut.mul(2));
 
         const withdrawalAssetPrice = await priceFeed_18.latestAnswer();
-        const [, depositAssetPrice,] = await priceFeed_6.latestRoundData();
+        const [, depositAssetPrice] = await priceFeed_6.latestRoundData();
 
         const OfferPrice: OfferPriceStruct = {
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           percentage: 100,
-          percentageType: PercentageType.Minus
-        }
+          percentageType: PercentageType.Minus,
+        };
 
         const PriceDeposit: AssetPriceStruct = {
           priceFeedAddress: priceFeed_6.address,
           offerMaximumPrice: depositAssetPrice.add(1),
           offerMinimumPrice: 0,
-        }
+        };
 
         const PriceWithdrawal: AssetPriceStruct = {
           priceFeedAddress: priceFeed_18.address,
           offerMaximumPrice: withdrawalAssetPrice.add(1),
           offerMinimumPrice: 0,
-        }
+        };
 
         const DepositAssetERC20: AssetStruct = {
           assetType: AssetType.ERC20,
@@ -2941,20 +3314,29 @@ describe('OpenDotcV2', () => {
           offer: Offer,
         };
 
-        await dotc
-          .connect(acc1)
-          .makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
+        await dotc.connect(acc1).makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
 
         const standardizedDepositPrice = standardizeNumber(depositAssetPrice, priceFeed_decimals);
         const standardizedWithdrawalPrice = standardizeNumber(withdrawalAssetPrice, priceFeed_decimals);
-        let depositToWithdrawalRate = standardizedDepositPrice.mul(BigNumber.from(10).pow(decimals_18)).div(standardizedWithdrawalPrice);
+        let depositToWithdrawalRate = standardizedDepositPrice
+          .mul(BigNumber.from(10).pow(decimals_18))
+          .div(standardizedWithdrawalPrice);
         depositToWithdrawalRate = getRateWithPercentage(depositToWithdrawalRate, Offer.offerPrice);
 
-        const withdrawalAmount = depositToWithdrawalRate.mul(DepositAssetERC20.amount).div(BigNumber.from(10).pow(decimals_6));
+        const withdrawalAmount = depositToWithdrawalRate
+          .mul(DepositAssetERC20.amount)
+          .div(BigNumber.from(10).pow(decimals_6));
 
-        const depositAmount = calculatePercentage(BigNumber.from(DepositAssetERC20.amount), getPartPercentage(withdrawalAmount, withdrawalAmount));
+        const depositAmount = calculatePercentage(
+          BigNumber.from(DepositAssetERC20.amount),
+          getPartPercentage(withdrawalAmount, withdrawalAmount),
+        );
 
-        const [fees, ,] = await assetHelper.getFees(withdrawalAmount, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
+        const [fees, ,] = await assetHelper.getFees(
+          withdrawalAmount,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
 
         const deployerBalance_before = await erc20_18.balanceOf(await deployer.getAddress());
 
@@ -2963,7 +3345,14 @@ describe('OpenDotcV2', () => {
         expect(depositAmount).to.eq(DepositAssetERC20.amount);
         await expect(take_offer)
           .to.emit(dotc, 'TakenOffer')
-          .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.offerFillType, depositAmount, withdrawalAmount, addressZero);
+          .withArgs(
+            offerId,
+            await acc2.getAddress(),
+            AwaitingOffer.offerFillType,
+            depositAmount,
+            withdrawalAmount,
+            addressZero,
+          );
         await expect(take_offer)
           .to.emit(escrow, 'OfferWithdrawn')
           .withArgs(offerId, await acc2.getAddress(), DepositAssetERC20.amount);
@@ -2971,20 +3360,34 @@ describe('OpenDotcV2', () => {
         expect(await erc20_6.balanceOf(escrow.address)).to.eq(0);
         expect(await erc20_6.balanceOf(await acc2.getAddress())).to.eq(DepositAssetERC20.amount);
         expect(await erc20_18.balanceOf(await acc1.getAddress())).to.eq(withdrawalAmount.sub(fees));
-        expect(await erc20_18.balanceOf(await deployer.getAddress())).to.eq(BigNumber.from(deployerBalance_before).add(fees));
+        expect(await erc20_18.balanceOf(await deployer.getAddress())).to.eq(
+          BigNumber.from(deployerBalance_before).add(fees),
+        );
 
         expect((await dotc.allOffers(0)).withdrawalAsset.amount).to.eq(0);
         expect((await dotc.allOffers(0)).depositAsset.amount).to.eq(0);
         expect((await dotc.allOffers(0)).offerFillType).to.eq(AwaitingOffer.offerFillType);
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(0);
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferFullyWithdrawn,
+        );
       });
 
       it('Should take partial dynamic price offer fully (offerMaximumPrice) (erc20 => erc20)', async () => {
-        const { dotc, escrow, assetHelper, dotcManager, priceFeed_6, priceFeed_18, erc20_18, erc20_6, deployer, acc1, acc2 } = await loadFixture(
-          fixture,
-        );
+        const {
+          dotc,
+          escrow,
+          assetHelper,
+          dotcManager,
+          priceFeed_6,
+          priceFeed_18,
+          erc20_18,
+          erc20_6,
+          deployer,
+          acc1,
+          acc2,
+        } = await loadFixture(fixture);
 
         const offerId = 0;
 
@@ -2998,26 +3401,26 @@ describe('OpenDotcV2', () => {
         await erc20_18.connect(acc2).approve(dotc.address, amountOut.mul(2));
 
         const withdrawalAssetPrice = await priceFeed_18.latestAnswer();
-        const [, depositAssetPrice,] = await priceFeed_6.latestRoundData();
+        const [, depositAssetPrice] = await priceFeed_6.latestRoundData();
 
         const OfferPrice: OfferPriceStruct = {
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           percentage: 100,
-          percentageType: PercentageType.Minus
-        }
+          percentageType: PercentageType.Minus,
+        };
 
         const PriceDeposit: AssetPriceStruct = {
           priceFeedAddress: priceFeed_6.address,
           offerMaximumPrice: depositAssetPrice,
           offerMinimumPrice: 0,
-        }
+        };
 
         const PriceWithdrawal: AssetPriceStruct = {
           priceFeedAddress: priceFeed_18.address,
           offerMaximumPrice: withdrawalAssetPrice,
           offerMinimumPrice: 0,
-        }
+        };
 
         const DepositAssetERC20: AssetStruct = {
           assetType: AssetType.ERC20,
@@ -3054,20 +3457,29 @@ describe('OpenDotcV2', () => {
           offer: Offer,
         };
 
-        await dotc
-          .connect(acc1)
-          .makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
+        await dotc.connect(acc1).makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
 
         const standardizedDepositPrice = standardizeNumber(depositAssetPrice, priceFeed_decimals);
         const standardizedWithdrawalPrice = standardizeNumber(withdrawalAssetPrice, priceFeed_decimals);
-        let depositToWithdrawalRate = standardizedDepositPrice.mul(BigNumber.from(10).pow(decimals_18)).div(standardizedWithdrawalPrice);
+        let depositToWithdrawalRate = standardizedDepositPrice
+          .mul(BigNumber.from(10).pow(decimals_18))
+          .div(standardizedWithdrawalPrice);
         depositToWithdrawalRate = getRateWithPercentage(depositToWithdrawalRate, Offer.offerPrice);
 
-        const withdrawalAmount = depositToWithdrawalRate.mul(DepositAssetERC20.amount).div(BigNumber.from(10).pow(decimals_6));
+        const withdrawalAmount = depositToWithdrawalRate
+          .mul(DepositAssetERC20.amount)
+          .div(BigNumber.from(10).pow(decimals_6));
 
-        const depositAmount = calculatePercentage(BigNumber.from(DepositAssetERC20.amount), getPartPercentage(withdrawalAmount, withdrawalAmount));
+        const depositAmount = calculatePercentage(
+          BigNumber.from(DepositAssetERC20.amount),
+          getPartPercentage(withdrawalAmount, withdrawalAmount),
+        );
 
-        const [fees, ,] = await assetHelper.getFees(withdrawalAmount, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
+        const [fees, ,] = await assetHelper.getFees(
+          withdrawalAmount,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
 
         const deployerBalance_before = await erc20_18.balanceOf(await deployer.getAddress());
 
@@ -3076,7 +3488,14 @@ describe('OpenDotcV2', () => {
         expect(depositAmount).to.eq(DepositAssetERC20.amount);
         await expect(take_offer)
           .to.emit(dotc, 'TakenOffer')
-          .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.offerFillType, depositAmount, withdrawalAmount, addressZero);
+          .withArgs(
+            offerId,
+            await acc2.getAddress(),
+            AwaitingOffer.offerFillType,
+            depositAmount,
+            withdrawalAmount,
+            addressZero,
+          );
         await expect(take_offer)
           .to.emit(escrow, 'OfferWithdrawn')
           .withArgs(offerId, await acc2.getAddress(), depositAmount);
@@ -3084,20 +3503,34 @@ describe('OpenDotcV2', () => {
         expect(await erc20_6.balanceOf(escrow.address)).to.eq(0);
         expect(await erc20_6.balanceOf(await acc2.getAddress())).to.eq(depositAmount);
         expect(await erc20_18.balanceOf(await acc1.getAddress())).to.eq(withdrawalAmount.sub(fees));
-        expect(await erc20_18.balanceOf(await deployer.getAddress())).to.eq(BigNumber.from(deployerBalance_before).add(fees));
+        expect(await erc20_18.balanceOf(await deployer.getAddress())).to.eq(
+          BigNumber.from(deployerBalance_before).add(fees),
+        );
 
         expect((await dotc.allOffers(0)).withdrawalAsset.amount).to.eq(0);
         expect((await dotc.allOffers(0)).depositAsset.amount).to.eq(0);
         expect((await dotc.allOffers(0)).offerFillType).to.eq(AwaitingOffer.offerFillType);
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(0);
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferFullyWithdrawn,
+        );
       });
 
       it('Should take partial dynamic price offer partially (offerMaximumPrice) (erc20 => erc20)', async () => {
-        const { dotc, escrow, assetHelper, dotcManager, priceFeed_6, priceFeed_18, erc20_18, erc20_6, deployer, acc1, acc2 } = await loadFixture(
-          fixture,
-        );
+        const {
+          dotc,
+          escrow,
+          assetHelper,
+          dotcManager,
+          priceFeed_6,
+          priceFeed_18,
+          erc20_18,
+          erc20_6,
+          deployer,
+          acc1,
+          acc2,
+        } = await loadFixture(fixture);
 
         const offerId = 0;
 
@@ -3111,26 +3544,26 @@ describe('OpenDotcV2', () => {
         await erc20_18.connect(acc2).approve(dotc.address, amountOut.mul(2));
 
         const withdrawalAssetPrice = await priceFeed_18.latestAnswer();
-        const [, depositAssetPrice,] = await priceFeed_6.latestRoundData();
+        const [, depositAssetPrice] = await priceFeed_6.latestRoundData();
 
         const OfferPrice: OfferPriceStruct = {
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           percentage: 100,
-          percentageType: PercentageType.Minus
-        }
+          percentageType: PercentageType.Minus,
+        };
 
         const PriceDeposit: AssetPriceStruct = {
           priceFeedAddress: priceFeed_6.address,
           offerMaximumPrice: depositAssetPrice,
           offerMinimumPrice: 0,
-        }
+        };
 
         const PriceWithdrawal: AssetPriceStruct = {
           priceFeedAddress: priceFeed_18.address,
           offerMaximumPrice: withdrawalAssetPrice,
           offerMinimumPrice: 0,
-        }
+        };
 
         const DepositAssetERC20: AssetStruct = {
           assetType: AssetType.ERC20,
@@ -3167,22 +3600,31 @@ describe('OpenDotcV2', () => {
           offer: Offer,
         };
 
-        await dotc
-          .connect(acc1)
-          .makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
+        await dotc.connect(acc1).makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
 
         const standardizedDepositPrice = standardizeNumber(depositAssetPrice, priceFeed_decimals);
         const standardizedWithdrawalPrice = standardizeNumber(withdrawalAssetPrice, priceFeed_decimals);
-        let depositToWithdrawalRate = standardizedDepositPrice.mul(BigNumber.from(10).pow(decimals_18)).div(standardizedWithdrawalPrice);
+        let depositToWithdrawalRate = standardizedDepositPrice
+          .mul(BigNumber.from(10).pow(decimals_18))
+          .div(standardizedWithdrawalPrice);
         depositToWithdrawalRate = getRateWithPercentage(depositToWithdrawalRate, Offer.offerPrice);
 
-        const withdrawalAmount = depositToWithdrawalRate.mul(DepositAssetERC20.amount).div(BigNumber.from(10).pow(decimals_6));
+        const withdrawalAmount = depositToWithdrawalRate
+          .mul(DepositAssetERC20.amount)
+          .div(BigNumber.from(10).pow(decimals_6));
 
         const withdrawalAmountPaid = withdrawalAmount.div(3);
 
-        const depositAmount = calculatePercentage(BigNumber.from(DepositAssetERC20.amount), getPartPercentage(withdrawalAmountPaid, withdrawalAmount));
+        const depositAmount = calculatePercentage(
+          BigNumber.from(DepositAssetERC20.amount),
+          getPartPercentage(withdrawalAmountPaid, withdrawalAmount),
+        );
 
-        const [fees, ,] = await assetHelper.getFees(withdrawalAmountPaid, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
+        const [fees, ,] = await assetHelper.getFees(
+          withdrawalAmountPaid,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
 
         const deployerBalance_before = await erc20_18.balanceOf(await deployer.getAddress());
         const escrow_balance = await erc20_6.balanceOf(escrow.address);
@@ -3191,7 +3633,14 @@ describe('OpenDotcV2', () => {
 
         await expect(take_offer)
           .to.emit(dotc, 'TakenOffer')
-          .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.offerFillType, depositAmount, withdrawalAmountPaid, addressZero);
+          .withArgs(
+            offerId,
+            await acc2.getAddress(),
+            AwaitingOffer.offerFillType,
+            depositAmount,
+            withdrawalAmountPaid,
+            addressZero,
+          );
         await expect(take_offer)
           .to.emit(escrow, 'OfferWithdrawn')
           .withArgs(offerId, await acc2.getAddress(), depositAmount);
@@ -3199,53 +3648,75 @@ describe('OpenDotcV2', () => {
         expect(await erc20_6.balanceOf(escrow.address)).to.eq(escrow_balance.sub(depositAmount));
         expect(await erc20_6.balanceOf(await acc2.getAddress())).to.eq(depositAmount);
         expect(await erc20_18.balanceOf(await acc1.getAddress())).to.eq(withdrawalAmountPaid.sub(fees));
-        expect(await erc20_18.balanceOf(await deployer.getAddress())).to.eq(BigNumber.from(deployerBalance_before).add(fees));
+        expect(await erc20_18.balanceOf(await deployer.getAddress())).to.eq(
+          BigNumber.from(deployerBalance_before).add(fees),
+        );
 
         expect((await dotc.allOffers(0)).withdrawalAsset.amount).to.eq(withdrawalAmount.sub(withdrawalAmountPaid));
         expect((await dotc.allOffers(0)).depositAsset.amount).to.eq(escrow_balance.sub(depositAmount));
         expect((await dotc.allOffers(0)).offerFillType).to.eq(AwaitingOffer.offerFillType);
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(escrow_balance.sub(depositAmount));
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferPartiallyWithdrawn);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferPartiallyWithdrawn,
+        );
       });
 
       it('Should take full dynamic price offer (offerMinimumPrice) (erc20 => erc1155)', async () => {
-        const { dotc, escrow, dotcManager, assetHelper, erc20_18, erc1155, priceFeed_18, priceFeed_1155, acc1, acc2, deployer } = await loadFixture(fixture);
+        const {
+          dotc,
+          escrow,
+          dotcManager,
+          assetHelper,
+          erc20_18,
+          erc1155,
+          priceFeed_18,
+          priceFeed_1155,
+          acc1,
+          acc2,
+          deployer,
+        } = await loadFixture(fixture);
 
         const offerId = 0;
 
         // 1 XAU = 0.769540966211224 ETH
         // ethers.utils.parseUnits("78", 16) == 0.78 ETH
-        const amountIn = ethers.utils.parseUnits("78", 16);
+        const amountIn = ethers.utils.parseUnits('78', 16);
         await erc20_18.transfer(await acc1.getAddress(), amountIn);
         await erc20_18.connect(acc1).approve(dotc.address, amountIn);
 
         const amountOut = 100;
         const tokenOutId = 3;
-        await erc1155.safeTransferFrom(await deployer.getAddress(), await acc2.getAddress(), tokenOutId, amountOut, '0x00');
+        await erc1155.safeTransferFrom(
+          await deployer.getAddress(),
+          await acc2.getAddress(),
+          tokenOutId,
+          amountOut,
+          '0x00',
+        );
         await erc1155.connect(acc2).setApprovalForAll(dotc.address, true);
 
         const depositAssetPrice = await priceFeed_18.latestAnswer();
-        const [, withdrawalAssetPrice,] = await priceFeed_1155.latestRoundData();
+        const [, withdrawalAssetPrice] = await priceFeed_1155.latestRoundData();
 
         const OfferPrice: OfferPriceStruct = {
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           percentage: 100,
-          percentageType: PercentageType.Plus
-        }
+          percentageType: PercentageType.Plus,
+        };
 
         const PriceDeposit: AssetPriceStruct = {
           priceFeedAddress: priceFeed_18.address,
           offerMaximumPrice: 0,
           offerMinimumPrice: depositAssetPrice,
-        }
+        };
 
         const PriceWithdrawal: AssetPriceStruct = {
           priceFeedAddress: priceFeed_1155.address,
           offerMaximumPrice: 0,
           offerMinimumPrice: withdrawalAssetPrice,
-        }
+        };
 
         const DepositAssetERC20: AssetStruct = {
           assetType: AssetType.ERC20,
@@ -3286,27 +3757,48 @@ describe('OpenDotcV2', () => {
 
         const standardizedDepositPrice = standardizeNumber(depositAssetPrice, priceFeed_decimals);
         const standardizedWithdrawalPrice = standardizeNumber(withdrawalAssetPrice, priceFeed_decimals);
-        let depositToWithdrawalRate = standardizedDepositPrice.mul(BigNumber.from(10).pow(27)).div(standardizedWithdrawalPrice);
+        let depositToWithdrawalRate = standardizedDepositPrice
+          .mul(BigNumber.from(10).pow(27))
+          .div(standardizedWithdrawalPrice);
         depositToWithdrawalRate = getRateWithPercentage(depositToWithdrawalRate, Offer.offerPrice);
 
-        let withdrawalAmount = depositToWithdrawalRate.mul(DepositAssetERC20.amount).div(BigNumber.from(10).pow(decimals_18));
+        let withdrawalAmount = depositToWithdrawalRate
+          .mul(DepositAssetERC20.amount)
+          .div(BigNumber.from(10).pow(decimals_18));
         withdrawalAmount = withdrawalAmount.div(BigNumber.from(10).pow(27));
 
-        const depositAmount = calculatePercentage(BigNumber.from(DepositAssetERC20.amount), BigNumber.from(SCALING_FACTOR));
+        const depositAmount = calculatePercentage(
+          BigNumber.from(DepositAssetERC20.amount),
+          BigNumber.from(SCALING_FACTOR),
+        );
 
-        const [fees, ,] = await assetHelper.getFees(DepositAssetERC20.amount, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
-        const outAmount =
-          BigNumber.from(DepositAssetERC20.amount).sub(BigNumber.from(fees));
+        const [fees, ,] = await assetHelper.getFees(
+          DepositAssetERC20.amount,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
+        const outAmount = BigNumber.from(DepositAssetERC20.amount).sub(BigNumber.from(fees));
 
         const deployerBalance_before = await erc20_18.balanceOf(await deployer.getAddress());
 
-        const take_offer = await dotc.connect(acc2).takeOfferDynamic(offerId, 0, depositToWithdrawalRate.mul(2), addressZero);
+        const take_offer = await dotc
+          .connect(acc2)
+          .takeOfferDynamic(offerId, 0, depositToWithdrawalRate.mul(2), addressZero);
 
         expect(depositAmount).to.eq(DepositAssetERC20.amount);
         await expect(take_offer)
           .to.emit(dotc, 'TakenOffer')
-          .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.offerFillType, DepositAssetERC20.amount, withdrawalAmount, addressZero);
-        await expect(take_offer).to.emit(escrow, 'OfferWithdrawn').withArgs(offerId, await acc2.getAddress(), outAmount);
+          .withArgs(
+            offerId,
+            await acc2.getAddress(),
+            AwaitingOffer.offerFillType,
+            DepositAssetERC20.amount,
+            withdrawalAmount,
+            addressZero,
+          );
+        await expect(take_offer)
+          .to.emit(escrow, 'OfferWithdrawn')
+          .withArgs(offerId, await acc2.getAddress(), outAmount);
 
         expect(await erc20_18.balanceOf(escrow.address)).to.eq(0);
         expect(await erc20_18.balanceOf(await acc2.getAddress())).to.eq(outAmount);
@@ -3324,11 +3816,25 @@ describe('OpenDotcV2', () => {
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(0);
 
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferFullyWithdrawn,
+        );
       });
 
       it('Should take full dynamic price offer (offerMaximumPrice) (erc20 => erc1155)', async () => {
-        const { dotc, escrow, dotcManager, assetHelper, erc20_18, erc1155, priceFeed_18, priceFeed_1155, acc1, acc2, deployer } = await loadFixture(fixture);
+        const {
+          dotc,
+          escrow,
+          dotcManager,
+          assetHelper,
+          erc20_18,
+          erc1155,
+          priceFeed_18,
+          priceFeed_1155,
+          acc1,
+          acc2,
+          deployer,
+        } = await loadFixture(fixture);
 
         const offerId = 0;
 
@@ -3341,26 +3847,26 @@ describe('OpenDotcV2', () => {
         await erc1155.connect(acc2).setApprovalForAll(dotc.address, true);
 
         const depositAssetPrice = await priceFeed_18.latestAnswer();
-        const [, withdrawalAssetPrice,] = await priceFeed_1155.latestRoundData();
+        const [, withdrawalAssetPrice] = await priceFeed_1155.latestRoundData();
 
         const OfferPrice: OfferPriceStruct = {
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           percentage: 100,
-          percentageType: PercentageType.Minus
-        }
+          percentageType: PercentageType.Minus,
+        };
 
         const PriceDeposit: AssetPriceStruct = {
           priceFeedAddress: priceFeed_18.address,
           offerMaximumPrice: depositAssetPrice,
           offerMinimumPrice: 0,
-        }
+        };
 
         const PriceWithdrawal: AssetPriceStruct = {
           priceFeedAddress: priceFeed_1155.address,
           offerMaximumPrice: withdrawalAssetPrice,
           offerMinimumPrice: 0,
-        }
+        };
 
         const DepositAssetERC20: AssetStruct = {
           assetType: AssetType.ERC20,
@@ -3401,17 +3907,27 @@ describe('OpenDotcV2', () => {
 
         const standardizedDepositPrice = standardizeNumber(depositAssetPrice, priceFeed_decimals);
         const standardizedWithdrawalPrice = standardizeNumber(withdrawalAssetPrice, priceFeed_decimals);
-        let depositToWithdrawalRate = standardizedDepositPrice.mul(BigNumber.from(10).pow(27)).div(standardizedWithdrawalPrice);
+        let depositToWithdrawalRate = standardizedDepositPrice
+          .mul(BigNumber.from(10).pow(27))
+          .div(standardizedWithdrawalPrice);
         depositToWithdrawalRate = getRateWithPercentage(depositToWithdrawalRate, Offer.offerPrice);
 
-        let withdrawalAmount = depositToWithdrawalRate.mul(DepositAssetERC20.amount).div(BigNumber.from(10).pow(decimals_18));
+        let withdrawalAmount = depositToWithdrawalRate
+          .mul(DepositAssetERC20.amount)
+          .div(BigNumber.from(10).pow(decimals_18));
         withdrawalAmount = withdrawalAmount.div(BigNumber.from(10).pow(27));
 
-        const depositAmount = calculatePercentage(BigNumber.from(DepositAssetERC20.amount), getPartPercentage(withdrawalAmount, withdrawalAmount));
+        const depositAmount = calculatePercentage(
+          BigNumber.from(DepositAssetERC20.amount),
+          getPartPercentage(withdrawalAmount, withdrawalAmount),
+        );
 
-        const [fees, ,] = await assetHelper.getFees(DepositAssetERC20.amount, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
-        const outAmount =
-          BigNumber.from(DepositAssetERC20.amount).sub(BigNumber.from(fees));
+        const [fees, ,] = await assetHelper.getFees(
+          DepositAssetERC20.amount,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
+        const outAmount = BigNumber.from(DepositAssetERC20.amount).sub(BigNumber.from(fees));
 
         const deployerBalance_before = await erc20_18.balanceOf(await deployer.getAddress());
 
@@ -3420,8 +3936,17 @@ describe('OpenDotcV2', () => {
         expect(depositAmount).to.eq(DepositAssetERC20.amount);
         await expect(take_offer)
           .to.emit(dotc, 'TakenOffer')
-          .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.offerFillType, DepositAssetERC20.amount, withdrawalAmount, addressZero);
-        await expect(take_offer).to.emit(escrow, 'OfferWithdrawn').withArgs(offerId, await acc2.getAddress(), outAmount);
+          .withArgs(
+            offerId,
+            await acc2.getAddress(),
+            AwaitingOffer.offerFillType,
+            DepositAssetERC20.amount,
+            withdrawalAmount,
+            addressZero,
+          );
+        await expect(take_offer)
+          .to.emit(escrow, 'OfferWithdrawn')
+          .withArgs(offerId, await acc2.getAddress(), outAmount);
 
         expect(await erc20_18.balanceOf(escrow.address)).to.eq(0);
         expect(await erc20_18.balanceOf(await acc2.getAddress())).to.eq(outAmount);
@@ -3439,11 +3964,25 @@ describe('OpenDotcV2', () => {
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(0);
 
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferFullyWithdrawn,
+        );
       });
 
       it('Should take full dynamic price offer (offerMinimumPrice) (erc1155 => erc20)', async () => {
-        const { dotc, escrow, dotcManager, assetHelper, erc20_18, erc1155, priceFeed_18, priceFeed_1155, acc1, acc2, deployer } = await loadFixture(fixture);
+        const {
+          dotc,
+          escrow,
+          dotcManager,
+          assetHelper,
+          erc20_18,
+          erc1155,
+          priceFeed_18,
+          priceFeed_1155,
+          acc1,
+          acc2,
+          deployer,
+        } = await loadFixture(fixture);
 
         const offerId = 0;
 
@@ -3456,26 +3995,26 @@ describe('OpenDotcV2', () => {
         await erc1155.connect(acc2).setApprovalForAll(dotc.address, true);
 
         const withdrawalAssetPrice = await priceFeed_18.latestAnswer();
-        const [, depositAssetPrice,] = await priceFeed_1155.latestRoundData();
+        const [, depositAssetPrice] = await priceFeed_1155.latestRoundData();
 
         const OfferPrice: OfferPriceStruct = {
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           percentage: 100,
-          percentageType: PercentageType.Plus
-        }
+          percentageType: PercentageType.Plus,
+        };
 
         const PriceDeposit: AssetPriceStruct = {
           priceFeedAddress: priceFeed_18.address,
           offerMaximumPrice: 0,
           offerMinimumPrice: withdrawalAssetPrice,
-        }
+        };
 
         const PriceWithdrawal: AssetPriceStruct = {
           priceFeedAddress: priceFeed_1155.address,
           offerMaximumPrice: 0,
           offerMinimumPrice: depositAssetPrice,
-        }
+        };
 
         const DepositAssetERC20: AssetStruct = {
           assetType: AssetType.ERC20,
@@ -3519,14 +4058,20 @@ describe('OpenDotcV2', () => {
 
         const standardizedDepositPrice = standardizeNumber(depositAssetPrice, priceFeed_decimals);
         const standardizedWithdrawalPrice = standardizeNumber(withdrawalAssetPrice, priceFeed_decimals);
-        let depositToWithdrawalRate = standardizedDepositPrice.mul(BigNumber.from(10).pow(decimals_18)).div(standardizedWithdrawalPrice);
+        let depositToWithdrawalRate = standardizedDepositPrice
+          .mul(BigNumber.from(10).pow(decimals_18))
+          .div(standardizedWithdrawalPrice);
         depositToWithdrawalRate = getRateWithPercentage(depositToWithdrawalRate, Offer.offerPrice);
 
         const withdrawalAmount = depositToWithdrawalRate.mul(DepositAssetERC1155.amount);
 
         const depositAmount = withdrawalAmount.mul(DepositAssetERC1155.amount).div(withdrawalAmount);
 
-        const [fees, ,] = await assetHelper.getFees(withdrawalAmount, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
+        const [fees, ,] = await assetHelper.getFees(
+          withdrawalAmount,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
 
         const deployerBalance_before = await erc20_18.balanceOf(await deployer.getAddress());
 
@@ -3535,8 +4080,17 @@ describe('OpenDotcV2', () => {
         expect(depositAmount).to.eq(DepositAssetERC1155.amount);
         await expect(take_offer)
           .to.emit(dotc, 'TakenOffer')
-          .withArgs(offerId, await acc1.getAddress(), AwaitingOffer.offerFillType, DepositAssetERC1155.amount, withdrawalAmount, addressZero);
-        await expect(take_offer).to.emit(escrow, 'OfferWithdrawn').withArgs(offerId, await acc1.getAddress(), DepositAssetERC1155.amount);
+          .withArgs(
+            offerId,
+            await acc1.getAddress(),
+            AwaitingOffer.offerFillType,
+            DepositAssetERC1155.amount,
+            withdrawalAmount,
+            addressZero,
+          );
+        await expect(take_offer)
+          .to.emit(escrow, 'OfferWithdrawn')
+          .withArgs(offerId, await acc1.getAddress(), DepositAssetERC1155.amount);
 
         expect(await erc1155.balanceOf(escrow.address, tokenOutId)).to.eq(0);
         expect(await erc1155.balanceOf(await acc1.getAddress(), tokenOutId)).to.eq(DepositAssetERC1155.amount);
@@ -3554,11 +4108,25 @@ describe('OpenDotcV2', () => {
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(0);
 
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferFullyWithdrawn,
+        );
       });
 
       it('Should take full dynamic price offer (offerMaximumPrice) (erc1155 => erc20)', async () => {
-        const { dotc, escrow, dotcManager, assetHelper, erc20_18, erc1155, priceFeed_18, priceFeed_1155, acc1, acc2, deployer } = await loadFixture(fixture);
+        const {
+          dotc,
+          escrow,
+          dotcManager,
+          assetHelper,
+          erc20_18,
+          erc1155,
+          priceFeed_18,
+          priceFeed_1155,
+          acc1,
+          acc2,
+          deployer,
+        } = await loadFixture(fixture);
 
         const offerId = 0;
 
@@ -3571,26 +4139,26 @@ describe('OpenDotcV2', () => {
         await erc1155.connect(acc2).setApprovalForAll(dotc.address, true);
 
         const withdrawalAssetPrice = await priceFeed_18.latestAnswer();
-        const [, depositAssetPrice,] = await priceFeed_1155.latestRoundData();
+        const [, depositAssetPrice] = await priceFeed_1155.latestRoundData();
 
         const OfferPrice: OfferPriceStruct = {
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           percentage: 100,
-          percentageType: PercentageType.Minus
-        }
+          percentageType: PercentageType.Minus,
+        };
 
         const PriceDeposit: AssetPriceStruct = {
           priceFeedAddress: priceFeed_18.address,
           offerMaximumPrice: withdrawalAssetPrice,
           offerMinimumPrice: 0,
-        }
+        };
 
         const PriceWithdrawal: AssetPriceStruct = {
           priceFeedAddress: priceFeed_1155.address,
           offerMaximumPrice: depositAssetPrice,
           offerMinimumPrice: 0,
-        }
+        };
 
         const DepositAssetERC20: AssetStruct = {
           assetType: AssetType.ERC20,
@@ -3634,14 +4202,20 @@ describe('OpenDotcV2', () => {
 
         const standardizedDepositPrice = standardizeNumber(depositAssetPrice, priceFeed_decimals);
         const standardizedWithdrawalPrice = standardizeNumber(withdrawalAssetPrice, priceFeed_decimals);
-        let depositToWithdrawalRate = standardizedDepositPrice.mul(BigNumber.from(10).pow(decimals_18)).div(standardizedWithdrawalPrice);
+        let depositToWithdrawalRate = standardizedDepositPrice
+          .mul(BigNumber.from(10).pow(decimals_18))
+          .div(standardizedWithdrawalPrice);
         depositToWithdrawalRate = getRateWithPercentage(depositToWithdrawalRate, Offer.offerPrice);
 
         const withdrawalAmount = depositToWithdrawalRate.mul(DepositAssetERC1155.amount);
 
         const depositAmount = withdrawalAmount.mul(DepositAssetERC1155.amount).div(withdrawalAmount);
 
-        const [fees, ,] = await assetHelper.getFees(withdrawalAmount, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
+        const [fees, ,] = await assetHelper.getFees(
+          withdrawalAmount,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
 
         const deployerBalance_before = await erc20_18.balanceOf(await deployer.getAddress());
 
@@ -3650,8 +4224,17 @@ describe('OpenDotcV2', () => {
         expect(depositAmount).to.eq(DepositAssetERC1155.amount);
         await expect(take_offer)
           .to.emit(dotc, 'TakenOffer')
-          .withArgs(offerId, await acc1.getAddress(), AwaitingOffer.offerFillType, DepositAssetERC1155.amount, withdrawalAmount, addressZero);
-        await expect(take_offer).to.emit(escrow, 'OfferWithdrawn').withArgs(offerId, await acc1.getAddress(), DepositAssetERC1155.amount);
+          .withArgs(
+            offerId,
+            await acc1.getAddress(),
+            AwaitingOffer.offerFillType,
+            DepositAssetERC1155.amount,
+            withdrawalAmount,
+            addressZero,
+          );
+        await expect(take_offer)
+          .to.emit(escrow, 'OfferWithdrawn')
+          .withArgs(offerId, await acc1.getAddress(), DepositAssetERC1155.amount);
 
         expect(await erc1155.balanceOf(escrow.address, tokenOutId)).to.eq(0);
         expect(await erc1155.balanceOf(await acc1.getAddress(), tokenOutId)).to.eq(DepositAssetERC1155.amount);
@@ -3669,44 +4252,62 @@ describe('OpenDotcV2', () => {
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(0);
 
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferFullyWithdrawn,
+        );
       });
 
       it('Should take full dynamic price offer (offerMinimumPrice) (erc20 => erc721)', async () => {
-        const { dotc, escrow, dotcManager, assetHelper, erc20_18, erc721, priceFeed_18, priceFeed_721, acc1, acc2, deployer } = await loadFixture(fixture);
+        const {
+          dotc,
+          escrow,
+          dotcManager,
+          assetHelper,
+          erc20_18,
+          erc721,
+          priceFeed_18,
+          priceFeed_721,
+          acc1,
+          acc2,
+          deployer,
+        } = await loadFixture(fixture);
 
         const offerId = 0;
 
-        const amountIn = ethers.utils.parseUnits("78", 16);
+        const amountIn = ethers.utils.parseUnits('78', 16);
         await erc20_18.transfer(await acc1.getAddress(), amountIn);
         await erc20_18.connect(acc1).approve(dotc.address, amountIn);
 
         const amountOut = 1;
         const tokenOutId = 3;
-        await erc721['safeTransferFrom(address,address,uint256)'](await deployer.getAddress(), await acc2.getAddress(), tokenOutId);
+        await erc721['safeTransferFrom(address,address,uint256)'](
+          await deployer.getAddress(),
+          await acc2.getAddress(),
+          tokenOutId,
+        );
         await erc721.connect(acc2).setApprovalForAll(dotc.address, true);
 
         const depositAssetPrice = await priceFeed_18.latestAnswer();
-        const [, withdrawalAssetPrice,] = await priceFeed_721.latestRoundData();
+        const [, withdrawalAssetPrice] = await priceFeed_721.latestRoundData();
 
         const OfferPrice: OfferPriceStruct = {
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           percentage: 100,
-          percentageType: PercentageType.Plus
-        }
+          percentageType: PercentageType.Plus,
+        };
 
         const PriceDeposit: AssetPriceStruct = {
           priceFeedAddress: priceFeed_18.address,
           offerMaximumPrice: 0,
           offerMinimumPrice: depositAssetPrice,
-        }
+        };
 
         const PriceWithdrawal: AssetPriceStruct = {
           priceFeedAddress: priceFeed_721.address,
           offerMaximumPrice: 0,
           offerMinimumPrice: withdrawalAssetPrice,
-        }
+        };
 
         const DepositAssetERC20: AssetStruct = {
           assetType: AssetType.ERC20,
@@ -3747,17 +4348,27 @@ describe('OpenDotcV2', () => {
 
         const standardizedDepositPrice = standardizeNumber(depositAssetPrice, priceFeed_decimals);
         const standardizedWithdrawalPrice = standardizeNumber(withdrawalAssetPrice, priceFeed_decimals);
-        let depositToWithdrawalRate = standardizedDepositPrice.mul(BigNumber.from(10).pow(27)).div(standardizedWithdrawalPrice);
+        let depositToWithdrawalRate = standardizedDepositPrice
+          .mul(BigNumber.from(10).pow(27))
+          .div(standardizedWithdrawalPrice);
         depositToWithdrawalRate = getRateWithPercentage(depositToWithdrawalRate, Offer.offerPrice);
 
-        let withdrawalAmount = depositToWithdrawalRate.mul(DepositAssetERC20.amount).div(BigNumber.from(10).pow(decimals_18));
+        let withdrawalAmount = depositToWithdrawalRate
+          .mul(DepositAssetERC20.amount)
+          .div(BigNumber.from(10).pow(decimals_18));
         withdrawalAmount = withdrawalAmount.div(BigNumber.from(10).pow(27));
 
-        const depositAmount = calculatePercentage(BigNumber.from(DepositAssetERC20.amount), getPartPercentage(withdrawalAmount, withdrawalAmount));
+        const depositAmount = calculatePercentage(
+          BigNumber.from(DepositAssetERC20.amount),
+          getPartPercentage(withdrawalAmount, withdrawalAmount),
+        );
 
-        const [fees, ,] = await assetHelper.getFees(DepositAssetERC20.amount, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
-        const outAmount =
-          BigNumber.from(DepositAssetERC20.amount).sub(BigNumber.from(fees));
+        const [fees, ,] = await assetHelper.getFees(
+          DepositAssetERC20.amount,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
+        const outAmount = BigNumber.from(DepositAssetERC20.amount).sub(BigNumber.from(fees));
 
         const deployerBalance_before = await erc20_18.balanceOf(await deployer.getAddress());
 
@@ -3766,17 +4377,24 @@ describe('OpenDotcV2', () => {
         expect(depositAmount).to.eq(DepositAssetERC20.amount);
         await expect(take_offer)
           .to.emit(dotc, 'TakenOffer')
-          .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.offerFillType, DepositAssetERC20.amount, withdrawalAmount, addressZero);
-        await expect(take_offer).to.emit(escrow, 'OfferWithdrawn').withArgs(offerId, await acc2.getAddress(), outAmount);
+          .withArgs(
+            offerId,
+            await acc2.getAddress(),
+            AwaitingOffer.offerFillType,
+            DepositAssetERC20.amount,
+            withdrawalAmount,
+            addressZero,
+          );
+        await expect(take_offer)
+          .to.emit(escrow, 'OfferWithdrawn')
+          .withArgs(offerId, await acc2.getAddress(), outAmount);
 
         expect(await erc20_18.balanceOf(escrow.address)).to.eq(0);
         expect(await erc20_18.balanceOf(await acc2.getAddress())).to.eq(outAmount);
         expect(await erc20_18.balanceOf(await deployer.getAddress())).to.eq(
           BigNumber.from(deployerBalance_before).add(BigNumber.from(fees)),
         );
-        expect(await erc721.ownerOf(WithdrawalAssetERC721.tokenId)).to.eq(
-          await acc1.getAddress(),
-        );
+        expect(await erc721.ownerOf(WithdrawalAssetERC721.tokenId)).to.eq(await acc1.getAddress());
 
         expect((await dotc.allOffers(0)).withdrawalAsset.amount).to.eq(0);
         expect((await dotc.allOffers(0)).offerFillType).to.eq(AwaitingOffer.offerFillType);
@@ -3785,44 +4403,62 @@ describe('OpenDotcV2', () => {
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(0);
 
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferFullyWithdrawn,
+        );
       });
 
       it('Should take full dynamic price offer (offerMaximumPrice) (erc20 => erc721)', async () => {
-        const { dotc, escrow, dotcManager, assetHelper, erc20_18, erc721, priceFeed_18, priceFeed_721, acc1, acc2, deployer } = await loadFixture(fixture);
+        const {
+          dotc,
+          escrow,
+          dotcManager,
+          assetHelper,
+          erc20_18,
+          erc721,
+          priceFeed_18,
+          priceFeed_721,
+          acc1,
+          acc2,
+          deployer,
+        } = await loadFixture(fixture);
 
         const offerId = 0;
 
-        const amountIn = ethers.utils.parseUnits("78", 16);
+        const amountIn = ethers.utils.parseUnits('78', 16);
         await erc20_18.transfer(await acc1.getAddress(), amountIn);
         await erc20_18.connect(acc1).approve(dotc.address, amountIn);
 
         const amountOut = 1;
         const tokenOutId = 3;
-        await erc721['safeTransferFrom(address,address,uint256)'](await deployer.getAddress(), await acc2.getAddress(), tokenOutId);
+        await erc721['safeTransferFrom(address,address,uint256)'](
+          await deployer.getAddress(),
+          await acc2.getAddress(),
+          tokenOutId,
+        );
         await erc721.connect(acc2).setApprovalForAll(dotc.address, true);
 
         const depositAssetPrice = await priceFeed_18.latestAnswer();
-        const [, withdrawalAssetPrice,] = await priceFeed_721.latestRoundData();
+        const [, withdrawalAssetPrice] = await priceFeed_721.latestRoundData();
 
         const OfferPrice: OfferPriceStruct = {
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           percentage: 100,
-          percentageType: PercentageType.Minus
-        }
+          percentageType: PercentageType.Minus,
+        };
 
         const PriceDeposit: AssetPriceStruct = {
           priceFeedAddress: priceFeed_18.address,
           offerMaximumPrice: depositAssetPrice,
           offerMinimumPrice: 0,
-        }
+        };
 
         const PriceWithdrawal: AssetPriceStruct = {
           priceFeedAddress: priceFeed_721.address,
           offerMaximumPrice: withdrawalAssetPrice,
           offerMinimumPrice: 0,
-        }
+        };
 
         const DepositAssetERC20: AssetStruct = {
           assetType: AssetType.ERC20,
@@ -3868,11 +4504,17 @@ describe('OpenDotcV2', () => {
 
         const withdrawalAmount = BigNumber.from(1);
 
-        const depositAmount = calculatePercentage(BigNumber.from(DepositAssetERC20.amount), BigNumber.from(SCALING_FACTOR));
+        const depositAmount = calculatePercentage(
+          BigNumber.from(DepositAssetERC20.amount),
+          BigNumber.from(SCALING_FACTOR),
+        );
 
-        const [fees, ,] = await assetHelper.getFees(DepositAssetERC20.amount, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
-        const outAmount =
-          BigNumber.from(DepositAssetERC20.amount).sub(BigNumber.from(fees));
+        const [fees, ,] = await assetHelper.getFees(
+          DepositAssetERC20.amount,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
+        const outAmount = BigNumber.from(DepositAssetERC20.amount).sub(BigNumber.from(fees));
 
         const deployerBalance_before = await erc20_18.balanceOf(await deployer.getAddress());
 
@@ -3881,17 +4523,24 @@ describe('OpenDotcV2', () => {
         expect(depositAmount).to.eq(DepositAssetERC20.amount);
         await expect(take_offer)
           .to.emit(dotc, 'TakenOffer')
-          .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.offerFillType, DepositAssetERC20.amount, withdrawalAmount, addressZero);
-        await expect(take_offer).to.emit(escrow, 'OfferWithdrawn').withArgs(offerId, await acc2.getAddress(), outAmount);
+          .withArgs(
+            offerId,
+            await acc2.getAddress(),
+            AwaitingOffer.offerFillType,
+            DepositAssetERC20.amount,
+            withdrawalAmount,
+            addressZero,
+          );
+        await expect(take_offer)
+          .to.emit(escrow, 'OfferWithdrawn')
+          .withArgs(offerId, await acc2.getAddress(), outAmount);
 
         expect(await erc20_18.balanceOf(escrow.address)).to.eq(0);
         expect(await erc20_18.balanceOf(await acc2.getAddress())).to.eq(outAmount);
         expect(await erc20_18.balanceOf(await deployer.getAddress())).to.eq(
           BigNumber.from(deployerBalance_before).add(BigNumber.from(fees)),
         );
-        expect(await erc721.ownerOf(WithdrawalAssetERC721.tokenId)).to.eq(
-          await acc1.getAddress(),
-        );
+        expect(await erc721.ownerOf(WithdrawalAssetERC721.tokenId)).to.eq(await acc1.getAddress());
 
         expect((await dotc.allOffers(0)).withdrawalAsset.amount).to.eq(0);
         expect((await dotc.allOffers(0)).offerFillType).to.eq(AwaitingOffer.offerFillType);
@@ -3900,13 +4549,25 @@ describe('OpenDotcV2', () => {
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(0);
 
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferFullyWithdrawn,
+        );
       });
 
       it('Should take full dynamic price offer (offerMinimumPrice) (erc20 => erc20) (MAX CHECK)', async () => {
-        const { dotc, escrow, assetHelper, dotcManager, priceFeed_6, priceFeed_18, erc20_18, erc20_6, deployer, acc1, acc2 } = await loadFixture(
-          fixture,
-        );
+        const {
+          dotc,
+          escrow,
+          assetHelper,
+          dotcManager,
+          priceFeed_6,
+          priceFeed_18,
+          erc20_18,
+          erc20_6,
+          deployer,
+          acc1,
+          acc2,
+        } = await loadFixture(fixture);
 
         const offerId = 0;
 
@@ -3920,7 +4581,7 @@ describe('OpenDotcV2', () => {
         await erc20_6.connect(acc2).approve(dotc.address, amountOut.mul(2));
 
         let depositAssetPrice = await priceFeed_18.latestAnswer();
-        let [, withdrawalAssetPrice,] = await priceFeed_6.latestRoundData();
+        let [, withdrawalAssetPrice] = await priceFeed_6.latestRoundData();
 
         depositAssetPrice = depositAssetPrice.add(10000000000);
         withdrawalAssetPrice = withdrawalAssetPrice.add(10000000000);
@@ -3929,20 +4590,20 @@ describe('OpenDotcV2', () => {
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           percentage: 100,
-          percentageType: PercentageType.Plus
-        }
+          percentageType: PercentageType.Plus,
+        };
 
         const PriceDeposit: AssetPriceStruct = {
           priceFeedAddress: priceFeed_18.address,
           offerMaximumPrice: 0,
           offerMinimumPrice: depositAssetPrice,
-        }
+        };
 
         const PriceWithdrawal: AssetPriceStruct = {
           priceFeedAddress: priceFeed_6.address,
           offerMaximumPrice: 0,
           offerMinimumPrice: withdrawalAssetPrice,
-        }
+        };
 
         const DepositAssetERC20: AssetStruct = {
           assetType: AssetType.ERC20,
@@ -3979,20 +4640,26 @@ describe('OpenDotcV2', () => {
           offer: Offer,
         };
 
-        await dotc
-          .connect(acc1)
-          .makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
+        await dotc.connect(acc1).makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
 
         const standardizedDepositPrice = standardizeNumber(depositAssetPrice, priceFeed_decimals);
         const standardizedWithdrawalPrice = standardizeNumber(withdrawalAssetPrice, priceFeed_decimals);
-        let depositToWithdrawalRate = standardizedDepositPrice.mul(BigNumber.from(10).pow(decimals_6)).div(standardizedWithdrawalPrice);
+        let depositToWithdrawalRate = standardizedDepositPrice
+          .mul(BigNumber.from(10).pow(decimals_6))
+          .div(standardizedWithdrawalPrice);
         depositToWithdrawalRate = getRateWithPercentage(depositToWithdrawalRate, Offer.offerPrice);
 
-        const withdrawalAmount = depositToWithdrawalRate.mul(DepositAssetERC20.amount).div(BigNumber.from(10).pow(decimals_18));
+        const withdrawalAmount = depositToWithdrawalRate
+          .mul(DepositAssetERC20.amount)
+          .div(BigNumber.from(10).pow(decimals_18));
 
         const depositAmount = withdrawalAmount.mul(BigNumber.from(10).pow(decimals_18)).div(depositToWithdrawalRate);
 
-        const [fees, ,] = await assetHelper.getFees(withdrawalAmount, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
+        const [fees, ,] = await assetHelper.getFees(
+          withdrawalAmount,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
 
         const deployerBalance_before = await erc20_6.balanceOf(await deployer.getAddress());
 
@@ -4000,7 +4667,14 @@ describe('OpenDotcV2', () => {
 
         await expect(take_offer)
           .to.emit(dotc, 'TakenOffer')
-          .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.offerFillType, depositAmount, withdrawalAmount, addressZero);
+          .withArgs(
+            offerId,
+            await acc2.getAddress(),
+            AwaitingOffer.offerFillType,
+            depositAmount,
+            withdrawalAmount,
+            addressZero,
+          );
         await expect(take_offer)
           .to.emit(escrow, 'OfferWithdrawn')
           .withArgs(offerId, await acc2.getAddress(), depositAmount);
@@ -4008,20 +4682,34 @@ describe('OpenDotcV2', () => {
         expect(await erc20_18.balanceOf(escrow.address)).to.eq(0);
         expect(await erc20_18.balanceOf(await acc2.getAddress())).to.eq(depositAmount);
         expect(await erc20_6.balanceOf(await acc1.getAddress())).to.eq(withdrawalAmount.sub(fees));
-        expect(await erc20_6.balanceOf(await deployer.getAddress())).to.eq(BigNumber.from(deployerBalance_before).add(fees));
+        expect(await erc20_6.balanceOf(await deployer.getAddress())).to.eq(
+          BigNumber.from(deployerBalance_before).add(fees),
+        );
 
         expect((await dotc.allOffers(0)).withdrawalAsset.amount).to.eq(0);
         expect((await dotc.allOffers(0)).depositAsset.amount).to.eq(0);
         expect((await dotc.allOffers(0)).offerFillType).to.eq(AwaitingOffer.offerFillType);
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(0);
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferFullyWithdrawn,
+        );
       });
 
       it('Should take full dynamic price offer (offerMaximumPrice) (erc20 => erc20) (MIN CHECK)', async () => {
-        const { dotc, escrow, assetHelper, dotcManager, priceFeed_6, priceFeed_18, erc20_18, erc20_6, deployer, acc1, acc2 } = await loadFixture(
-          fixture,
-        );
+        const {
+          dotc,
+          escrow,
+          assetHelper,
+          dotcManager,
+          priceFeed_6,
+          priceFeed_18,
+          erc20_18,
+          erc20_6,
+          deployer,
+          acc1,
+          acc2,
+        } = await loadFixture(fixture);
 
         const offerId = 0;
 
@@ -4035,7 +4723,7 @@ describe('OpenDotcV2', () => {
         await erc20_18.connect(acc2).approve(dotc.address, amountOut.mul(2));
 
         let withdrawalAssetPrice = await priceFeed_18.latestAnswer();
-        let [, depositAssetPrice,] = await priceFeed_6.latestRoundData();
+        let [, depositAssetPrice] = await priceFeed_6.latestRoundData();
 
         withdrawalAssetPrice = withdrawalAssetPrice.div(2);
         depositAssetPrice = depositAssetPrice.div(2);
@@ -4044,20 +4732,20 @@ describe('OpenDotcV2', () => {
           offerPricingType: OfferPricingType.DynamicPricing,
           unitPrice: 0,
           percentage: 100,
-          percentageType: PercentageType.Minus
-        }
+          percentageType: PercentageType.Minus,
+        };
 
         const PriceDeposit: AssetPriceStruct = {
           priceFeedAddress: priceFeed_6.address,
           offerMaximumPrice: depositAssetPrice,
           offerMinimumPrice: 0,
-        }
+        };
 
         const PriceWithdrawal: AssetPriceStruct = {
           priceFeedAddress: priceFeed_18.address,
           offerMaximumPrice: withdrawalAssetPrice,
           offerMinimumPrice: 0,
-        }
+        };
 
         const DepositAssetERC20: AssetStruct = {
           assetType: AssetType.ERC20,
@@ -4094,20 +4782,29 @@ describe('OpenDotcV2', () => {
           offer: Offer,
         };
 
-        await dotc
-          .connect(acc1)
-          .makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
+        await dotc.connect(acc1).makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
 
         const standardizedDepositPrice = standardizeNumber(depositAssetPrice, priceFeed_decimals);
         const standardizedWithdrawalPrice = standardizeNumber(withdrawalAssetPrice, priceFeed_decimals);
-        let depositToWithdrawalRate = standardizedDepositPrice.mul(BigNumber.from(10).pow(decimals_18)).div(standardizedWithdrawalPrice);
+        let depositToWithdrawalRate = standardizedDepositPrice
+          .mul(BigNumber.from(10).pow(decimals_18))
+          .div(standardizedWithdrawalPrice);
         depositToWithdrawalRate = getRateWithPercentage(depositToWithdrawalRate, Offer.offerPrice);
 
-        const withdrawalAmount = depositToWithdrawalRate.mul(DepositAssetERC20.amount).div(BigNumber.from(10).pow(decimals_6));
+        const withdrawalAmount = depositToWithdrawalRate
+          .mul(DepositAssetERC20.amount)
+          .div(BigNumber.from(10).pow(decimals_6));
 
-        const depositAmount = calculatePercentage(BigNumber.from(DepositAssetERC20.amount), BigNumber.from(SCALING_FACTOR));
+        const depositAmount = calculatePercentage(
+          BigNumber.from(DepositAssetERC20.amount),
+          BigNumber.from(SCALING_FACTOR),
+        );
 
-        const [fees, ,] = await assetHelper.getFees(withdrawalAmount, await dotcManager.feeAmount(), await dotcManager.revSharePercentage());
+        const [fees, ,] = await assetHelper.getFees(
+          withdrawalAmount,
+          await dotcManager.feeAmount(),
+          await dotcManager.revSharePercentage(),
+        );
 
         const deployerBalance_before = await erc20_18.balanceOf(await deployer.getAddress());
 
@@ -4116,7 +4813,14 @@ describe('OpenDotcV2', () => {
         expect(depositAmount).to.eq(DepositAssetERC20.amount);
         await expect(take_offer)
           .to.emit(dotc, 'TakenOffer')
-          .withArgs(offerId, await acc2.getAddress(), AwaitingOffer.offerFillType, depositAmount, withdrawalAmount, addressZero);
+          .withArgs(
+            offerId,
+            await acc2.getAddress(),
+            AwaitingOffer.offerFillType,
+            depositAmount,
+            withdrawalAmount,
+            addressZero,
+          );
         await expect(take_offer)
           .to.emit(escrow, 'OfferWithdrawn')
           .withArgs(offerId, await acc2.getAddress(), DepositAssetERC20.amount);
@@ -4124,14 +4828,18 @@ describe('OpenDotcV2', () => {
         expect(await erc20_6.balanceOf(escrow.address)).to.eq(0);
         expect(await erc20_6.balanceOf(await acc2.getAddress())).to.eq(DepositAssetERC20.amount);
         expect(await erc20_18.balanceOf(await acc1.getAddress())).to.eq(withdrawalAmount.sub(fees));
-        expect(await erc20_18.balanceOf(await deployer.getAddress())).to.eq(BigNumber.from(deployerBalance_before).add(fees));
+        expect(await erc20_18.balanceOf(await deployer.getAddress())).to.eq(
+          BigNumber.from(deployerBalance_before).add(fees),
+        );
 
         expect((await dotc.allOffers(0)).withdrawalAsset.amount).to.eq(0);
         expect((await dotc.allOffers(0)).depositAsset.amount).to.eq(0);
         expect((await dotc.allOffers(0)).offerFillType).to.eq(AwaitingOffer.offerFillType);
 
         expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(0);
-        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferFullyWithdrawn);
+        expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+          EscrowOfferStatusType.OfferFullyWithdrawn,
+        );
       });
     });
   });
@@ -4191,7 +4899,10 @@ describe('OpenDotcV2', () => {
 
       await dotc.connect(acc1).makeOffer(DepositAssetERC20, WithdrawalAssetERC20, AwaitingOffer.offer);
 
-      await expect(dotc.connect(acc1).cancelOffer(offerId)).to.be.revertedWithCustomError(dotcOfferHelper, 'OfferInTimelockError');
+      await expect(dotc.connect(acc1).cancelOffer(offerId)).to.be.revertedWithCustomError(
+        dotcOfferHelper,
+        'OfferInTimelockError',
+      );
       await time.increase(300);
 
       await expect(dotc.connect(acc2).cancelOffer(offerId)).to.be.revertedWithCustomError(
@@ -4201,9 +4912,7 @@ describe('OpenDotcV2', () => {
 
       const cancel_offer = await dotc.connect(acc1).cancelOffer(offerId);
 
-      await expect(cancel_offer)
-        .to.emit(dotc, 'CanceledOffer')
-        .withArgs(offerId, DepositAssetERC20.amount);
+      await expect(cancel_offer).to.emit(dotc, 'CanceledOffer').withArgs(offerId, DepositAssetERC20.amount);
       await expect(cancel_offer)
         .to.emit(escrow, 'OfferCancelled')
         .withArgs(offerId, await acc1.getAddress(), DepositAssetERC20.amount);
@@ -4220,14 +4929,18 @@ describe('OpenDotcV2', () => {
       expect((await escrow.escrowDeposits(offerId)).depositAsset.tokenId).to.be.eq(DepositAssetERC20.tokenId);
       expect((await escrow.escrowDeposits(offerId)).depositAsset.assetType).to.be.eq(DepositAssetERC20.assetType);
 
-      expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferCancelled);
+      expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+        EscrowOfferStatusType.OfferCancelled,
+      );
 
-      await expect(dotc.connect(acc1).cancelOffer(2002)).to.be.revertedWithCustomError(dotcOfferHelper, 'OnlyMakerAllowedError');
-
-      await expect(dotc.connect(acc1).updateOffer(offerId, Offer)).to.be.revertedWithCustomError(
+      await expect(dotc.connect(acc1).cancelOffer(2002)).to.be.revertedWithCustomError(
         dotcOfferHelper,
-        'OfferValidityError',
-      ).withArgs(OfferFillType.Cancelled);
+        'OnlyMakerAllowedError',
+      );
+
+      await expect(dotc.connect(acc1).updateOffer(offerId, Offer))
+        .to.be.revertedWithCustomError(dotcOfferHelper, 'OfferValidityError')
+        .withArgs(OfferFillType.Cancelled);
     });
 
     it('Should cancel partial offer (erc20 => erc20)', async () => {
@@ -4281,7 +4994,6 @@ describe('OpenDotcV2', () => {
         tokenId: 0,
       };
 
-
       const Offer: OfferStruct = {
         takingOfferType: TakingOfferType.PartialOffer,
         offerPrice: OfferPrice,
@@ -4305,9 +5017,7 @@ describe('OpenDotcV2', () => {
 
       const cancel_offer = await dotc.connect(acc1).cancelOffer(offerId);
 
-      await expect(cancel_offer)
-        .to.emit(dotc, 'CanceledOffer')
-        .withArgs(offerId, DepositAssetERC20.amount);
+      await expect(cancel_offer).to.emit(dotc, 'CanceledOffer').withArgs(offerId, DepositAssetERC20.amount);
       await expect(cancel_offer)
         .to.emit(escrow, 'OfferCancelled')
         .withArgs(offerId, await acc1.getAddress(), DepositAssetERC20.amount);
@@ -4324,7 +5034,9 @@ describe('OpenDotcV2', () => {
       expect((await escrow.escrowDeposits(offerId)).depositAsset.tokenId).to.be.eq(DepositAssetERC20.tokenId);
       expect((await escrow.escrowDeposits(offerId)).depositAsset.assetType).to.be.eq(DepositAssetERC20.assetType);
 
-      expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferCancelled);
+      expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+        EscrowOfferStatusType.OfferCancelled,
+      );
     });
 
     it('Should cancel partial with taken amount offer (erc20 => erc20)', async () => {
@@ -4399,10 +5111,8 @@ describe('OpenDotcV2', () => {
 
       const unitPrice = BigNumber.from(WithdrawalAssetERC20_standardized.amount)
         .mul(WAD)
-        .div(BigNumber.from(DepositAssetERC20_standardized.amount))
-      const amountToWitdraw = standardized_amountOut_to_take
-        .mul(WAD)
-        .div(BigNumber.from(unitPrice));
+        .div(BigNumber.from(DepositAssetERC20_standardized.amount));
+      const amountToWitdraw = standardized_amountOut_to_take.mul(WAD).div(BigNumber.from(unitPrice));
 
       let amountToCancel = BigNumber.from(DepositAssetERC20_standardized.amount).sub(amountToWitdraw);
 
@@ -4415,7 +5125,9 @@ describe('OpenDotcV2', () => {
       const cancel_offer = await dotc.connect(acc1).cancelOffer(offerId);
 
       await expect(cancel_offer).to.emit(dotc, 'CanceledOffer').withArgs(offerId, amountToCancel);
-      await expect(cancel_offer).to.emit(escrow, 'OfferCancelled').withArgs(offerId, await acc1.getAddress(), amountToCancel);
+      await expect(cancel_offer)
+        .to.emit(escrow, 'OfferCancelled')
+        .withArgs(offerId, await acc1.getAddress(), amountToCancel);
 
       expect(await erc20_18.balanceOf(escrow.address)).to.eq(0);
       expect(await erc20_18.balanceOf(await acc1.getAddress())).to.eq(amountToCancel);
@@ -4429,7 +5141,9 @@ describe('OpenDotcV2', () => {
       expect((await escrow.escrowDeposits(offerId)).depositAsset.tokenId).to.be.eq(DepositAssetERC20.tokenId);
       expect((await escrow.escrowDeposits(offerId)).depositAsset.assetType).to.be.eq(DepositAssetERC20.assetType);
 
-      expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferCancelled);
+      expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+        EscrowOfferStatusType.OfferCancelled,
+      );
     });
 
     it('Should cancel full offer (erc20 => erc721)', async () => {
@@ -4442,7 +5156,11 @@ describe('OpenDotcV2', () => {
       const amountIn_asset = BigNumber.from(amountIn).mul(BigNumber.from(10).pow(decimals_18));
 
       await erc20_18.transfer(await acc1.getAddress(), amountIn_asset);
-      await erc721['safeTransferFrom(address,address,uint256)'](await deployer.getAddress(), await acc2.getAddress(), 4);
+      await erc721['safeTransferFrom(address,address,uint256)'](
+        await deployer.getAddress(),
+        await acc2.getAddress(),
+        4,
+      );
 
       await erc20_18.connect(acc1).approve(dotc.address, amountIn_asset);
       await erc721.connect(acc2).setApprovalForAll(dotc.address, true);
@@ -4486,9 +5204,7 @@ describe('OpenDotcV2', () => {
 
       const cancel_offer = await dotc.connect(acc1).cancelOffer(offerId);
 
-      await expect(cancel_offer)
-        .to.emit(dotc, 'CanceledOffer')
-        .withArgs(offerId, DepositAssetERC20.amount);
+      await expect(cancel_offer).to.emit(dotc, 'CanceledOffer').withArgs(offerId, DepositAssetERC20.amount);
       await expect(cancel_offer)
         .to.emit(escrow, 'OfferCancelled')
         .withArgs(offerId, await acc1.getAddress(), DepositAssetERC20.amount);
@@ -4505,7 +5221,9 @@ describe('OpenDotcV2', () => {
       expect((await escrow.escrowDeposits(offerId)).depositAsset.tokenId).to.be.eq(DepositAssetERC20.tokenId);
       expect((await escrow.escrowDeposits(offerId)).depositAsset.assetType).to.be.eq(DepositAssetERC20.assetType);
 
-      expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferCancelled);
+      expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+        EscrowOfferStatusType.OfferCancelled,
+      );
     });
 
     it('Should cancel full offer (erc721 => erc20)', async () => {
@@ -4518,7 +5236,11 @@ describe('OpenDotcV2', () => {
       const amountIn_asset = BigNumber.from(amountIn).mul(BigNumber.from(10).pow(decimals_18));
 
       await erc20_18.transfer(await acc1.getAddress(), amountIn_asset);
-      await erc721['safeTransferFrom(address,address,uint256)'](await deployer.getAddress(), await acc2.getAddress(), 4);
+      await erc721['safeTransferFrom(address,address,uint256)'](
+        await deployer.getAddress(),
+        await acc2.getAddress(),
+        4,
+      );
 
       await erc20_18.connect(acc1).approve(dotc.address, amountIn_asset);
       await erc721.connect(acc2).setApprovalForAll(dotc.address, true);
@@ -4562,9 +5284,7 @@ describe('OpenDotcV2', () => {
 
       const cancel_offer = await dotc.connect(acc2).cancelOffer(offerId);
 
-      await expect(cancel_offer)
-        .to.emit(dotc, 'CanceledOffer')
-        .withArgs(offerId, WithdrawalAssetERC721.amount);
+      await expect(cancel_offer).to.emit(dotc, 'CanceledOffer').withArgs(offerId, WithdrawalAssetERC721.amount);
       await expect(cancel_offer)
         .to.emit(escrow, 'OfferCancelled')
         .withArgs(offerId, await acc2.getAddress(), WithdrawalAssetERC721.amount);
@@ -4575,12 +5295,16 @@ describe('OpenDotcV2', () => {
 
       expect(await dotc.offersFromAddress(await acc2.getAddress(), 0)).to.eq(offerId);
 
-      expect((await escrow.escrowDeposits(offerId)).depositAsset.assetAddress).to.be.eq(WithdrawalAssetERC721.assetAddress);
+      expect((await escrow.escrowDeposits(offerId)).depositAsset.assetAddress).to.be.eq(
+        WithdrawalAssetERC721.assetAddress,
+      );
       expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(0);
       expect((await escrow.escrowDeposits(offerId)).depositAsset.tokenId).to.be.eq(WithdrawalAssetERC721.tokenId);
       expect((await escrow.escrowDeposits(offerId)).depositAsset.assetType).to.be.eq(WithdrawalAssetERC721.assetType);
 
-      expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferCancelled);
+      expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+        EscrowOfferStatusType.OfferCancelled,
+      );
     });
 
     it('Should cancel full offer (erc20 => erc1155)', async () => {
@@ -4637,9 +5361,7 @@ describe('OpenDotcV2', () => {
 
       const cancel_offer = await dotc.connect(acc1).cancelOffer(offerId);
 
-      await expect(cancel_offer)
-        .to.emit(dotc, 'CanceledOffer')
-        .withArgs(offerId, DepositAssetERC20.amount);
+      await expect(cancel_offer).to.emit(dotc, 'CanceledOffer').withArgs(offerId, DepositAssetERC20.amount);
       await expect(cancel_offer)
         .to.emit(escrow, 'OfferCancelled')
         .withArgs(offerId, await acc1.getAddress(), DepositAssetERC20.amount);
@@ -4656,7 +5378,9 @@ describe('OpenDotcV2', () => {
       expect((await escrow.escrowDeposits(offerId)).depositAsset.tokenId).to.be.eq(DepositAssetERC20.tokenId);
       expect((await escrow.escrowDeposits(offerId)).depositAsset.assetType).to.be.eq(DepositAssetERC20.assetType);
 
-      expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferCancelled);
+      expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+        EscrowOfferStatusType.OfferCancelled,
+      );
     });
 
     it('Should cancel full offer (erc1155 => erc20)', async () => {
@@ -4713,9 +5437,7 @@ describe('OpenDotcV2', () => {
 
       const cancel_offer = await dotc.connect(acc2).cancelOffer(offerId);
 
-      await expect(cancel_offer)
-        .to.emit(dotc, 'CanceledOffer')
-        .withArgs(offerId, WithdrawalAssetERC1155.amount);
+      await expect(cancel_offer).to.emit(dotc, 'CanceledOffer').withArgs(offerId, WithdrawalAssetERC1155.amount);
       await expect(cancel_offer)
         .to.emit(escrow, 'OfferCancelled')
         .withArgs(offerId, await acc2.getAddress(), WithdrawalAssetERC1155.amount);
@@ -4729,12 +5451,16 @@ describe('OpenDotcV2', () => {
 
       expect(await dotc.offersFromAddress(await acc2.getAddress(), 0)).to.eq(offerId);
 
-      expect((await escrow.escrowDeposits(offerId)).depositAsset.assetAddress).to.be.eq(WithdrawalAssetERC1155.assetAddress);
+      expect((await escrow.escrowDeposits(offerId)).depositAsset.assetAddress).to.be.eq(
+        WithdrawalAssetERC1155.assetAddress,
+      );
       expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(0);
       expect((await escrow.escrowDeposits(offerId)).depositAsset.tokenId).to.be.eq(WithdrawalAssetERC1155.tokenId);
       expect((await escrow.escrowDeposits(offerId)).depositAsset.assetType).to.be.eq(WithdrawalAssetERC1155.assetType);
 
-      expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferCancelled);
+      expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+        EscrowOfferStatusType.OfferCancelled,
+      );
     });
 
     it('Should cancel full offer (erc721 => erc721)', async () => {
@@ -4742,8 +5468,16 @@ describe('OpenDotcV2', () => {
 
       const offerId = 0;
 
-      await erc721['safeTransferFrom(address,address,uint256)'](await deployer.getAddress(), await acc1.getAddress(), 2);
-      await erc721['safeTransferFrom(address,address,uint256)'](await deployer.getAddress(), await acc2.getAddress(), 4);
+      await erc721['safeTransferFrom(address,address,uint256)'](
+        await deployer.getAddress(),
+        await acc1.getAddress(),
+        2,
+      );
+      await erc721['safeTransferFrom(address,address,uint256)'](
+        await deployer.getAddress(),
+        await acc2.getAddress(),
+        4,
+      );
 
       await erc721.connect(acc1).setApprovalForAll(dotc.address, true);
       await erc721.connect(acc2).setApprovalForAll(dotc.address, true);
@@ -4787,9 +5521,7 @@ describe('OpenDotcV2', () => {
 
       const cancel_offer = await dotc.connect(acc2).cancelOffer(offerId);
 
-      await expect(cancel_offer)
-        .to.emit(dotc, 'CanceledOffer')
-        .withArgs(offerId, WithdrawalAssetERC721.amount);
+      await expect(cancel_offer).to.emit(dotc, 'CanceledOffer').withArgs(offerId, WithdrawalAssetERC721.amount);
       await expect(cancel_offer)
         .to.emit(escrow, 'OfferCancelled')
         .withArgs(offerId, await acc2.getAddress(), WithdrawalAssetERC721.amount);
@@ -4800,17 +5532,20 @@ describe('OpenDotcV2', () => {
 
       expect(await dotc.offersFromAddress(await acc2.getAddress(), 0)).to.eq(offerId);
 
-      expect((await escrow.escrowDeposits(offerId)).depositAsset.assetAddress).to.be.eq(WithdrawalAssetERC721.assetAddress);
+      expect((await escrow.escrowDeposits(offerId)).depositAsset.assetAddress).to.be.eq(
+        WithdrawalAssetERC721.assetAddress,
+      );
       expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(0);
       expect((await escrow.escrowDeposits(offerId)).depositAsset.tokenId).to.be.eq(WithdrawalAssetERC721.tokenId);
       expect((await escrow.escrowDeposits(offerId)).depositAsset.assetType).to.be.eq(WithdrawalAssetERC721.assetType);
 
-      expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferCancelled);
+      expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+        EscrowOfferStatusType.OfferCancelled,
+      );
     });
 
     it('Should cancel full offer (erc1155 => erc1155)', async () => {
       const { dotc, escrow, erc1155, acc1, acc2, deployer } = await loadFixture(fixture);
-
 
       const offerId = 0;
 
@@ -4859,9 +5594,7 @@ describe('OpenDotcV2', () => {
 
       const cancel_offer = await dotc.connect(acc2).cancelOffer(offerId);
 
-      await expect(cancel_offer)
-        .to.emit(dotc, 'CanceledOffer')
-        .withArgs(offerId, WithdrawalAssetERC1155.amount);
+      await expect(cancel_offer).to.emit(dotc, 'CanceledOffer').withArgs(offerId, WithdrawalAssetERC1155.amount);
       await expect(cancel_offer)
         .to.emit(escrow, 'OfferCancelled')
         .withArgs(offerId, await acc2.getAddress(), WithdrawalAssetERC1155.amount);
@@ -4875,18 +5608,23 @@ describe('OpenDotcV2', () => {
 
       expect(await dotc.offersFromAddress(await acc2.getAddress(), 0)).to.eq(offerId);
 
-      expect((await escrow.escrowDeposits(offerId)).depositAsset.assetAddress).to.be.eq(WithdrawalAssetERC1155.assetAddress);
+      expect((await escrow.escrowDeposits(offerId)).depositAsset.assetAddress).to.be.eq(
+        WithdrawalAssetERC1155.assetAddress,
+      );
       expect((await escrow.escrowDeposits(offerId)).depositAsset.amount).to.be.eq(0);
       expect((await escrow.escrowDeposits(offerId)).depositAsset.tokenId).to.be.eq(WithdrawalAssetERC1155.tokenId);
       expect((await escrow.escrowDeposits(offerId)).depositAsset.assetType).to.be.eq(WithdrawalAssetERC1155.assetType);
 
-      expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(EscrowOfferStatusType.OfferCancelled);
+      expect((await escrow.escrowDeposits(offerId)).escrowOfferStatusType).to.be.eq(
+        EscrowOfferStatusType.OfferCancelled,
+      );
     });
   });
 
   describe('Update Offer', () => {
     it('Should update full offer', async () => {
-      const { dotc, dotcOfferHelper, offerHelper, authorization_true, erc20_18, erc20_6, acc1, acc2, acc3, deployer } = await loadFixture(fixture);
+      const { dotc, dotcOfferHelper, offerHelper, authorization_true, erc20_18, erc20_6, acc1, acc2, acc3, deployer } =
+        await loadFixture(fixture);
 
       const offerId = 0;
 
@@ -4954,17 +5692,13 @@ describe('OpenDotcV2', () => {
       Offer.timelockPeriod = 0;
 
       const update_offer_2 = await dotc.connect(acc1).updateOffer(offerId, Offer);
-      await expect(update_offer_2)
-        .to.emit(dotc, 'UpdatedOfferExpiry')
-        .withArgs(offerId, Offer.expiryTimestamp);
+      await expect(update_offer_2).to.emit(dotc, 'UpdatedOfferExpiry').withArgs(offerId, Offer.expiryTimestamp);
       expect((await dotc.allOffers(0)).offer.expiryTimestamp).to.eq(Offer.expiryTimestamp);
 
       Offer.expiryTimestamp = 0;
       Offer.timelockPeriod = now + 300;
       const update_offer_3 = await dotc.connect(acc1).updateOffer(offerId, Offer);
-      await expect(update_offer_3)
-        .to.emit(dotc, 'UpdatedTimeLockPeriod')
-        .withArgs(offerId, Offer.timelockPeriod);
+      await expect(update_offer_3).to.emit(dotc, 'UpdatedTimeLockPeriod').withArgs(offerId, Offer.timelockPeriod);
       expect((await dotc.allOffers(0)).offer.timelockPeriod).to.eq(Offer.timelockPeriod);
 
       await time.increase(300);
@@ -4988,17 +5722,15 @@ describe('OpenDotcV2', () => {
       );
 
       Offer.specialAddresses = [addressZero];
-      await expect(dotc.connect(acc1).updateOffer(offerId, Offer)).to.be.revertedWithCustomError(
-        offerHelper,
-        'AddressIsZeroError',
-      ).withArgs(offerId);
+      await expect(dotc.connect(acc1).updateOffer(offerId, Offer))
+        .to.be.revertedWithCustomError(offerHelper, 'AddressIsZeroError')
+        .withArgs(offerId);
 
       Offer.specialAddresses = [];
       Offer.authorizationAddresses = [addressZero];
-      await expect(dotc.connect(acc1).updateOffer(offerId, Offer)).to.be.revertedWithCustomError(
-        offerHelper,
-        'AddressIsZeroError',
-      ).withArgs(offerId);
+      await expect(dotc.connect(acc1).updateOffer(offerId, Offer))
+        .to.be.revertedWithCustomError(offerHelper, 'AddressIsZeroError')
+        .withArgs(offerId);
 
       Offer.authorizationAddresses = [];
 
@@ -5006,23 +5738,26 @@ describe('OpenDotcV2', () => {
       Offer.expiryTimestamp = now + 2000;
       Offer.timelockPeriod = now + 200;
       const update_offer_5 = await dotc.connect(acc1).updateOffer(offerId, Offer);
-      await expect(update_offer_5).to.emit(dotc, 'OfferSpecialAddressesUpdated').withArgs(offerId, Offer.specialAddresses);
+      await expect(update_offer_5)
+        .to.emit(dotc, 'OfferSpecialAddressesUpdated')
+        .withArgs(offerId, Offer.specialAddresses);
       expect((await dotc.allOffers(0)).offer.specialAddresses).to.deep.eq([await acc2.getAddress()]);
 
       Offer.authorizationAddresses = [authorization_true.address, authorization_true.address];
       const update_offer_6 = await dotc.connect(acc1).updateOffer(offerId, Offer);
-      await expect(update_offer_6).to.emit(dotc, 'OfferAuthAddressesUpdated').withArgs(offerId, Offer.authorizationAddresses);
+      await expect(update_offer_6)
+        .to.emit(dotc, 'OfferAuthAddressesUpdated')
+        .withArgs(offerId, Offer.authorizationAddresses);
       expect((await dotc.allOffers(0)).offer.specialAddresses).to.deep.eq([await acc2.getAddress()]);
 
-      await expect(
-        dotc.connect(deployer).takeOfferFixed(offerId, 0, addressZero),
-      ).to.be.revertedWithCustomError(offerHelper, 'NotSpecialAddressError').withArgs(await deployer.getAddress());
-      await expect(dotc.connect(acc3).takeOfferFixed(offerId, 0, addressZero)).to.be.revertedWithCustomError(
-        offerHelper,
-        'NotSpecialAddressError',
-      ).withArgs(await acc3.getAddress());
+      await expect(dotc.connect(deployer).takeOfferFixed(offerId, 0, addressZero))
+        .to.be.revertedWithCustomError(offerHelper, 'NotSpecialAddressError')
+        .withArgs(await deployer.getAddress());
+      await expect(dotc.connect(acc3).takeOfferFixed(offerId, 0, addressZero))
+        .to.be.revertedWithCustomError(offerHelper, 'NotSpecialAddressError')
+        .withArgs(await acc3.getAddress());
 
-      await dotc.connect(acc2).takeOfferFixed(offerId, 0, addressZero)
+      await dotc.connect(acc2).takeOfferFixed(offerId, 0, addressZero);
     });
   });
 });
@@ -5045,10 +5780,7 @@ function calculatePercentage(value: BigNumber, percentage: BigNumber): BigNumber
   return value.mul(percentage).div(SCALING_FACTOR);
 }
 
-function getRateWithPercentage(
-  rate: BigNumber,
-  offerPrice: OfferPriceStruct
-): BigNumber {
+function getRateWithPercentage(rate: BigNumber, offerPrice: OfferPriceStruct): BigNumber {
   const percentage = calculatePercentage(rate, BigNumber.from(offerPrice.percentage));
 
   return offerPrice.percentageType == PercentageType.Plus ? rate.add(percentage) : rate.sub(percentage);
