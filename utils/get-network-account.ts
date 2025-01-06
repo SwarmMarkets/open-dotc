@@ -73,7 +73,7 @@ export function getNetworkConfig(
   return {
     accounts: getNetworkAccounts(account, accountType),
     url: override?.url || infuraRpcUrl || alchemyRpcUrl,
-    gas: 'auto',
+    gasPrice: 'auto',
     ...override,
     chainId: chainIds[networkName],
   };
