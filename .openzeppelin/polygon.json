@@ -630,6 +630,342 @@
           ]
         }
       }
+    },
+    "be51669bd3b45572ef1fed3d761402bae2b3c38b9f63b6fa0ff6297ef5be78b6": {
+      "address": "0x1F58f1BA43a88b4FF3B4265449b26e28C08395aD",
+      "txHash": "0x372e9433adcd0bd3a00060329905b2a4dbc339ed8ccb6c4d74273eca04d95ae1",
+      "layout": {
+        "solcVersion": "0.8.25",
+        "storage": [
+          {
+            "label": "manager",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_contract(DotcManagerV2)5922",
+            "contract": "DotcV2_1",
+            "src": "contracts/OpenDotc/v2/DotcV2_1.sol:137"
+          },
+          {
+            "label": "escrow",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_contract(DotcEscrowV2)5639",
+            "contract": "DotcV2_1",
+            "src": "contracts/OpenDotc/v2/DotcV2_1.sol:141"
+          },
+          {
+            "label": "allOffers",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_mapping(t_uint256,t_struct(DotcOffer)10265_storage)",
+            "contract": "DotcV2_1",
+            "src": "contracts/OpenDotc/v2/DotcV2_1.sol:147"
+          },
+          {
+            "label": "offersFromAddress",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_mapping(t_address,t_array(t_uint256)dyn_storage)",
+            "contract": "DotcV2_1",
+            "src": "contracts/OpenDotc/v2/DotcV2_1.sol:152"
+          },
+          {
+            "label": "currentOfferId",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_uint256",
+            "contract": "DotcV2_1",
+            "src": "contracts/OpenDotc/v2/DotcV2_1.sol:157"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
+          "t_contract(DotcEscrowV2)5639": {
+            "label": "contract DotcEscrowV2",
+            "numberOfBytes": "20"
+          },
+          "t_contract(DotcManagerV2)5922": {
+            "label": "contract DotcManagerV2",
+            "numberOfBytes": "20"
+          },
+          "t_enum(AssetType)10165": {
+            "label": "enum AssetType",
+            "members": [
+              "NoType",
+              "ERC20",
+              "ERC721",
+              "ERC1155"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_enum(OfferFillType)10186": {
+            "label": "enum OfferFillType",
+            "members": [
+              "NotTaken",
+              "Cancelled",
+              "PartiallyTaken",
+              "FullyTaken"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_enum(OfferPricingType)10170": {
+            "label": "enum OfferPricingType",
+            "members": [
+              "NoType",
+              "FixedPricing",
+              "DynamicPricing"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_enum(PercentageType)10180": {
+            "label": "enum PercentageType",
+            "members": [
+              "NoType",
+              "Plus",
+              "Minus"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_enum(TakingOfferType)10175": {
+            "label": "enum TakingOfferType",
+            "members": [
+              "NoType",
+              "PartialOffer",
+              "BlockOffer"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_array(t_uint256)dyn_storage)": {
+            "label": "mapping(address => uint256[])",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(DotcOffer)10265_storage)": {
+            "label": "mapping(uint256 => struct DotcOffer)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Asset)10227_storage": {
+            "label": "struct Asset",
+            "members": [
+              {
+                "label": "assetType",
+                "type": "t_enum(AssetType)10165",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "assetAddress",
+                "type": "t_address",
+                "offset": 1,
+                "slot": "0"
+              },
+              {
+                "label": "amount",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "tokenId",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "assetPrice",
+                "type": "t_struct(AssetPrice)10201_storage",
+                "offset": 0,
+                "slot": "3"
+              }
+            ],
+            "numberOfBytes": "192"
+          },
+          "t_struct(AssetPrice)10201_storage": {
+            "label": "struct AssetPrice",
+            "members": [
+              {
+                "label": "priceFeedAddress",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "offerMaximumPrice",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "offerMinimumPrice",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              }
+            ],
+            "numberOfBytes": "96"
+          },
+          "t_struct(DotcOffer)10265_storage": {
+            "label": "struct DotcOffer",
+            "members": [
+              {
+                "label": "maker",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "offerFillType",
+                "type": "t_enum(OfferFillType)10186",
+                "offset": 20,
+                "slot": "0"
+              },
+              {
+                "label": "depositAsset",
+                "type": "t_struct(Asset)10227_storage",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "withdrawalAsset",
+                "type": "t_struct(Asset)10227_storage",
+                "offset": 0,
+                "slot": "7"
+              },
+              {
+                "label": "offer",
+                "type": "t_struct(OfferStruct)10249_storage",
+                "offset": 0,
+                "slot": "13"
+              }
+            ],
+            "numberOfBytes": "768"
+          },
+          "t_struct(OfferPrice)10213_storage": {
+            "label": "struct OfferPrice",
+            "members": [
+              {
+                "label": "offerPricingType",
+                "type": "t_enum(OfferPricingType)10170",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "unitPrice",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "percentage",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "percentageType",
+                "type": "t_enum(PercentageType)10180",
+                "offset": 0,
+                "slot": "3"
+              }
+            ],
+            "numberOfBytes": "128"
+          },
+          "t_struct(OfferStruct)10249_storage": {
+            "label": "struct OfferStruct",
+            "members": [
+              {
+                "label": "takingOfferType",
+                "type": "t_enum(TakingOfferType)10175",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "offerPrice",
+                "type": "t_struct(OfferPrice)10213_storage",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "specialAddresses",
+                "type": "t_array(t_address)dyn_storage",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "authorizationAddresses",
+                "type": "t_array(t_address)dyn_storage",
+                "offset": 0,
+                "slot": "6"
+              },
+              {
+                "label": "expiryTimestamp",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "7"
+              },
+              {
+                "label": "timelockPeriod",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "8"
+              },
+              {
+                "label": "terms",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "9"
+              },
+              {
+                "label": "commsLink",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "10"
+              }
+            ],
+            "numberOfBytes": "352"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64"
+          },
+          "t_bool": {
+            "label": "bool"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin-v5/contracts-upgradeable/proxy/utils/Initializable.sol:69"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin-v5/contracts-upgradeable/proxy/utils/Initializable.sol:73"
+            }
+          ]
+        }
+      }
     }
   }
 }
