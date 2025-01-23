@@ -1,0 +1,51 @@
+[
+  {
+    "name": "Open",
+    "chainName": "Ethereum",
+    "chainID": 1,
+    "authContractAddress": "0x395666ffDF009A6804bf6329A26636E4B4C41b9e",
+    "linkToQualify": "https://app.swarm.com/v1/onboarding "
+  },
+  {
+    "name": "Open",
+    "chainName": "Polygon",
+    "chainID": 137,
+    "authContractAddress": "0x34E4A977EaA54Fe97f93894C6a37E061B77197D5",
+    "linkToQualify": "https://app.swarm.com/v1/onboarding "
+  },
+  {
+    "name": "Permissionless",
+    "chainName": "Base",
+    "chainID": 8453,
+    "authContractAddress": "0xdEE5E991F2D9865EC9317ee4dED5657856D4E0cE",
+    "linkToQualify": "https://app.swarm.com/v1/onboarding "
+  },
+  {
+    "name": "Security",
+    "chainName": "Polygon",
+    "chainID": 137,
+    "authContractAddress": "0xcD2609a25407ce8B1bDc31038Fb0B86637cB2063",
+    "linkToQualify": "https://app.swarm.com/v1/onboarding "
+  },
+  {
+    "name": "SoF",
+    "chainName": "Polygon",
+    "chainID": 137,
+    "authContractAddress": "0xE757E813A49d338026B49b921684aFe9BC7C7f5B",
+    "linkToQualify": "https://app.swarm.com/v1/onboarding "
+  },
+  {
+    "name": "Standard",
+    "chainName": "Ethereum",
+    "chainID": 1,
+    "authContractAddress": "0xE4DDF30e91FD4Fa43fd69B46f232CA67db79DFCD",
+    "linkToQualify": "https://app.swarm.com/v1/onboarding "
+  },
+  {
+    "name": "Standard",
+    "chainName": "Polygon",
+    "chainID": 137,
+    "authContractAddress": "0xb161fb38ccCe7E70a010a60736cf579AB6cA130d",
+    "linkToQualify": "https://app.swarm.com/v1/onboarding "
+  }
+]
