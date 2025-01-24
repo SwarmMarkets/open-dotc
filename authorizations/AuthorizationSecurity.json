@@ -1,6 +1,10 @@
 {
   "name": "Security",
-  "address": {
-    "polygon": "0xcD2609a25407ce8B1bDc31038Fb0B86637cB2063"
+  "network": {
+    "polygon": {
+      "chainId": 137,
+      "authContractAddress": "0xcD2609a25407ce8B1bDc31038Fb0B86637cB2063",
+      "linkToQualify": "https://app.swarm.com/v1/onboarding "
+    }
   }
 }

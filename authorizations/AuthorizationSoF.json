@@ -1,6 +1,10 @@
 {
   "name": "SoF",
-  "address": {
-    "polygon": "0xE757E813A49d338026B49b921684aFe9BC7C7f5B"
+  "network": {
+    "polygon": {
+      "chainId": 137,
+      "authContractAddress": "0xE757E813A49d338026B49b921684aFe9BC7C7f5B",
+      "linkToQualify": "https://app.swarm.com/v1/onboarding "
+    }
   }
 }

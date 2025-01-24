@@ -1,7 +1,15 @@
 {
   "name": "Open",
-  "address": {
-    "ethereum": "0x395666ffDF009A6804bf6329A26636E4B4C41b9e",
-    "polygon": "0x34E4A977EaA54Fe97f93894C6a37E061B77197D5"
+  "network": {
+    "ethereum":  {
+      "chainId": 1,
+      "authContractAddress": "0x395666ffDF009A6804bf6329A26636E4B4C41b9e",
+      "linkToQualify": "https://app.swarm.com/v1/onboarding "
+    },
+    "polygon": {
+      "chainId": 137,
+      "authContractAddress": "0x34E4A977EaA54Fe97f93894C6a37E061B77197D5",
+      "linkToQualify": "https://app.swarm.com/v1/onboarding "
+    }
   }
 }
