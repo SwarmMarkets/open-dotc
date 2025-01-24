@@ -1,15 +1,20 @@
 {
   "name": "Standard",
   "network": {
-    "ethereum":  {
+    "ethereum": {
       "chainId": 1,
       "authContractAddress": "0xE4DDF30e91FD4Fa43fd69B46f232CA67db79DFCD",
-      "linkToQualify": "https://app.swarm.com/v1/onboarding "
+      "linkToQualify": "https://app.swarm.com/v1/onboarding"
     },
     "polygon": {
       "chainId": 137,
       "authContractAddress": "0xb161fb38ccCe7E70a010a60736cf579AB6cA130d",
-      "linkToQualify": "https://app.swarm.com/v1/onboarding "
+      "linkToQualify": "https://app.swarm.com/v1/onboarding"
+    },
+    "arbitrum-sepolia": {
+      "chainId": 421614,
+      "authContractAddress": "0x53bf31335EC19d485EB21980D7EfbC2278fdcF28",
+      "linkToQualify": "https://dev.swarm.com/v1/onboarding"
     }
   }
 }
