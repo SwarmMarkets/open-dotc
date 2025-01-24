@@ -1,6 +1,10 @@
 {
   "name": "Permissionless",
-  "address": {
-    "base": "0xdEE5E991F2D9865EC9317ee4dED5657856D4E0cE"
+  "network": {
+    "base": {
+      "chainId": 8453,
+      "authContractAddress": "0xdEE5E991F2D9865EC9317ee4dED5657856D4E0cE",
+      "linkToQualify": "https://app.swarm.com/v1/onboarding"
+    }
   }
 }
