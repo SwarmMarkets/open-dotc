@@ -13,7 +13,7 @@
     },
     "arbitrum-sepolia": {
       "chainId": 421614,
-      "authContractAddress": "0x53bf31335EC19d485EB21980D7EfbC2278fdcF28",
+      "authContractAddress": "0x6C6484Ffa4c77e3C35966411fF79D51a6c2adCE3",
       "linkToQualify": "https://dev.swarm.com/v1/onboarding"
     }
   }
