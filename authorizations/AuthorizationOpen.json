@@ -16,5 +16,6 @@
       "authContractAddress": "0x31F12f3932aE3752e23D6FcA07255956caCfFD87",
       "linkToQualify": "https://dev.swarm.com/v1/onboarding"
     }
-  }
+  },
+  "hidden": true
 }
