@@ -3,7 +3,7 @@ import { BigNumber, ContractFactory, Signer } from 'ethers';
 import { expect } from 'chai';
 import {
   DotcEscrowV2,
-  DotcV2_1 as DotcV2,
+  DotcV2 as DotcV2,
   ERC20MockV2,
   ERC721MockV2,
   ERC1155MockV2,
@@ -80,7 +80,7 @@ describe('OpenDotcV2', () => {
     })) as DotcEscrowV2;
     await escrow.deployed();
 
-    const Dotc = await ethers.getContractFactory('DotcV2_1', {
+    const Dotc = await ethers.getContractFactory('DotcV2', {
       libraries: {
         AssetHelper: assetHelper.address,
         OfferHelper: offerHelper.address,

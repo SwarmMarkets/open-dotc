@@ -189,49 +189,27 @@
           },
           "t_enum(AssetType)18086": {
             "label": "enum AssetType",
-            "members": [
-              "NoType",
-              "ERC20",
-              "ERC721",
-              "ERC1155"
-            ],
+            "members": ["NoType", "ERC20", "ERC721", "ERC1155"],
             "numberOfBytes": "1"
           },
           "t_enum(OfferFillType)18107": {
             "label": "enum OfferFillType",
-            "members": [
-              "NotTaken",
-              "Cancelled",
-              "PartiallyTaken",
-              "FullyTaken"
-            ],
+            "members": ["NotTaken", "Cancelled", "PartiallyTaken", "FullyTaken"],
             "numberOfBytes": "1"
           },
           "t_enum(OfferPricingType)18091": {
             "label": "enum OfferPricingType",
-            "members": [
-              "NoType",
-              "FixedPricing",
-              "DynamicPricing"
-            ],
+            "members": ["NoType", "FixedPricing", "DynamicPricing"],
             "numberOfBytes": "1"
           },
           "t_enum(PercentageType)18101": {
             "label": "enum PercentageType",
-            "members": [
-              "NoType",
-              "Plus",
-              "Minus"
-            ],
+            "members": ["NoType", "Plus", "Minus"],
             "numberOfBytes": "1"
           },
           "t_enum(TakingOfferType)18096": {
             "label": "enum TakingOfferType",
-            "members": [
-              "NoType",
-              "PartialOffer",
-              "BlockOffer"
-            ],
+            "members": ["NoType", "PartialOffer", "BlockOffer"],
             "numberOfBytes": "1"
           },
           "t_mapping(t_address,t_array(t_uint256)dyn_storage)": {
@@ -501,23 +479,12 @@
           },
           "t_enum(AssetType)18086": {
             "label": "enum AssetType",
-            "members": [
-              "NoType",
-              "ERC20",
-              "ERC721",
-              "ERC1155"
-            ],
+            "members": ["NoType", "ERC20", "ERC721", "ERC1155"],
             "numberOfBytes": "1"
           },
           "t_enum(EscrowOfferStatusType)18114": {
             "label": "enum EscrowOfferStatusType",
-            "members": [
-              "NoType",
-              "OfferDeposited",
-              "OfferFullyWithdrawn",
-              "OfferPartiallyWithdrawn",
-              "OfferCancelled"
-            ],
+            "members": ["NoType", "OfferDeposited", "OfferFullyWithdrawn", "OfferPartiallyWithdrawn", "OfferCancelled"],
             "numberOfBytes": "1"
           },
           "t_mapping(t_uint256,t_struct(EscrowDeposit)18194_storage)": {
@@ -642,40 +609,40 @@
             "offset": 0,
             "slot": "0",
             "type": "t_contract(DotcManagerV2)5922",
-            "contract": "DotcV2_1",
-            "src": "contracts/OpenDotc/v2/DotcV2_1.sol:137"
+            "contract": "DotcV2",
+            "src": "contracts/OpenDotc/v2/DotcV2.sol:137"
           },
           {
             "label": "escrow",
             "offset": 0,
             "slot": "1",
             "type": "t_contract(DotcEscrowV2)5639",
-            "contract": "DotcV2_1",
-            "src": "contracts/OpenDotc/v2/DotcV2_1.sol:141"
+            "contract": "DotcV2",
+            "src": "contracts/OpenDotc/v2/DotcV2.sol:141"
           },
           {
             "label": "allOffers",
             "offset": 0,
             "slot": "2",
             "type": "t_mapping(t_uint256,t_struct(DotcOffer)10265_storage)",
-            "contract": "DotcV2_1",
-            "src": "contracts/OpenDotc/v2/DotcV2_1.sol:147"
+            "contract": "DotcV2",
+            "src": "contracts/OpenDotc/v2/DotcV2.sol:147"
           },
           {
             "label": "offersFromAddress",
             "offset": 0,
             "slot": "3",
             "type": "t_mapping(t_address,t_array(t_uint256)dyn_storage)",
-            "contract": "DotcV2_1",
-            "src": "contracts/OpenDotc/v2/DotcV2_1.sol:152"
+            "contract": "DotcV2",
+            "src": "contracts/OpenDotc/v2/DotcV2.sol:152"
           },
           {
             "label": "currentOfferId",
             "offset": 0,
             "slot": "4",
             "type": "t_uint256",
-            "contract": "DotcV2_1",
-            "src": "contracts/OpenDotc/v2/DotcV2_1.sol:157"
+            "contract": "DotcV2",
+            "src": "contracts/OpenDotc/v2/DotcV2.sol:157"
           }
         ],
         "types": {
@@ -701,49 +668,27 @@
           },
           "t_enum(AssetType)10165": {
             "label": "enum AssetType",
-            "members": [
-              "NoType",
-              "ERC20",
-              "ERC721",
-              "ERC1155"
-            ],
+            "members": ["NoType", "ERC20", "ERC721", "ERC1155"],
             "numberOfBytes": "1"
           },
           "t_enum(OfferFillType)10186": {
             "label": "enum OfferFillType",
-            "members": [
-              "NotTaken",
-              "Cancelled",
-              "PartiallyTaken",
-              "FullyTaken"
-            ],
+            "members": ["NotTaken", "Cancelled", "PartiallyTaken", "FullyTaken"],
             "numberOfBytes": "1"
           },
           "t_enum(OfferPricingType)10170": {
             "label": "enum OfferPricingType",
-            "members": [
-              "NoType",
-              "FixedPricing",
-              "DynamicPricing"
-            ],
+            "members": ["NoType", "FixedPricing", "DynamicPricing"],
             "numberOfBytes": "1"
           },
           "t_enum(PercentageType)10180": {
             "label": "enum PercentageType",
-            "members": [
-              "NoType",
-              "Plus",
-              "Minus"
-            ],
+            "members": ["NoType", "Plus", "Minus"],
             "numberOfBytes": "1"
           },
           "t_enum(TakingOfferType)10175": {
             "label": "enum TakingOfferType",
-            "members": [
-              "NoType",
-              "PartialOffer",
-              "BlockOffer"
-            ],
+            "members": ["NoType", "PartialOffer", "BlockOffer"],
             "numberOfBytes": "1"
           },
           "t_mapping(t_address,t_array(t_uint256)dyn_storage)": {
