@@ -1,4 +1,5 @@
 import { ethers, upgrades } from 'hardhat';
+import { verifyContract } from '../helpers/verify-contract';
 import { DotcManagerV2, DotcV2, DotcEscrowV2, AssetHelper, OfferHelper, DotcOfferHelper } from '../../typechain';
 import { ContractFactory } from 'ethers';
 
@@ -6,14 +7,11 @@ const DEPLOY_LIBRARIES = true;
 const DEPLOY_DOTC_MANAGER = true;
 const DEPLOY_DOTC = true;
 const DEPLOY_ESCROW = true;
+const VERIFY = true;
 
-let dotcManager_address: string,
-  dotc_address: string,
-  escrow_address: string;
+let dotcManager_address: string, dotc_address: string, escrow_address: string;
 
-let assetHelper_address: string,
-  offerHelper_address: string,
-  dotcOfferHelper_address: string;
+let assetHelper_address: string, offerHelper_address: string, dotcOfferHelper_address: string;
 
 async function main() {
   const [deployer] = await ethers.getSigners();
@@ -21,11 +19,11 @@ async function main() {
   if (DEPLOY_LIBRARIES) {
     // Deploy AssetHelper library
     const AssetHelper: ContractFactory = await ethers.getContractFactory('AssetHelper');
-    const assetHelper = await AssetHelper.deploy() as AssetHelper;
+    const assetHelper = (await AssetHelper.deploy()) as AssetHelper;
     await assetHelper.deployed();
     assetHelper_address = assetHelper.address;
 
-    console.log("AssetHelper: ", assetHelper.address);
+    console.log('AssetHelper: ', assetHelper.address);
 
     // Deploy DotcOfferHelper library
     const OfferHelper: ContractFactory = await ethers.getContractFactory('OfferHelper', {
@@ -33,20 +31,19 @@ async function main() {
         AssetHelper: assetHelper.address,
       },
     });
-    const offerHelper = await OfferHelper.deploy() as OfferHelper;
+    const offerHelper = (await OfferHelper.deploy()) as OfferHelper;
     await offerHelper.deployed();
     offerHelper_address = offerHelper.address;
 
-    console.log("OfferHelper: ", offerHelper.address);
+    console.log('OfferHelper: ', offerHelper.address);
 
     // Deploy DotcOfferHelper library
     const DotcOfferHelper: ContractFactory = await ethers.getContractFactory('DotcOfferHelper');
-    const dotcOfferHelper = await DotcOfferHelper.deploy() as DotcOfferHelper;
+    const dotcOfferHelper = (await DotcOfferHelper.deploy()) as DotcOfferHelper;
     await dotcOfferHelper.deployed();
     dotcOfferHelper_address = dotcOfferHelper.address;
 
-    console.log("DotcOfferHelper: ", dotcOfferHelper.address);
-
+    console.log('DotcOfferHelper: ', dotcOfferHelper.address);
   }
 
   if (DEPLOY_DOTC_MANAGER) {
@@ -81,7 +78,9 @@ async function main() {
         DotcOfferHelper: dotcOfferHelper_address,
       },
     });
-    const dotc = (await upgrades.deployProxy(Dotc, [dotcManager_address], { unsafeAllowLinkedLibraries: true })) as DotcV2;
+    const dotc = (await upgrades.deployProxy(Dotc, [dotcManager_address], {
+      unsafeAllowLinkedLibraries: true,
+    })) as DotcV2;
     await dotc.deployed();
     dotc_address = dotc.address;
 
@@ -102,12 +101,28 @@ async function main() {
   }
 
   if (dotcManager_address) {
-    const dotcManager = await ethers.getContractAt('DotcManagerV2', dotcManager_address) as DotcManagerV2;
+    const dotcManager = (await ethers.getContractAt('DotcManagerV2', dotcManager_address)) as DotcManagerV2;
 
     await (await dotcManager.changeEscrow(escrow_address)).wait(1);
     await (await dotcManager.changeDotc(dotc_address)).wait(1);
     await (await dotcManager.changeDotcInEscrow()).wait(1);
     await (await dotcManager.changeEscrowInDotc()).wait(1);
+  }
+
+  if (VERIFY) {
+    await verifyContract(assetHelper_address);
+    await verifyContract(offerHelper_address, [], {
+      AssetHelper: assetHelper_address,
+    });
+    await verifyContract(dotcOfferHelper_address);
+
+    await verifyContract(dotcManager_address);
+    await verifyContract(dotc_address, [], {
+      assetHelper_address,
+      offerHelper_address,
+      dotcOfferHelper_address,
+    });
+    await verifyContract(escrow_address);
   }
 }
 
