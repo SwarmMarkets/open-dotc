@@ -50,7 +50,7 @@ error IncorrectOfferPricingType(OfferPricingType incorrectOfferPricingType);
  * ////////////////DISCLAIMER////////////////DISCLAIMER////////////////DISCLAIMER////////////////
  * @author Swarm
  */
-contract DotcV2_1 is Initializable, Receiver {
+contract DotcV2 is Initializable, Receiver {
     /// @dev Used for Safe transfer tokens.
     using SafeTransferLib for address;
     /// @dev Used for precise calculations.
