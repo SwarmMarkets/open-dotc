@@ -19,6 +19,21 @@
       "address": "0x7dE0DA30ada33b23E66d562b9B5aa7c508F9F147",
       "txHash": "0x27a8d0d485931d47b25a805c97a92d0dec6a08732c3f19f5497de762387618f8",
       "kind": "transparent"
+    },
+    {
+      "address": "0xE416603336873aA568C5fbFA738e17cC8e025293",
+      "txHash": "0xe3a861bf83b1fc67b275373a5f8f77d8e838183535cf5f6185b66194c73f739b",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x3A5D3FB5d39dc5a206E9f63E133e2Ff1B7c2C159",
+      "txHash": "0x9d5f8394491095df1012da50fcdce2ca12596a44f68c38df2ea07015c8231275",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xef24A519994bffa2104c4fd6c1ee58718f6c7Bd5",
+      "txHash": "0xf5e872fc48217f03fb0543f5b5731863e9217742637f8fcb8f5d36f30a865ce9",
+      "kind": "transparent"
     }
   ],
   "impls": {
@@ -189,27 +204,49 @@
           },
           "t_enum(AssetType)18086": {
             "label": "enum AssetType",
-            "members": ["NoType", "ERC20", "ERC721", "ERC1155"],
+            "members": [
+              "NoType",
+              "ERC20",
+              "ERC721",
+              "ERC1155"
+            ],
             "numberOfBytes": "1"
           },
           "t_enum(OfferFillType)18107": {
             "label": "enum OfferFillType",
-            "members": ["NotTaken", "Cancelled", "PartiallyTaken", "FullyTaken"],
+            "members": [
+              "NotTaken",
+              "Cancelled",
+              "PartiallyTaken",
+              "FullyTaken"
+            ],
             "numberOfBytes": "1"
           },
           "t_enum(OfferPricingType)18091": {
             "label": "enum OfferPricingType",
-            "members": ["NoType", "FixedPricing", "DynamicPricing"],
+            "members": [
+              "NoType",
+              "FixedPricing",
+              "DynamicPricing"
+            ],
             "numberOfBytes": "1"
           },
           "t_enum(PercentageType)18101": {
             "label": "enum PercentageType",
-            "members": ["NoType", "Plus", "Minus"],
+            "members": [
+              "NoType",
+              "Plus",
+              "Minus"
+            ],
             "numberOfBytes": "1"
           },
           "t_enum(TakingOfferType)18096": {
             "label": "enum TakingOfferType",
-            "members": ["NoType", "PartialOffer", "BlockOffer"],
+            "members": [
+              "NoType",
+              "PartialOffer",
+              "BlockOffer"
+            ],
             "numberOfBytes": "1"
           },
           "t_mapping(t_address,t_array(t_uint256)dyn_storage)": {
@@ -479,12 +516,23 @@
           },
           "t_enum(AssetType)18086": {
             "label": "enum AssetType",
-            "members": ["NoType", "ERC20", "ERC721", "ERC1155"],
+            "members": [
+              "NoType",
+              "ERC20",
+              "ERC721",
+              "ERC1155"
+            ],
             "numberOfBytes": "1"
           },
           "t_enum(EscrowOfferStatusType)18114": {
             "label": "enum EscrowOfferStatusType",
-            "members": ["NoType", "OfferDeposited", "OfferFullyWithdrawn", "OfferPartiallyWithdrawn", "OfferCancelled"],
+            "members": [
+              "NoType",
+              "OfferDeposited",
+              "OfferFullyWithdrawn",
+              "OfferPartiallyWithdrawn",
+              "OfferCancelled"
+            ],
             "numberOfBytes": "1"
           },
           "t_mapping(t_uint256,t_struct(EscrowDeposit)18194_storage)": {
@@ -668,27 +716,49 @@
           },
           "t_enum(AssetType)10165": {
             "label": "enum AssetType",
-            "members": ["NoType", "ERC20", "ERC721", "ERC1155"],
+            "members": [
+              "NoType",
+              "ERC20",
+              "ERC721",
+              "ERC1155"
+            ],
             "numberOfBytes": "1"
           },
           "t_enum(OfferFillType)10186": {
             "label": "enum OfferFillType",
-            "members": ["NotTaken", "Cancelled", "PartiallyTaken", "FullyTaken"],
+            "members": [
+              "NotTaken",
+              "Cancelled",
+              "PartiallyTaken",
+              "FullyTaken"
+            ],
             "numberOfBytes": "1"
           },
           "t_enum(OfferPricingType)10170": {
             "label": "enum OfferPricingType",
-            "members": ["NoType", "FixedPricing", "DynamicPricing"],
+            "members": [
+              "NoType",
+              "FixedPricing",
+              "DynamicPricing"
+            ],
             "numberOfBytes": "1"
           },
           "t_enum(PercentageType)10180": {
             "label": "enum PercentageType",
-            "members": ["NoType", "Plus", "Minus"],
+            "members": [
+              "NoType",
+              "Plus",
+              "Minus"
+            ],
             "numberOfBytes": "1"
           },
           "t_enum(TakingOfferType)10175": {
             "label": "enum TakingOfferType",
-            "members": ["NoType", "PartialOffer", "BlockOffer"],
+            "members": [
+              "NoType",
+              "PartialOffer",
+              "BlockOffer"
+            ],
             "numberOfBytes": "1"
           },
           "t_mapping(t_address,t_array(t_uint256)dyn_storage)": {
@@ -841,6 +911,342 @@
               {
                 "label": "offerPrice",
                 "type": "t_struct(OfferPrice)10213_storage",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "specialAddresses",
+                "type": "t_array(t_address)dyn_storage",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "authorizationAddresses",
+                "type": "t_array(t_address)dyn_storage",
+                "offset": 0,
+                "slot": "6"
+              },
+              {
+                "label": "expiryTimestamp",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "7"
+              },
+              {
+                "label": "timelockPeriod",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "8"
+              },
+              {
+                "label": "terms",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "9"
+              },
+              {
+                "label": "commsLink",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "10"
+              }
+            ],
+            "numberOfBytes": "352"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64"
+          },
+          "t_bool": {
+            "label": "bool"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin-v5/contracts-upgradeable/proxy/utils/Initializable.sol:69"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin-v5/contracts-upgradeable/proxy/utils/Initializable.sol:73"
+            }
+          ]
+        }
+      }
+    },
+    "c2aa1de92d856d86e8e0d1b54d193282f9700b3ec1ac07b727aba8a72f962f21": {
+      "address": "0x7F8148cd533c0AB6058bB11346a0C242B1ee3Ca4",
+      "txHash": "0xaf1f9ee6cb2715bf0029c29816f6eea24a3d9c09507f7effbccf0ac4a472b12b",
+      "layout": {
+        "solcVersion": "0.8.25",
+        "storage": [
+          {
+            "label": "manager",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_contract(DotcManagerV2)2256",
+            "contract": "DotcV2",
+            "src": "contracts/OpenDotc/v2/DotcV2.sol:137"
+          },
+          {
+            "label": "escrow",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_contract(DotcEscrowV2)1973",
+            "contract": "DotcV2",
+            "src": "contracts/OpenDotc/v2/DotcV2.sol:141"
+          },
+          {
+            "label": "allOffers",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_mapping(t_uint256,t_struct(DotcOffer)5278_storage)",
+            "contract": "DotcV2",
+            "src": "contracts/OpenDotc/v2/DotcV2.sol:147"
+          },
+          {
+            "label": "offersFromAddress",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_mapping(t_address,t_array(t_uint256)dyn_storage)",
+            "contract": "DotcV2",
+            "src": "contracts/OpenDotc/v2/DotcV2.sol:152"
+          },
+          {
+            "label": "currentOfferId",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_uint256",
+            "contract": "DotcV2",
+            "src": "contracts/OpenDotc/v2/DotcV2.sol:157"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
+          "t_contract(DotcEscrowV2)1973": {
+            "label": "contract DotcEscrowV2",
+            "numberOfBytes": "20"
+          },
+          "t_contract(DotcManagerV2)2256": {
+            "label": "contract DotcManagerV2",
+            "numberOfBytes": "20"
+          },
+          "t_enum(AssetType)5178": {
+            "label": "enum AssetType",
+            "members": [
+              "NoType",
+              "ERC20",
+              "ERC721",
+              "ERC1155"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_enum(OfferFillType)5199": {
+            "label": "enum OfferFillType",
+            "members": [
+              "NotTaken",
+              "Cancelled",
+              "PartiallyTaken",
+              "FullyTaken"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_enum(OfferPricingType)5183": {
+            "label": "enum OfferPricingType",
+            "members": [
+              "NoType",
+              "FixedPricing",
+              "DynamicPricing"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_enum(PercentageType)5193": {
+            "label": "enum PercentageType",
+            "members": [
+              "NoType",
+              "Plus",
+              "Minus"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_enum(TakingOfferType)5188": {
+            "label": "enum TakingOfferType",
+            "members": [
+              "NoType",
+              "PartialOffer",
+              "BlockOffer"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_array(t_uint256)dyn_storage)": {
+            "label": "mapping(address => uint256[])",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(DotcOffer)5278_storage)": {
+            "label": "mapping(uint256 => struct DotcOffer)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Asset)5240_storage": {
+            "label": "struct Asset",
+            "members": [
+              {
+                "label": "assetType",
+                "type": "t_enum(AssetType)5178",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "assetAddress",
+                "type": "t_address",
+                "offset": 1,
+                "slot": "0"
+              },
+              {
+                "label": "amount",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "tokenId",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "assetPrice",
+                "type": "t_struct(AssetPrice)5214_storage",
+                "offset": 0,
+                "slot": "3"
+              }
+            ],
+            "numberOfBytes": "192"
+          },
+          "t_struct(AssetPrice)5214_storage": {
+            "label": "struct AssetPrice",
+            "members": [
+              {
+                "label": "priceFeedAddress",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "offerMaximumPrice",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "offerMinimumPrice",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              }
+            ],
+            "numberOfBytes": "96"
+          },
+          "t_struct(DotcOffer)5278_storage": {
+            "label": "struct DotcOffer",
+            "members": [
+              {
+                "label": "maker",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "offerFillType",
+                "type": "t_enum(OfferFillType)5199",
+                "offset": 20,
+                "slot": "0"
+              },
+              {
+                "label": "depositAsset",
+                "type": "t_struct(Asset)5240_storage",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "withdrawalAsset",
+                "type": "t_struct(Asset)5240_storage",
+                "offset": 0,
+                "slot": "7"
+              },
+              {
+                "label": "offer",
+                "type": "t_struct(OfferStruct)5262_storage",
+                "offset": 0,
+                "slot": "13"
+              }
+            ],
+            "numberOfBytes": "768"
+          },
+          "t_struct(OfferPrice)5226_storage": {
+            "label": "struct OfferPrice",
+            "members": [
+              {
+                "label": "offerPricingType",
+                "type": "t_enum(OfferPricingType)5183",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "unitPrice",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "percentage",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "percentageType",
+                "type": "t_enum(PercentageType)5193",
+                "offset": 0,
+                "slot": "3"
+              }
+            ],
+            "numberOfBytes": "128"
+          },
+          "t_struct(OfferStruct)5262_storage": {
+            "label": "struct OfferStruct",
+            "members": [
+              {
+                "label": "takingOfferType",
+                "type": "t_enum(TakingOfferType)5188",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "offerPrice",
+                "type": "t_struct(OfferPrice)5226_storage",
                 "offset": 0,
                 "slot": "1"
               },
