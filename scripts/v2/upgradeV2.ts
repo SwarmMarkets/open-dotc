@@ -1,5 +1,5 @@
 import { ethers, upgrades } from 'hardhat';
-import { DotcManagerV2, DotcV2, DotcEscrowV2 } from '../../typechain';
+import { DotcManagerV2, DotcV2_1, DotcEscrowV2 } from '../../typechain';
 import { ContractFactory } from 'ethers';
 
 const UPGRADE_DOTC_MANAGER = true;
@@ -10,6 +10,9 @@ const dotcManager_address: string = '',
   dotc_address: string = '',
   escrow_address: string = '';
 
+const AssetHelper: string = '',
+  OfferHelper: string = '',
+  DotcOfferHelper: string = '';
 async function main() {
   if (UPGRADE_DOTC_MANAGER) {
     const DotcManager: ContractFactory = await ethers.getContractFactory('DotcManagerV2');
@@ -20,8 +23,22 @@ async function main() {
   }
 
   if (UPGRADE_DOTC) {
-    const Dotc = await ethers.getContractFactory('DotcV2');
-    const dotc = (await upgrades.upgradeProxy(dotc_address, Dotc)) as DotcV2;
+    if (
+      (AssetHelper === undefined || AssetHelper === '') &&
+      (OfferHelper === undefined || OfferHelper === '') &&
+      (DotcOfferHelper === undefined || DotcOfferHelper === '')
+    ) {
+      throw new Error('Libraries are not defined');
+    }
+
+    const Dotc = await ethers.getContractFactory('DotcV2_1', {
+      libraries: {
+        AssetHelper,
+        OfferHelper,
+        DotcOfferHelper,
+      },
+    });
+    const dotc = (await upgrades.upgradeProxy(dotc_address, Dotc, { unsafeAllowLinkedLibraries: true })) as DotcV2_1;
     await dotc.deployed();
 
     console.log('Dotc: ', dotc.address);
