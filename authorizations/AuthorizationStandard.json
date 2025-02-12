@@ -15,6 +15,11 @@
       "chainId": 421614,
       "authContractAddress": "0x6C6484Ffa4c77e3C35966411fF79D51a6c2adCE3",
       "linkToQualify": "https://dev.swarm.com/v1/onboarding"
+    },
+    "base": {
+      "chainId": 8453,
+      "authContractAddress": "0xef24A519994bffa2104c4fd6c1ee58718f6c7Bd5",
+      "linkToQualify": "https://app.swarm.com/v1/onboarding"
     }
   }
 }
