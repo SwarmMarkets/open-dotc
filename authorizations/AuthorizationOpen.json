@@ -11,6 +11,11 @@
       "authContractAddress": "0x34E4A977EaA54Fe97f93894C6a37E061B77197D5",
       "linkToQualify": "https://app.swarm.com/v1/onboarding"
     },
+    "base": {
+      "chainId": 8453,
+      "authContractAddress": "0xbb6a3BFc2597E3C3A1443B5BcB83261A98c816F2",
+      "linkToQualify": "https://app.swarm.com/v1/onboarding"
+    },
     "arbitrum-sepolia": {
       "chainId": 421614,
       "authContractAddress": "0x31F12f3932aE3752e23D6FcA07255956caCfFD87",
