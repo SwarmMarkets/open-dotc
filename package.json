@@ -36,8 +36,7 @@
     "upgradeV1": "hardhat run scripts/v1/upgrade.ts --network",
     "upgradeV2": "hardhat run scripts/v2/upgradeV2.ts --network"
   },
-  "devDependencies": {
-    "@chainlink/contracts": "^1.1.1",
+ "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^1.0.6",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
@@ -48,18 +47,12 @@
     "@typechain/ethers-v5": "^10.2.0",
     "@typechain/hardhat": "^6.1.5",
     "@types/chai": "^4.3.3",
-    "@types/contract-proxy-kit": "^1.0.2",
-    "@types/convert-excel-to-json": "^1.7.1",
     "@types/fs-extra": "^11.0.1",
     "@types/lodash": "^4.14.168",
     "@types/mocha": "^10.0.1",
     "@types/node": "^18.11.18",
     "@typescript-eslint/eslint-plugin": "^5.46.1",
     "@typescript-eslint/parser": "^5.46.1",
-    "cacheable-request": "^10.2.5",
-    "cli-spinners": "^2.7.0",
-    "contract-proxy-kit": "^3.0.0",
-    "convert-excel-to-json": "^1.7.0",
     "dotenv": "^16.0.3",
     "dotenv-cli": "^7.2.1",
     "eslint": "^8.32.0",
@@ -74,23 +67,18 @@
     "hardhat-typechain": "^0.3.5",
     "husky": "^8.0.2",
     "lint-staged": "^13.1.0",
-    "ora": "^6.1.2",
-    "patch-package": "^6.4.7",
-    "postinstall-postinstall": "^2.1.0",
     "prettier": "2.8.7",
     "prettier-plugin-solidity": "1.1.3",
     "shelljs": "^0.8.4",
-    "sol2uml": "^2.5.4",
     "solc": "^0.8.17",
-    "solc-0.7": "npm:solc@^0.7.0",
     "solhint": "^3.3.8",
     "solhint-plugin-prettier": "^0.0.5",
     "solidity-coverage": "^0.8.5",
-    "solidity-docgen": "^0.6.0-beta.35",
     "ts-generator": "^0.1.1",
     "ts-node": "^10.9.1",
     "typechain": "^8.1.1",
-    "typescript": "^5.0.4"
+    "typescript": "^5.0.4",
+    "solidity-docgen": "^0.6.0-beta.36"
   },
   "dependencies": {
     "@openzeppelin-v4/contracts": "npm:@openzeppelin/contracts@4.8.1",
@@ -98,7 +86,7 @@
     "@openzeppelin-v5/contracts": "npm:@openzeppelin/contracts@5.0.2",
     "@openzeppelin-v5/contracts-upgradeable": "npm:@openzeppelin/contracts-upgradeable@5.0.2",
     "@types/cacheable-request": "^8.3.2",
-    "solady": "^0.0.213"
-  },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+    "solady": "^0.1.12"
+
+  }
 }
