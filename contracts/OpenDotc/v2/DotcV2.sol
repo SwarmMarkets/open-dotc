@@ -32,6 +32,8 @@ error BlockOfferShouldBePaidFully(uint256 withdrawalAmountPaid);
  */
 error IncorrectOfferPricingType(OfferPricingType incorrectOfferPricingType);
 
+error InsufficientFundsForERC721(uint256 withdrawalAmountPaid, uint256 withdrawalPrice);
+
 /**
  * @title Open Dotc smart contract (as part of the "SwarmX.eth Protocol")
  * @notice This contract handles decentralized over-the-counter trading.
@@ -306,13 +308,13 @@ contract DotcV2 is Initializable, Receiver {
         offer.withdrawalAsset.checkAssetOwner(msg.sender, withdrawalAmountPaid);
 
         uint256 depositAssetAmount;
-        if (offer.depositAsset.assetType != AssetType.ERC20) {
-            depositAssetAmount = withdrawalAmountPaid.fullMulDiv(offer.depositAsset.amount, withdrawalPrice);
+        if (offer.depositAsset.assetType == AssetType.ERC721) {
+            if (withdrawalAmountPaid < withdrawalPrice) {
+                revert InsufficientFundsForERC721(withdrawalAmountPaid, withdrawalPrice);
+            }
+            depositAssetAmount = 1;
         } else {
-            depositAssetAmount = AssetHelper.calculatePercentage(
-                offer.depositAsset.amount,
-                AssetHelper.getPartPercentage(withdrawalAmountPaid, withdrawalPrice)
-            );
+            depositAssetAmount = withdrawalAmountPaid.fullMulDiv(offer.depositAsset.amount, withdrawalPrice);
         }
         uint256 fullDepositAssetAmount = depositAssetAmount;
 

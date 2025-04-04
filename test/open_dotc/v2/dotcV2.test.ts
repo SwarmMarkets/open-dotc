@@ -2790,7 +2790,7 @@ describe('OpenDotcV2', () => {
     });
 
     describe('Dynamic AssetPrice', () => {
-      it.only('Should take full dynamic price offer (offerMinimumPrice) (erc20 => erc20)', async () => {
+      it('Should take full dynamic price offer (offerMinimumPrice) (erc20 => erc20)', async () => {
         const {
           dotc,
           escrow,
@@ -3184,10 +3184,7 @@ describe('OpenDotcV2', () => {
 
         const withdrawalAmountPaid = withdrawalAmount.div(3);
 
-        const depositAmount = calculatePercentage(
-          BigNumber.from(DepositAssetERC20.amount),
-          getPartPercentage(withdrawalAmountPaid, withdrawalAmount),
-        );
+        const depositAmount = withdrawalAmountPaid.mul(DepositAssetERC20.amount).div(withdrawalAmount);
 
         const [fees, ,] = await assetHelper.getFees(
           withdrawalAmountPaid,
@@ -3615,10 +3612,7 @@ describe('OpenDotcV2', () => {
 
         const withdrawalAmountPaid = withdrawalAmount.div(3);
 
-        const depositAmount = calculatePercentage(
-          BigNumber.from(DepositAssetERC20.amount),
-          getPartPercentage(withdrawalAmountPaid, withdrawalAmount),
-        );
+        const depositAmount = withdrawalAmountPaid.mul(DepositAssetERC20.amount).div(withdrawalAmount);
 
         const [fees, ,] = await assetHelper.getFees(
           withdrawalAmountPaid,
