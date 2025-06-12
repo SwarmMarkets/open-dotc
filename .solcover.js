@@ -19,5 +19,5 @@ module.exports = {
   providerOptions: {
     mnemonic,
   },
-  skipFiles: ['mocks', 'test', 'OpenDotc/v1'],
+  skipFiles: ['mocks', 'test', 'price-feeds', 'OpenDotc/v1'],
 };
