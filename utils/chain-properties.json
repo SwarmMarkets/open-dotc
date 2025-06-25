@@ -3,15 +3,13 @@
     "chainId": 1,
     "alchemySubdomain": "eth-mainnet",
     "infuraSubdomain": "mainnet",
-    "explorer": "https://etherscan.io/",
-    "builtin": true
+    "explorer": "https://etherscan.io/"
   },
   "optimism": {
     "chainId": 10,
     "alchemySubdomain": "opt-mainnet",
     "infuraSubdomain": "optimism-mainnet",
-    "explorer": "https://optimistic.etherscan.io/",
-    "builtin": true
+    "explorer": "https://optimistic.etherscan.io/"
   },
   "bsc": {
     "chainId": 56,
@@ -34,8 +32,7 @@
     "chainId": 137,
     "alchemySubdomain": "polygon-mainnet",
     "infuraSubdomain": "polygon-mainnet",
-    "explorer": "https://polygonscan.com/",
-    "builtin": true
+    "explorer": "https://polygonscan.com/"
   },
   "sonic": {
     "chainId": 146,
@@ -111,8 +108,7 @@
     "chainId": 11155111,
     "alchemySubdomain": "eth-sepolia",
     "infuraSubdomain": "sepolia",
-    "explorer": "https://sepolia.etherscan.io/",
-    "builtin": true
+    "explorer": "https://sepolia.etherscan.io/"
   },
   "blast_sepolia": {
     "chainId": 168587773,

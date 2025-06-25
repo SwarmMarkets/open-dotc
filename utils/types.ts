@@ -11,6 +11,5 @@ export interface ChainConfig {
   infuraSubdomain?: string;
   rpc?: string;
   explorer: string;
-  builtin?: boolean;
   api?: string;
 }

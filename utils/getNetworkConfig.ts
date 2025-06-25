@@ -12,8 +12,12 @@ const hederaOnly = ['hedera'];
 
 const networkAccountMap: Record<string, AccountTypes> = Object.fromEntries(
   Object.keys(chainConfig).map(slug => {
-    if (testnets.includes(slug)) return [slug, AccountTypes.TESTNET_PK];
-    if (hederaOnly.includes(slug)) return [slug, AccountTypes.HEDERA_PK];
+    if (testnets.includes(slug)) {
+      return [slug, AccountTypes.TESTNET_PK];
+    }
+    if (hederaOnly.includes(slug)) {
+      return [slug, AccountTypes.HEDERA_PK];
+    }
     return [slug, AccountTypes.MNEMONIC];
   }),
 );
@@ -24,10 +28,11 @@ export function getNetworkConfig(slug: string, override?: HttpNetworkUserConfig)
     throw new Error(`Network '${slug}' not found in chain-config.json`);
   }
 
-  const accountType = networkAccountMap[slug];
-  if (!accountType) {
+  if (!(slug in networkAccountMap)) {
     throw new Error(`No AccountType mapped for network '${slug}'`);
   }
+
+  const accountType = networkAccountMap[slug];
 
   const timeout = slug === 'hedera' ? 60_000 : undefined;
 

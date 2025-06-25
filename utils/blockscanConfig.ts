@@ -7,22 +7,11 @@ dotenv.config();
 
 const allSlugs = Object.keys(chainConfig);
 
-const BUILT_IN_SLUGS = new Set<string>(
-  Object.entries(chainConfig)
-    .filter(([, entry]) => (entry as ChainConfig).builtin === true)
-    .map(([slug]) => slug),
-);
-const customSlugs = allSlugs.filter(slug => !BUILT_IN_SLUGS.has(slug));
-
-function getBlockscanConfig(slug: string): CustomChain {
+export function getBlockscanConfig(slug: string): CustomChain {
   const entry = (chainConfig as Record<string, ChainConfig>)[slug];
 
   if (!entry) {
     throw new Error(`Network '${slug}' not found in chain-config.json`);
-  }
-
-  if (entry.builtin) {
-    throw new Error(`${slug} is supported by default; custom config not needed`);
   }
 
   const key = process.env.ETHERSCAN_KEY;
@@ -44,5 +33,5 @@ const apiKey = Object.fromEntries(Object.keys(chainConfig).map(slug => [slug, pr
 
 export const etherscanConfig: EtherscanConfig = {
   apiKey,
-  customChains: customSlugs.map(getBlockscanConfig),
+  customChains: allSlugs.map(getBlockscanConfig),
 };
