@@ -531,7 +531,7 @@ contract DotcV2 is Initializable, Receiver {
         uint256 withdrawalAmountPaid,
         uint256 withdrawalPrice,
         TakingOfferType takingOfferType
-    ) internal returns (uint256 toPay) {
+    ) internal pure returns (uint256 toPay) {
         toPay = withdrawalAmountPaid;
 
         if (withdrawalAmountPaid == 0 || withdrawalAmountPaid > withdrawalPrice) {
