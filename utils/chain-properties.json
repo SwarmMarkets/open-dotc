@@ -118,15 +118,20 @@
   },
   "hedera": {
     "chainId": 295,
-    "rpc": "https://hedera.linkpool.pro",
-    "explorer": "https://hashscan.io",
-    "api": "https://hedera.linkpool.pro"
+    "rpc": "https://295.rpc.thirdweb.com",
+    "explorer": "https://hashscan.io/mainnet",
+    "api": "https://mainnet.hashio.io/api"
+  },
+  "hedera_testnet": {
+    "chainId": 296,
+    "rpc": "https://testnet.hashio.io/api",
+    "explorer": "https://hashscan.io/testnet",
+    "api": "https://testnet.hashio.io/api"
   },
   "hyperevm": {
     "chainId": 999,
     "rpc": "https://rpc.hyperliquid.xyz/evm",
-    "explorer": "https://www.hyperscan.com/",
-    "api": "https://www.hyperscan.com/api"
+    "explorer": "https://hyperevmscan.io/"
   },
   "mode": {
     "chainId": 34443,

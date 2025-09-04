@@ -12,9 +12,39 @@ dotenv.config();
 const config: HardhatUserConfig = {
   solidity: {
     compilers: [
-      { version: '0.8.28', settings: { optimizer: { enabled: true, runs: 200 } } },
-      { version: '0.8.25', settings: { optimizer: { enabled: true, runs: 200 } } },
-      { version: '0.8.19', settings: { optimizer: { enabled: true, runs: 200 } } },
+      {
+        version: '0.8.28',
+        settings: {
+          optimizer: { enabled: true, runs: 200 },
+          outputSelection: {
+            '*': {
+              '*': ['abi', 'evm.bytecode', 'evm.deployedBytecode', 'metadata', 'devdoc', 'userdoc'],
+            },
+          },
+        },
+      },
+      {
+        version: '0.8.25',
+        settings: {
+          optimizer: { enabled: true, runs: 200 },
+          outputSelection: {
+            '*': {
+              '*': ['abi', 'evm.bytecode', 'evm.deployedBytecode', 'metadata', 'devdoc', 'userdoc'],
+            },
+          },
+        },
+      },
+      {
+        version: '0.8.19',
+        settings: {
+          optimizer: { enabled: true, runs: 200 },
+          outputSelection: {
+            '*': {
+              '*': ['abi', 'evm.bytecode', 'evm.deployedBytecode', 'metadata', 'devdoc', 'userdoc'],
+            },
+          },
+        },
+      },
     ],
   },
   defaultNetwork: 'hardhat',
@@ -32,15 +62,24 @@ const config: HardhatUserConfig = {
     mainnet: getNetworkConfig('mainnet'),
     optimism: getNetworkConfig('optimism'),
     bsc: getNetworkConfig('bsc'),
+    bscMainnet: {
+      url: 'https://bsc-dataseed.binance.org/', // Public BSC mainnet RPC (or use testnet: https://data-seed-prebsc-1-s1.binance.org:8545/)
+      accounts: [process.env.PK!], // Replace with your deployer's private key
+      chainId: 56, // BSC mainnet (use 97 for testnet)
+      gasPrice: 5000000000, // Set to 5 Gwei to cover BSC's minimum tip
+      gas: 8000000, // Optional: Set a high gas limit for complex deployments
+    },
     gnosis: getNetworkConfig('gnosis'),
     unichain: getNetworkConfig('unichain'),
     polygon: getNetworkConfig('polygon'),
     sonic: getNetworkConfig('sonic'),
     hedera: getNetworkConfig('hedera'),
     // hederaMainnet: {
-    //   url: 'http://127.0.0.1:7546',
+    //   url: 'https://mainnet.hashio.io/api',
     //   chainId: 295,
     //   accounts: [process.env.HEDERA_PK!],
+    //   blockGasLimit: 4_000_000,
+    //   gas: 4_000_000,
     // },
     polygonZk: getNetworkConfig('polygonZk'),
     base: getNetworkConfig('base'),
@@ -57,6 +96,7 @@ const config: HardhatUserConfig = {
     base_sepolia: getNetworkConfig('base_sepolia'),
     arbitrum_sepolia: getNetworkConfig('arbitrum_sepolia'),
     sepolia: getNetworkConfig('sepolia'),
+    hedera_testnet: getNetworkConfig('hedera_testnet'),
   },
   gasReporter: {
     coinmarketcap: process.env.COIN_MARKET_CAP_KEY,
@@ -65,6 +105,11 @@ const config: HardhatUserConfig = {
     excludeContracts: ['mocks/', 'test/'],
   },
   etherscan,
+  // sourcify: {
+  //   enabled: true,
+  //   apiUrl: 'https://server-verify.hashscan.io',
+  //   browserUrl: 'https://repository-verify.hashscan.io',
+  // },
   docgen: {
     outputDir: './docs/TechnicalRequirements',
     exclude: ['mocks', 'OpenDotc/v1'],

@@ -8,7 +8,7 @@ import chainConfig from './chain-properties.json';
 dotenv.config();
 
 const testnets = ['amoy', 'base_sepolia', 'arbitrum_sepolia', 'sepolia'];
-const hederaOnly = ['hedera'];
+const hederaOnly = ['hedera', 'hedera_testnet'];
 
 const networkAccountMap: Record<string, AccountTypes> = Object.fromEntries(
   Object.keys(chainConfig).map(slug => {
@@ -34,14 +34,14 @@ export function getNetworkConfig(slug: string, override?: HttpNetworkUserConfig)
 
   const accountType = networkAccountMap[slug];
 
-  const timeout = slug === 'hedera' ? 60_000 : undefined;
+  // const timeout = slug === 'hedera' ? 60_000 : undefined;
 
   return {
     accounts: getNetworkAccounts(accountType),
     url: override?.url ?? getChainRpc(slug),
-    gasPrice: 'auto',
+    // gas: 12_000_000,
     chainId: entry.chainId,
-    timeout,
+    // timeout,
     ...override,
   };
 }
