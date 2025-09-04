@@ -1,8 +1,8 @@
 import { verifyContract } from '../helpers/verify-contract';
 
-const goldOz_address: string = '0x0a103eE32F4209926D8ba7e528AFf8a831Ed3daE';
+const goldOz_address: string = '0x86896fEB19D8A607c3b11f2aF50A0f239Bd71CD0';
 
-const goldKg_address: string = '0x2B418D9B1e0C203Ab93c8b5A54258Bb3E6BAbbc6';
+const goldKg_address: string = '0xe9e59bB874741E50C8322c3BaBB02BE0066455f5';
 
 async function main(): Promise<void> {
   await verifyContract(goldKg_address, [goldOz_address]);
