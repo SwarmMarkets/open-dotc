@@ -36,7 +36,7 @@
     "upgradeV1": "hardhat run scripts/v1/upgrade.ts --network",
     "upgradeV2": "hardhat run scripts/v2/upgradeV2.ts --network"
   },
- "devDependencies": {
+  "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^1.0.6",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
@@ -86,7 +86,8 @@
     "@openzeppelin-v5/contracts": "npm:@openzeppelin/contracts@5.0.2",
     "@openzeppelin-v5/contracts-upgradeable": "npm:@openzeppelin/contracts-upgradeable@5.0.2",
     "@types/cacheable-request": "^8.3.2",
+    "@uniswap/v3-core": "^1.0.1",
+    "@uniswap/v3-periphery": "^1.4.4",
     "solady": "^0.1.12"
-
   }
 }
