@@ -9,6 +9,8 @@ import { ISwapRouter } from "@uniswap/v3-periphery/contracts/interfaces/ISwapRou
 import { IQuoter } from "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";
 import { AggregatorV2V3Interface } from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV2V3Interface.sol";
 
+// TODO: unify uniswap and pancakeswap, check pools first in uniswap then pancake
+
 import { Storage } from "./Storage.sol";
 import { WhitelistedTokens } from "./WhitelistedTokens.sol";
 import { IERC20Burner } from "./interfaces/IERC20Burner.sol";
