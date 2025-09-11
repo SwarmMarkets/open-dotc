@@ -1,0 +1,153 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+pragma solidity ^0.8.19;
+
+import { Ownable } from "solady/src/auth/Ownable.sol";
+import { SafeTransferLib } from "solady/src/utils/SafeTransferLib.sol";
+import { MetadataReaderLib } from "solady/src/utils/MetadataReaderLib.sol";
+import { IUniswapV3Factory } from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
+import { ISwapRouter } from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+import { IQuoter } from "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";
+import { AggregatorV2V3Interface } from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV2V3Interface.sol";
+
+import { Storage } from "./Storage.sol";
+import { WhitelistedTokens } from "./WhitelistedTokens.sol";
+import { IERC20Burner } from "./interfaces/IERC20Burner.sol";
+import { ISMTPriceFeed } from "./interfaces/ISMTPriceFeed.sol";
+
+/// @title SwarmBuyerBurner smart contract (as part of the "SwarmX.eth Protocol")
+/// @notice This contract provides functionality to swap and burn ERC20 tokens using Uniswap V3.
+/// @dev It leverages Uniswap V3 for token swaps and supports burning a specific token.
+contract SwarmBuyerBurner is Storage, WhitelistedTokens, Ownable {
+    using SafeTransferLib for address;
+    using MetadataReaderLib for address;
+
+    error PriceFeedError(address priceFeed);
+    error TokenDecimalsError(address token, uint8 decimals);
+
+    /// @notice Emitted when a `token` is swapped to SMT using WETH9 as an intermediary.
+    /// @param amountOut The amount of SMT received.
+    event SwappedExactInputMultihop(address indexed token, uint256 amountOut);
+
+    event PoolNotExists(address indexed token);
+
+    event ZeroBalance(address indexed token);
+
+    /// @param uniswapV3Factory The address of the Uniswap V3 factory.
+    /// @param uniswapV3Router The address of the Uniswap V3 swap router.
+    /// @param weth The address of the WETH9 token.
+    /// @param smt The address of the burnable SMT token.
+    constructor(
+        address weth,
+        address smt,
+        address[] memory depositTokens,
+        address uniswapV3Factory,
+        address uniswapV3Router,
+        address uniswapV3Quoter
+    ) {
+        WETH9 = weth;
+        SMT = smt;
+
+        UNISWAP_V3_FACTORY = uniswapV3Factory;
+        UNISWAP_V3_ROUTER = uniswapV3Router;
+        UNISWAP_V3_QUOTER = uniswapV3Quoter;
+
+        _addTokens(depositTokens);
+        _setOwner(msg.sender);
+    }
+
+    /// @notice Swaps `token` for SMT through WETH9, with the exact input amount.
+    /// @dev Requires approval for spending `token`.
+    /// @return fullAmountOut The amount of SMT burned.
+    function swapExactInputMultihop() external returns (uint256 fullAmountOut) {
+        address[] memory _tokens = tokens;
+
+        for (uint256 i = 0; i < _tokens.length; ++i) {
+            uint256 amountIn = _tokens[i].balanceOf(address(this));
+            if (amountIn == 0) {
+                emit ZeroBalance(_tokens[i]);
+                continue; // Skip if no tokens are available for swapping
+            }
+
+            bool isWeth = _tokens[i] == WETH9;
+
+            bytes memory path;
+
+            if (isWeth) {
+                path = abi.encodePacked(WETH9, POOL_FEE, SMT);
+            } else {
+                if (IUniswapV3Factory(UNISWAP_V3_FACTORY).getPool(_tokens[i], WETH9, POOL_FEE) == address(0)) {
+                    emit PoolNotExists(_tokens[i]);
+                    // TODO: Create offer on dotc
+                    continue; // Skip if the pool does not exist
+                }
+                path = abi.encodePacked(_tokens[i], POOL_FEE, WETH9, POOL_FEE, SMT);
+            }
+
+            uint256 amountOutMinimum = IQuoter(UNISWAP_V3_QUOTER).quoteExactInput(path, amountIn);
+
+            // Multiple pool swaps are encoded through bytes called a `path`.
+            // A path is a sequence of token addresses and POOL_FEEs that define the pools used in the swaps.
+            //
+            // The format for pool encoding is (tokenIn, fee, tokenOut/tokenIn, fee, tokenOut)
+            // where tokenIn/tokenOut parameter is the shared token across the pools.
+            //
+            // Since we are swapping `tokens[i]` to WETH9 and then WETH9 to SMT the path encoding
+            // is (`tokens[i]`, 0.3%, WETH9, 0.3%, SMT).
+            ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
+                path: path,
+                recipient: address(this),
+                deadline: block.timestamp,
+                amountIn: amountIn,
+                amountOutMinimum: amountOutMinimum
+            });
+
+            uint256 amountOut = ISwapRouter(UNISWAP_V3_ROUTER).exactInput(params);
+            fullAmountOut += amountOut;
+
+            emit SwappedExactInputMultihop(tokens[i], amountOut);
+        }
+
+        // Burn the SMT tokens received from the swap.
+        _burnSmt(fullAmountOut);
+    }
+
+    /// @notice Adds a list of tokens to the whitelist.
+    /// @dev Only the owner can call this function.
+    /// @dev The function will revert if any of the tokens are already whitelisted.
+    /// @dev The function will emit a `Whitelisted` event for each token added.
+    /// @dev The function will revert if any of the tokens are already whitelisted.
+    /// @param tokensToAdd The list of token addresses to add to the whitelist.
+    function addTokens(address[] calldata tokensToAdd) external onlyOwner {
+        _addTokens(tokensToAdd);
+    }
+
+    /// @notice Removes a list of tokens from the whitelist.
+    /// @dev Only the owner can call this function.
+    /// @dev The function will revert if any of the tokens are not whitelisted.
+    /// @dev The function will emit a `Unwhitelisted` event for each token removed.
+    /// @param tokensToRemove The list of token addresses to remove from the whitelist.
+    function removeTokens(address[] calldata tokensToRemove) external onlyOwner {
+        _removeTokens(tokensToRemove);
+    }
+
+    /// @notice Burns a specific amount of SMTs.
+    /// @param amount The amount of SMTs to burn.
+    function burnSMT(uint256 amount) external onlyOwner {
+        _burnSmt(amount);
+    }
+
+    /// @notice Allows the owner to withdraw a specified amount of `token`'s.
+    /// @param token The token address to withdraw.
+    /// @param amount The amount of the `token`s to withdraw.
+    function withdrawTokens(address token, uint256 amount) external onlyOwner {
+        token.safeTransfer(msg.sender, amount);
+    }
+
+    function _burnSmt(uint256 amount) internal {
+        IERC20Burner(SMT).burn(amount);
+    }
+
+    function _toApprove() internal view override returns (address) {
+        return UNISWAP_V3_ROUTER;
+    }
+}
