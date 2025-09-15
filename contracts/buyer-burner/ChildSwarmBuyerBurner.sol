@@ -5,7 +5,7 @@ import { Initializable } from "solady/src/utils/Initializable.sol";
 import { Ownable } from "solady/src/auth/Ownable.sol";
 
 import { BuyerBurnerSwapper } from "./extensions/BuyerBurnerSwapper.sol";
-import { BuyerBurnerDotcOfferMaker } from "./extensions/BuyerBurnerOfferMaker.sol";
+import { BuyerBurnerOfferMaker, DotcV2 } from "./extensions/BuyerBurnerOfferMaker.sol";
 import { BuyerBurnerCCIPCaller } from "./extensions/BuyerBurnerCCIPCaller.sol";
 
 /// @title SwarmBuyerBurner smart contract (as part of the "SwarmX.eth Protocol")
@@ -15,13 +15,9 @@ contract ChildSwarmBuyerBurner is
     Initializable,
     Ownable,
     BuyerBurnerSwapper,
-    BuyerBurnerDotcOfferMaker,
+    BuyerBurnerOfferMaker,
     BuyerBurnerCCIPCaller
 {
-    /// @param uniswapV3Factory The address of the Uniswap V3 factory.
-    /// @param uniswapV3Router The address of the Uniswap V3 swap router.
-    /// @param weth The address of the WETH9 token.
-    /// @param smt The address of the burnable SMT token.
     function initialize(
         DotcV2 dotc,
         CCIPConfig calldata ccipConfig,
@@ -71,14 +67,10 @@ contract ChildSwarmBuyerBurner is
     }
 
     function _ifPoolsNA(address tokenIn, uint256 amountIn, address tokenOut, uint256 amountOut) internal override {
-        _makeOffer(_tokens[i], amountIn, config.finalToken, amountOut);
+        _makeOffer(tokenIn, amountIn, tokenOut, amountOut);
     }
 
     function _finishSwap(address token, uint256 amount) internal override {
         _ccipTransfer(token, amount);
-    }
-
-    function _toApprove() internal view override returns (address) {
-        return UNISWAP_V3_ROUTER;
     }
 }
