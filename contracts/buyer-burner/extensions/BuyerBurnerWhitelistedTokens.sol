@@ -5,22 +5,28 @@ abstract contract BuyerBurnerWhitelistedTokens {
     error TokenWhitelisted(address token);
     error TokenNotWhitelisted(address token);
 
-    event Whitelisted(address indexed token);
-    event Unwhitelisted(address indexed token);
+    event Whitelisted(TokenInfo tokenInfo);
+    event Unwhitelisted(address token);
 
-    address[] public tokens;
+    struct TokenInfo {
+        address token;
+        address priceFeed;
+        uint256 maxPriceFeedDelay;
+    }
+
+    TokenInfo[] public tokens;
     mapping(address token => uint256 index) public indexOf;
 
     /// @notice Add a single token + its Chainlink feed
-    function _addToken(address token) internal virtual {
-        if (indexOf[token] != 0) {
-            revert TokenWhitelisted(token);
+    function _addToken(TokenInfo calldata tokenInfo) internal virtual {
+        if (indexOf[tokenInfo.token] != 0) {
+            revert TokenWhitelisted(tokenInfo.token);
         }
 
-        tokens.push(token);
-        indexOf[token] = tokens.length; // 1-based
+        tokens.push(tokenInfo);
+        indexOf[tokenInfo.token] = tokens.length; // 1-based
 
-        emit Whitelisted(token);
+        emit Whitelisted(tokenInfo);
     }
 
     /// @notice Remove a single token
@@ -32,9 +38,9 @@ abstract contract BuyerBurnerWhitelistedTokens {
 
         // swap-and-pop
         uint256 last = tokens.length;
-        address lastToken = tokens[last - 1];
-        tokens[index - 1] = lastToken;
-        indexOf[lastToken] = index;
+        TokenInfo memory lastTokenInfo = tokens[last - 1];
+        tokens[index - 1] = lastTokenInfo;
+        indexOf[lastTokenInfo.token] = index;
 
         tokens.pop();
 
@@ -44,9 +50,9 @@ abstract contract BuyerBurnerWhitelistedTokens {
     }
 
     /// @notice Batch add
-    function _addTokens(address[] calldata tokensToAdd) internal {
-        for (uint256 i; i < tokensToAdd.length; ++i) {
-            _addToken(tokensToAdd[i]);
+    function _addTokens(TokenInfo[] calldata tokensInfos) internal {
+        for (uint256 i; i < tokensInfos.length; ++i) {
+            _addToken(tokensInfos[i]);
         }
     }
 
