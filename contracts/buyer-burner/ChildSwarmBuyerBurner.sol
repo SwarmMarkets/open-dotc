@@ -32,7 +32,13 @@ contract ChildSwarmBuyerBurner is Initializable, Ownable, BuyerBurnerStorage, Wh
     /// @param amountOut The amount of SMT received.
     event SwappedExactInputMultihop(address indexed token, uint256 amountOut);
 
-    event PoolNotExists(address indexed token);
+    event PoolNotExistsOfferMade(
+        uint256 offerId,
+        address depositToken,
+        uint256 amountIn,
+        address withdrawalToken,
+        uint256 amountOut
+    );
 
     event ZeroBalance(address indexed token);
 
