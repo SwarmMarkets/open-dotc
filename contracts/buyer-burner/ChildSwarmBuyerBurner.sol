@@ -36,19 +36,8 @@ contract ChildSwarmBuyerBurner is
 
     /// @notice Emitted when a `token` is swapped to SMT using WETH9 as an intermediary.
     /// @param amountOut The amount of SMT received.
-    event SwappedExactInputMultihop(address indexed token, uint256 amountOut);
-
-    event PoolNotExistsOfferMade(
-        uint256 offerId,
-        address depositToken,
-        uint256 amountIn,
-        address withdrawalToken,
-        uint256 amountOut
-    );
-
-    event ZeroBalance(address indexed token);
-
-    address public backend;
+    event Swapped(address token, uint256 amountOut);
+    event ZeroBalance(address token);
 
     /// @param uniswapV3Factory The address of the Uniswap V3 factory.
     /// @param uniswapV3Router The address of the Uniswap V3 swap router.
