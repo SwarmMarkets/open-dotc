@@ -14,12 +14,9 @@ import { IV3SwapQuoter } from "./interfaces/IV3SwapQuoter.sol";
 
 // TODO: unify uniswap and pancakeswap, check pools first in uniswap then pancake
 
-import { Storage } from "./Storage.sol";
-import { WhitelistedTokens } from "./WhitelistedTokens.sol";
-import { IERC20Burner } from "./interfaces/IERC20Burner.sol";
-import { ISMTPriceFeed } from "./interfaces/ISMTPriceFeed.sol";
-import { DotcV2 } from "../OpenDotc/v2/DotcV2.sol";
-import { Asset, AssetType, AssetPrice, OfferStruct, TakingOfferType, OfferPrice } from "../OpenDotc/v2/structures/DotcStructuresV2.sol";
+import { BuyerBurnerStorage } from "./extensions/BuyerBurnerStorage.sol";
+import { WhitelistedTokens } from "./extensions/WhitelistedTokens.sol";
+import { DotcOfferMaker } from "./extensions/DotcOfferMaker.sol";
 
 /// @title SwarmBuyerBurner smart contract (as part of the "SwarmX.eth Protocol")
 /// @notice This contract provides functionality to swap and burn ERC20 tokens using Uniswap V3.
