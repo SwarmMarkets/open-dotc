@@ -32,9 +32,9 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens {
         uint24 poolFee;
         address intermediateToken;
         address finalToken;
-        address swapV3Factory;
         address swapV3Router;
-        address swapV3Quoter;
+        IV3SwapQuoter swapV3Quoter;
+        IV3SwapFactory swapV3Factory;
     }
 
     mapping(DEXType dexType => DexConfig config) internal _dexConfigs;
@@ -63,18 +63,12 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens {
             bool isWrappedNative = _tokens[i] == config.intermediateToken;
 
             bytes memory path;
-
+            uint256 amountOut;
             if (isWrappedNative) {
                 path = abi.encodePacked(config.intermediateToken, config.poolFee, config.finalToken);
             } else {
-                if (
-                    IV3SwapFactory(config.swapV3Factory).getPool(
-                        _tokens[i],
-                        config.intermediateToken,
-                        config.poolFee
-                    ) == address(0)
-                ) {
-                    uint256 amountOut = 1; //TODO: take this 1 from getPrice() that relies on AggregatorV2V3Interface
+                if (config.swapV3Factory.getPool(_tokens[i], config.intermediateToken, config.poolFee) == address(0)) {
+                    amountOut = 1; //TODO: take this 1 from getPrice() that relies on AggregatorV2V3Interface
                     _ifPoolsNA(_tokens[i], amountIn, config.finalToken, amountOut);
 
                     continue;
@@ -88,7 +82,7 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens {
                 );
             }
 
-            uint256 amountOutMinimum = IV3SwapQuoter(config.swapV3Quoter).quoteExactInput(path, amountIn);
+            uint256 amountOutMinimum = config.swapV3Quoter.quoteExactInput(path, amountIn);
 
             // Multiple pool swaps are encoded through bytes called a `path`.
             // A path is a sequence of token addresses and POOL_FEEs that define the pools used in the swaps.
@@ -106,8 +100,12 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens {
                 amountOutMinimum: amountOutMinimum
             });
 
-            uint256 amountOut = IV3SwapRouter(config.swapV3Router).exactInput(params);
+            _tokens[i].safeApproveWithRetry(config.swapV3Router, amountIn);
+
+            amountOut = IV3SwapRouter(config.swapV3Router).exactInput(params);
             fullAmountOut += amountOut;
+
+            _tokens[i].safeApprove(config.swapV3Router, amountIn);
 
             emit Swapped(tokens[i], amountOut);
         }
