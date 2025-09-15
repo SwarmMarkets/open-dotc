@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.28;
 
 import { SafeTransferLib } from "solady/src/utils/SafeTransferLib.sol";
 
@@ -15,8 +15,12 @@ abstract contract WhitelistedTokens {
     address[] public tokens;
     mapping(address token => uint256 index) public indexOf;
 
+    function __initialize_WhitelistedTokens_(address[] calldata depositTokens) internal {
+        _addTokens(depositTokens);
+    }
+
     /// @notice Add a single token + its Chainlink feed
-    function _addToken(address token) internal {
+    function _addToken(address token) internal virtual {
         require(indexOf[token] == 0, TokenWhitelisted(token));
 
         tokens.push(token);
@@ -28,7 +32,7 @@ abstract contract WhitelistedTokens {
     }
 
     /// @notice Remove a single token
-    function _removeToken(address token) internal {
+    function _removeToken(address token) internal virtual {
         uint256 index = indexOf[token];
         require(index != 0, TokenNotWhitelisted(token));
 
@@ -48,7 +52,7 @@ abstract contract WhitelistedTokens {
     }
 
     /// @notice Batch add
-    function _addTokens(address[] memory tokensToAdd) internal {
+    function _addTokens(address[] calldata tokensToAdd) internal {
         for (uint256 i; i < tokensToAdd.length; ++i) {
             _addToken(tokensToAdd[i]);
         }
@@ -62,12 +66,12 @@ abstract contract WhitelistedTokens {
     }
 
     /// @notice Revert if not whitelisted
-    function _ensureWhitelisted(address token) internal view {
+    function _ensureWhitelisted(address token) internal view virtual {
         require(indexOf[token] != 0, TokenNotWhitelisted(token));
     }
 
     /// @notice Revert if already whitelisted
-    function _ensureNotWhitelisted(address token) internal view {
+    function _ensureNotWhitelisted(address token) internal view virtual {
         require(indexOf[token] == 0, TokenWhitelisted(token));
     }
 
