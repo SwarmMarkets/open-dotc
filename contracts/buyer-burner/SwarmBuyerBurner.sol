@@ -5,16 +5,12 @@ import { Initializable } from "solady/src/utils/Initializable.sol";
 import { Ownable } from "solady/src/auth/Ownable.sol";
 
 import { BuyerBurnerSwapper } from "./extensions/BuyerBurnerSwapper.sol";
-import { BuyerBurnerDotcOfferMaker } from "./extensions/BuyerBurnerOfferMaker.sol";
+import { BuyerBurnerOfferMaker, DotcV2 } from "./extensions/BuyerBurnerOfferMaker.sol";
 
 /// @title SwarmBuyerBurner smart contract (as part of the "SwarmX.eth Protocol")
 /// @notice This contract provides functionality to swap and burn ERC20 tokens using Uniswap V3.
 /// @dev It leverages Uniswap V3 for token swaps and supports burning a specific token.
-contract SwarmBuyerBurner is Initializable, Ownable, BuyerBurnerSwapper, BuyerBurnerDotcOfferMaker {
-    /// @param uniswapV3Factory The address of the Uniswap V3 factory.
-    /// @param uniswapV3Router The address of the Uniswap V3 swap router.
-    /// @param weth The address of the WETH9 token.
-    /// @param smt The address of the burnable SMT token.
+contract SwarmBuyerBurner is Initializable, Ownable, BuyerBurnerSwapper, BuyerBurnerOfferMaker {
     function initialize(
         DotcV2 dotc,
         DEXType[] calldata dexTypes,
@@ -73,9 +69,5 @@ contract SwarmBuyerBurner is Initializable, Ownable, BuyerBurnerSwapper, BuyerBu
 
     function _finishSwap(address token, uint256 amount) internal override {
         IERC20Burner(token).burn(amount);
-    }
-
-    function _toApprove() internal view override returns (address) {
-        return UNISWAP_V3_ROUTER;
     }
 }
