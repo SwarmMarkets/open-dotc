@@ -64,8 +64,9 @@ contract ChildSwarmBuyerBurner is Initializable, Ownable, BuyerBurnerStorage, Wh
     /// @notice Swaps `token` for SMT through WETH9, with the exact input amount.
     /// @dev Requires approval for spending `token`.
     /// @return fullAmountOut The amount of SMT burned.
-    function swapExactInputMultihop() external returns (uint256 fullAmountOut) {
+    function swap(DEXType dexType) external returns (uint256 fullAmountOut) {
         address[] memory _tokens = tokens;
+        DexConfig memory config = dexConfigs[dexType];
 
         for (uint256 i = 0; i < _tokens.length; ++i) {
             uint256 amountIn = _tokens[i].balanceOf(address(this));
@@ -74,12 +75,12 @@ contract ChildSwarmBuyerBurner is Initializable, Ownable, BuyerBurnerStorage, Wh
                 continue; // Skip if no tokens are available for swapping
             }
 
-            bool isWeth = _tokens[i] == WETH9;
+            bool isWrappedNative = _tokens[i] == config.intermediateToken;
 
             bytes memory path;
 
-            if (isWeth) {
-                path = abi.encodePacked(WETH9, POOL_FEE, SMT);
+            if (isWrappedNative) {
+                path = abi.encodePacked(config.intermediateToken, config.poolFee, config.finalToken);
             } else {
                 if (IUniswapV3Factory(UNISWAP_V3_FACTORY).getPool(_tokens[i], WETH9, POOL_FEE) == address(0)) {
                     emit PoolNotExists(_tokens[i]);
@@ -117,12 +118,18 @@ contract ChildSwarmBuyerBurner is Initializable, Ownable, BuyerBurnerStorage, Wh
                     // TODO: Create offer on dotc
                     dotc.makeOffer(depositAsset, withdrawalAsset, offer);
                     // TODO: BE can check allOffers[address(this)] to trigger
-                    continue; // Skip if the pool does not exist
+                    continue;
                 }
-                path = abi.encodePacked(_tokens[i], POOL_FEE, WETH9, POOL_FEE, SMT);
+                path = abi.encodePacked(
+                    _tokens[i],
+                    config.poolFee,
+                    config.intermediateToken,
+                    config.poolFee,
+                    config.finalToken
+                );
             }
 
-            uint256 amountOutMinimum = IQuoter(UNISWAP_V3_QUOTER).quoteExactInput(path, amountIn);
+            uint256 amountOutMinimum = IQuoter(config.swapV3Quoter).quoteExactInput(path, amountIn);
 
             // Multiple pool swaps are encoded through bytes called a `path`.
             // A path is a sequence of token addresses and POOL_FEEs that define the pools used in the swaps.
@@ -140,7 +147,7 @@ contract ChildSwarmBuyerBurner is Initializable, Ownable, BuyerBurnerStorage, Wh
                 amountOutMinimum: amountOutMinimum
             });
 
-            uint256 amountOut = ISwapRouter(UNISWAP_V3_ROUTER).exactInput(params);
+            uint256 amountOut = ISwapRouter(config.swapV3Router).exactInput(params);
             fullAmountOut += amountOut;
 
             emit SwappedExactInputMultihop(tokens[i], amountOut);
