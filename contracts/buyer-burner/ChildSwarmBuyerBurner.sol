@@ -21,7 +21,7 @@ import { DotcOfferMaker } from "./extensions/DotcOfferMaker.sol";
 /// @title SwarmBuyerBurner smart contract (as part of the "SwarmX.eth Protocol")
 /// @notice This contract provides functionality to swap and burn ERC20 tokens using Uniswap V3.
 /// @dev It leverages Uniswap V3 for token swaps and supports burning a specific token.
-contract ChildSwarmBuyerBurner is Storage, WhitelistedTokens, Ownable {
+contract ChildSwarmBuyerBurner is Initializable, Ownable, BuyerBurnerStorage, WhitelistedTokens, DotcOfferMaker {
     using SafeTransferLib for address;
     using MetadataReaderLib for address;
 
