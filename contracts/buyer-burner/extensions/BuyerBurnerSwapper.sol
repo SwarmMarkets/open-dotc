@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import { SafeTransferLib } from "solady/src/utils/SafeTransferLib.sol";
 import { MetadataReaderLib } from "solady/src/utils/MetadataReaderLib.sol";
+import { AggregatorV2V3Interface } from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV2V3Interface.sol";
 
 import { IV3SwapFactory } from "../interfaces/IV3SwapFactory.sol";
 import { IV3SwapRouter } from "../interfaces/IV3SwapRouter.sol";
@@ -15,6 +16,12 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens {
     using MetadataReaderLib for address;
 
     error ArraySizesNotEq();
+    error LatestRoundError(address priceFeed);
+    error LatestTimestampError(address priceFeed);
+    error LatestAnswerError(address priceFeed);
+    error IncorrectPriceFeed(address priceFeed);
+    error IncorrectRoundId(address priceFeed, uint256 roundId);
+    error IncorrectLatestUpdatedTimestamp(tokenInfo.priceFeed, updatedAt);
 
     event DexConfigSet(DEXType dexType, DexConfig config);
     /// @notice Emitted when a `token` is swapped to SMT using WETH9 as an intermediary.
@@ -113,6 +120,59 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens {
         }
 
         _finishSwap(config.finalToken, fullAmountOut);
+    }
+
+    function getPrice(
+        BuyerBurnerWhitelistedTokens.TokenInfo calldata tokenInfo
+    ) public view returns (uint256 price, uint8 decimals) {
+        int256 intAnswer;
+        uint256 roundId;
+        uint256 updatedAt;
+        try AggregatorV2V3Interface(tokenInfo.priceFeed).latestRoundData() returns (
+            uint80 _roundId,
+            int256 _answer,
+            uint256,
+            uint256 _updatedAt,
+            uint80
+        ) {
+            roundId = uint256(_roundId);
+            updatedAt = _updatedAt;
+            intAnswer = _answer;
+        } catch {
+            try AggregatorV2V3Interface(tokenInfo.priceFeed).latestRound() returns (uint256 _roundId) {
+                roundId = _roundId;
+            } catch {
+                revert LatestRoundError(tokenInfo.priceFeed);
+            }
+
+            try AggregatorV2V3Interface(tokenInfo.priceFeed).latestTimestamp() returns (uint256 _updatedAt) {
+                updatedAt = _updatedAt;
+            } catch {
+                revert LatestTimestampError(tokenInfo.priceFeed);
+            }
+
+            try AggregatorV2V3Interface(tokenInfo.priceFeed).latestAnswer() returns (int256 _answer) {
+                intAnswer = _answer;
+            } catch {
+                revert LatestAnswerError(tokenInfo.priceFeed);
+            }
+        }
+
+        try AggregatorV2V3Interface(tokenInfo.priceFeed).decimals() returns (uint8 _decimals) {
+            decimals = _decimals;
+        } catch {
+            revert IncorrectPriceFeed(tokenInfo.priceFeed);
+        }
+
+        require(roundId > 0, IncorrectRoundId(tokenInfo.priceFeed, roundId));
+        require(
+            updatedAt > 0 && updatedAt <= block.timestamp && block.timestamp - updatedAt <= tokenInfo.maxPriceFeedDelay,
+            IncorrectLatestUpdatedTimestamp(tokenInfo.priceFeed, updatedAt)
+        );
+
+        require(intAnswer > 0, IncorrectAnswer(tokenInfo.priceFeed, intAnswer));
+
+        price = uint256(intAnswer);
     }
 
     function _ifPoolsNA(address tokenIn, uint256 amountIn, address tokenOut, uint256 amountOut) internal virtual;
