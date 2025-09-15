@@ -5,10 +5,12 @@ import { Initializable } from "solady/src/utils/Initializable.sol";
 import { Ownable } from "solady/src/auth/Ownable.sol";
 import { SafeTransferLib } from "solady/src/utils/SafeTransferLib.sol";
 import { MetadataReaderLib } from "solady/src/utils/MetadataReaderLib.sol";
-import { IUniswapV3Factory } from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
-import { ISwapRouter } from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
-import { IQuoter } from "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";
+
 import { AggregatorV2V3Interface } from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV2V3Interface.sol";
+
+import { IV3SwapFactory } from "./interfaces/IV3SwapFactory.sol";
+import { IV3SwapRouter } from "./interfaces/IV3SwapRouter.sol";
+import { IV3SwapQuoter } from "./interfaces/IV3SwapQuoter.sol";
 
 // TODO: unify uniswap and pancakeswap, check pools first in uniswap then pancake
 
