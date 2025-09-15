@@ -39,7 +39,7 @@ abstract contract BuyerBurnerOfferMaker {
         Asset memory withdrawalAsset = Asset({
             assetType: AssetType.ERC20,
             assetAddress: withdrawalToken,
-            amount: amountOut, //TODO: take from getPrice() that relies on AggregatorV2V3Interface,
+            amount: amountOut,
             tokenId: 0,
             assetPrice: AssetPrice(address(0), 0, 0)
         });
@@ -63,6 +63,7 @@ abstract contract BuyerBurnerOfferMaker {
 
         dotc.makeOffer(depositAsset, withdrawalAsset, offer);
 
+        // TODO: BE should check this event
         emit PoolNotExistsOfferMade(offerId, depositToken, amountIn, withdrawalToken, amountOut);
     }
 }

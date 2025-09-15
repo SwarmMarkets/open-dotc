@@ -12,7 +12,6 @@ import { IV3SwapFactory } from "./interfaces/IV3SwapFactory.sol";
 import { IV3SwapRouter } from "./interfaces/IV3SwapRouter.sol";
 import { IV3SwapQuoter } from "./interfaces/IV3SwapQuoter.sol";
 import { ITokenTransferor } from "./interfaces/ITokenTransferor.sol";
-// TODO: unify uniswap and pancakeswap, check pools first in uniswap then pancake
 
 import { BuyerBurnerStorage } from "./extensions/BuyerBurnerStorage.sol";
 import { BuyerBurnerDotcOfferMaker } from "./extensions/BuyerBurnerOfferMaker.sol";
@@ -89,7 +88,6 @@ contract ChildSwarmBuyerBurner is
                     uint256 amountOut = 1; //TODO: take this 1 from getPrice() that relies on AggregatorV2V3Interface
                     _makeOffer(_tokens[i], amountIn, config.finalToken, amountOut);
 
-                    // TODO: BE can check allOffers[address(this)] to trigger
                     continue;
                 }
                 path = abi.encodePacked(
