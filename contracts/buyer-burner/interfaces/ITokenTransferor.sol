@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: GPL-3.0-only
-pragma solidity ^0.8.28;
+pragma solidity ^0.8.25;
 
 interface ITokenTransferor {
     /// @notice Transfer tokens to receiver on the destination chain.

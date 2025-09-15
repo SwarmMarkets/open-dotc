@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-pragma solidity ^0.8.28;
-
-import { SafeTransferLib } from "solady/src/utils/SafeTransferLib.sol";
+pragma solidity ^0.8.25;
 
 abstract contract BuyerBurnerWhitelistedTokens {
     using SafeTransferLib for address;

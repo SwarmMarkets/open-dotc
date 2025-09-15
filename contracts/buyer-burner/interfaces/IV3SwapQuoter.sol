@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.28;
+pragma solidity ^0.8.25;
 
 /// @title IV3SwapQuoter
 /// @notice Minimal V3-like quoter interface to unify Uniswap V3 / Pancake V3 quoting.
