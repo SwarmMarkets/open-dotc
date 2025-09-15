@@ -42,30 +42,22 @@ contract ChildSwarmBuyerBurner is Initializable, Ownable, BuyerBurnerStorage, Wh
 
     event ZeroBalance(address indexed token);
 
-    DotcV2 public dotc;
-
     address public backend;
 
     /// @param uniswapV3Factory The address of the Uniswap V3 factory.
     /// @param uniswapV3Router The address of the Uniswap V3 swap router.
     /// @param weth The address of the WETH9 token.
     /// @param smt The address of the burnable SMT token.
-    constructor(
-        address weth,
-        address smt,
-        address[] memory depositTokens,
-        address uniswapV3Factory,
-        address uniswapV3Router,
-        address uniswapV3Quoter
-    ) {
-        WETH9 = weth;
-        SMT = smt;
+    function initialize(
+        DEXType[] calldata dexTypes,
+        DexConfig[] calldata configs,
+        address[] calldata depositTokens,
+        address dotcV2
+    ) external initializer {
+        __initialize_BuyerBurnerStorage_(dexTypes, configs);
+        __initialize_WhitelistedTokens_(depositTokens);
+        __initialize_DotcOfferMaker_(dotcV2);
 
-        UNISWAP_V3_FACTORY = uniswapV3Factory;
-        UNISWAP_V3_ROUTER = uniswapV3Router;
-        UNISWAP_V3_QUOTER = uniswapV3Quoter;
-
-        _addTokens(depositTokens);
         _setOwner(msg.sender);
     }
 
