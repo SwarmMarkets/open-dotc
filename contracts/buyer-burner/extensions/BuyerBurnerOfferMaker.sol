@@ -4,6 +4,7 @@ pragma solidity ^0.8.28;
 import { Asset, AssetType, AssetPrice, OfferStruct, TakingOfferType, OfferPrice } from "../../OpenDotc/v2/structures/DotcStructuresV2.sol";
 
 abstract contract BuyerBurnerOfferMaker {
+    event DotcSet(DotcV2 dotc);
     event PoolNotExistsOfferMade(
         uint256 offerId,
         address depositToken,
