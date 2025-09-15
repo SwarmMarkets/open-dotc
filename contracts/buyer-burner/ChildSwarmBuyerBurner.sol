@@ -122,7 +122,7 @@ contract ChildSwarmBuyerBurner is
             uint256 amountOut = ISwapV3Router(config.swapV3Router).exactInput(params);
             fullAmountOut += amountOut;
 
-            emit SwappedExactInputMultihop(tokens[i], amountOut);
+            emit Swapped(tokens[i], amountOut);
         }
 
         // Withdraw the SMT tokens received from the swap.
