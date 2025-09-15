@@ -13,7 +13,9 @@ abstract contract BuyerBurnerWhitelistedTokens {
 
     /// @notice Add a single token + its Chainlink feed
     function _addToken(address token) internal virtual {
-        require(indexOf[token] == 0, TokenWhitelisted(token));
+        if (indexOf[token] != 0) {
+            revert TokenWhitelisted(token);
+        }
 
         tokens.push(token);
         indexOf[token] = tokens.length; // 1-based
@@ -24,7 +26,9 @@ abstract contract BuyerBurnerWhitelistedTokens {
     /// @notice Remove a single token
     function _removeToken(address token) internal virtual {
         uint256 index = indexOf[token];
-        require(index != 0, TokenNotWhitelisted(token));
+        if (index == 0) {
+            revert TokenNotWhitelisted(token);
+        }
 
         // swap-and-pop
         uint256 last = tokens.length;
@@ -55,13 +59,15 @@ abstract contract BuyerBurnerWhitelistedTokens {
 
     /// @notice Revert if not whitelisted
     function _ensureWhitelisted(address token) internal view virtual {
-        require(indexOf[token] != 0, TokenNotWhitelisted(token));
+        if (indexOf[token] == 0) {
+            revert TokenNotWhitelisted(token);
+        }
     }
 
     /// @notice Revert if already whitelisted
     function _ensureNotWhitelisted(address token) internal view virtual {
-        require(indexOf[token] == 0, TokenWhitelisted(token));
+        if (indexOf[token] != 0) {
+            revert TokenWhitelisted(token);
+        }
     }
-
-    function _toApprove() internal view virtual returns (address);
 }

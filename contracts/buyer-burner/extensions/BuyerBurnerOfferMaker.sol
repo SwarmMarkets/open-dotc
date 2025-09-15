@@ -46,7 +46,7 @@ abstract contract BuyerBurnerOfferMaker {
             assetPrice: AssetPrice(address(0), 0, 0)
         });
 
-        address[] memory addresses = address[](0);
+        address[] memory addresses = new address[](0);
 
         OfferStruct memory offer = OfferStruct({
             takingOfferType: TakingOfferType.PartialOffer,

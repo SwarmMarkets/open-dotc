@@ -40,7 +40,9 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens {
     mapping(DEXType dexType => DexConfig config) internal _dexConfigs;
 
     function _setDexConfigs(DEXType[] calldata dexTypes, DexConfig[] calldata dexConfigs) internal {
-        require(dexTypes.length == dexConfigs.length, ArraySizesNotEq());
+        if (dexTypes.length != dexConfigs.length) {
+            revert ArraySizesNotEq();
+        }
 
         for (uint256 i; i < dexTypes.length; ++i) {
             _dexConfigs[dexTypes[i]] = dexConfigs[i];
