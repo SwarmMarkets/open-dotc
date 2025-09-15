@@ -172,7 +172,7 @@ contract ChildSwarmBuyerBurner is Initializable, Ownable, BuyerBurnerStorage, Wh
     /// @notice Allows the owner to withdraw a specified amount of `token`'s.
     /// @param token The token address to withdraw.
     /// @param amount The amount of the `token`s to withdraw.
-    function withdrawTokens(address token, uint256 amount) external onlyOwner {
+    function withdrawTokens(address token, address to, uint256 amount) external onlyOwner {
         token.safeTransfer(to, amount);
     }
 
