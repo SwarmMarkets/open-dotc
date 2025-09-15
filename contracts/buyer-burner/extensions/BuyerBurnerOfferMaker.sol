@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.25;
 
-import { Asset, AssetType, AssetPrice, OfferStruct, TakingOfferType, OfferPrice } from "../../OpenDotc/v2/structures/DotcStructuresV2.sol";
+import { DotcV2 } from "../../OpenDotc/v2/DotcV2.sol";
+import { Asset, AssetType, AssetPrice, OfferStruct, TakingOfferType, OfferPrice, OfferPricingType, PercentageType } from "../../OpenDotc/v2/structures/DotcStructuresV2.sol";
 
 abstract contract BuyerBurnerOfferMaker {
     event DotcSet(DotcV2 dotc);
