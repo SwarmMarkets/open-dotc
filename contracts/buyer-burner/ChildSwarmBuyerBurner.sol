@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.28;
 
 import { Initializable } from "solady/src/utils/Initializable.sol";
 import { Ownable } from "solady/src/auth/Ownable.sol";
