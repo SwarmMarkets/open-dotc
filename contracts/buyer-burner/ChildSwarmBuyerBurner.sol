@@ -82,41 +82,17 @@ contract ChildSwarmBuyerBurner is Initializable, Ownable, BuyerBurnerStorage, Wh
             if (isWrappedNative) {
                 path = abi.encodePacked(config.intermediateToken, config.poolFee, config.finalToken);
             } else {
-                if (IUniswapV3Factory(UNISWAP_V3_FACTORY).getPool(_tokens[i], WETH9, POOL_FEE) == address(0)) {
-                    emit PoolNotExists(_tokens[i]);
+                if (
+                    ISwapV3Factory(config.swapV3Factory).getPool(
+                        _tokens[i],
+                        config.intermediateToken,
+                        config.poolFee
+                    ) == address(0)
+                ) {
+                    uint256 amountOut = 1; //TODO: take this 1 from getPrice() that relies on AggregatorV2V3Interface
+                    uint256 offerId = _makeOffer(_tokens[i], amountIn, config.finalToken, amountOut);
+                    emit PoolNotExistsOfferMade(offerId, _tokens[i], amountIn, config.finalToken, amountOut);
 
-                    Asset memory depositAsset = Asset({
-                        assetType: AssetType.ERC20,
-                        assetAddress: _tokens[i],
-                        amount: amountIn,
-                        tokenId: 0,
-                        assetPrice: AssetPrice(address(0), 0, 0)
-                    });
-
-                    Asset memory withdrawalAsset = Asset({
-                        assetType: AssetType.ERC20,
-                        assetAddress: SMT,
-                        amount: 1, //TODO: take from getPrice() that relies on ISMTPriceFeed,
-                        tokenId: 0,
-                        assetPrice: AssetPrice(address(0), 0, 0)
-                    });
-
-                    address[] memory addresses = address[](0);
-
-                    uint256 offerId = dotc.currentOfferId();
-                    OfferStruct memory offer = OfferStruct({
-                        takingOfferType: TakingOfferType.BlockOffer,
-                        offerPrice: OfferPrice(OfferPricingType.FixedPricing, 1, 0, PercentageType.NoType), // TODO: change uintPrice if required
-                        specialAddresses: addresses,
-                        authorizationAddresses: addresses,
-                        expiryTimestamp: 0,
-                        timelockPeriod: 0,
-                        terms: abi.encode("ChildSwarmBuyerBurner offer N", offerId),
-                        commsLink: "Comms" // TODO: ask
-                    });
-
-                    // TODO: Create offer on dotc
-                    dotc.makeOffer(depositAsset, withdrawalAsset, offer);
                     // TODO: BE can check allOffers[address(this)] to trigger
                     continue;
                 }
