@@ -44,14 +44,16 @@ contract ChildSwarmBuyerBurner is
     /// @param weth The address of the WETH9 token.
     /// @param smt The address of the burnable SMT token.
     function initialize(
+        DotcV2 dotc,
+        CCIPConfig calldata ccipConfig,
         DEXType[] calldata dexTypes,
         DexConfig[] calldata configs,
-        address[] calldata depositTokens,
-        address dotcV2
+        address[] calldata depositTokens
     ) external initializer {
-        __initialize_BuyerBurnerStorage_(dexTypes, configs);
-        __initialize_WhitelistedTokens_(depositTokens);
-        __initialize_DotcOfferMaker_(dotcV2);
+        _setCCIPConfig(ccipConfig);
+        _setDotc(dotc);
+        _setDexConfigs(dexTypes, dexConfigs);
+        _addTokens(depositTokens);
 
         _setOwner(msg.sender);
     }
