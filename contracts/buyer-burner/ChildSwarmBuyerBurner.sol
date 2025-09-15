@@ -105,7 +105,7 @@ contract ChildSwarmBuyerBurner is Initializable, Ownable, BuyerBurnerStorage, Wh
                 );
             }
 
-            uint256 amountOutMinimum = IQuoter(config.swapV3Quoter).quoteExactInput(path, amountIn);
+            uint256 amountOutMinimum = IV3SwapQuoter(config.swapV3Quoter).quoteExactInput(path, amountIn);
 
             // Multiple pool swaps are encoded through bytes called a `path`.
             // A path is a sequence of token addresses and POOL_FEEs that define the pools used in the swaps.
@@ -115,7 +115,7 @@ contract ChildSwarmBuyerBurner is Initializable, Ownable, BuyerBurnerStorage, Wh
             //
             // Since we are swapping `tokens[i]` to WETH9 and then WETH9 to SMT the path encoding
             // is (`tokens[i]`, 0.3%, WETH9, 0.3%, SMT).
-            ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
+            ISwapV3Router.ExactInputParams memory params = ISwapV3Router.ExactInputParams({
                 path: path,
                 recipient: address(this),
                 deadline: block.timestamp,
@@ -123,7 +123,7 @@ contract ChildSwarmBuyerBurner is Initializable, Ownable, BuyerBurnerStorage, Wh
                 amountOutMinimum: amountOutMinimum
             });
 
-            uint256 amountOut = ISwapRouter(config.swapV3Router).exactInput(params);
+            uint256 amountOut = ISwapV3Router(config.swapV3Router).exactInput(params);
             fullAmountOut += amountOut;
 
             emit SwappedExactInputMultihop(tokens[i], amountOut);
