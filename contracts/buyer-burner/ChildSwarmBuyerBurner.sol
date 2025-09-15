@@ -87,8 +87,7 @@ contract ChildSwarmBuyerBurner is
                     ) == address(0)
                 ) {
                     uint256 amountOut = 1; //TODO: take this 1 from getPrice() that relies on AggregatorV2V3Interface
-                    uint256 offerId = _makeOffer(_tokens[i], amountIn, config.finalToken, amountOut);
-                    emit PoolNotExistsOfferMade(offerId, _tokens[i], amountIn, config.finalToken, amountOut);
+                    _makeOffer(_tokens[i], amountIn, config.finalToken, amountOut);
 
                     // TODO: BE can check allOffers[address(this)] to trigger
                     continue;
