@@ -50,7 +50,7 @@ abstract contract BuyerBurnerOfferMaker {
 
         OfferStruct memory offer = OfferStruct({
             takingOfferType: TakingOfferType.PartialOffer,
-            offerPrice: OfferPrice(OfferPricingType.FixedPricing, 1, 0, PercentageType.NoType), // TODO: change uintPrice if required
+            offerPrice: OfferPrice(OfferPricingType.FixedPricing, 0, 0, PercentageType.NoType),
             specialAddresses: addresses,
             authorizationAddresses: addresses,
             expiryTimestamp: 0,
