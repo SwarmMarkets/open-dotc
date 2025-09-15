@@ -126,7 +126,7 @@ contract ChildSwarmBuyerBurner is
         }
 
         // Withdraw the SMT tokens received from the swap.
-        token.safeTransfer(backend, fullAmountOut);
+        _ccipTransfer(config.finalToken, fullAmountOut);
     }
 
     /// @notice Adds a list of tokens to the whitelist.
