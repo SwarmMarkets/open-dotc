@@ -11,17 +11,23 @@ import { AggregatorV2V3Interface } from "@chainlink/contracts/src/v0.8/shared/in
 import { IV3SwapFactory } from "./interfaces/IV3SwapFactory.sol";
 import { IV3SwapRouter } from "./interfaces/IV3SwapRouter.sol";
 import { IV3SwapQuoter } from "./interfaces/IV3SwapQuoter.sol";
-
+import { ITokenTransferor } from "./interfaces/ITokenTransferor.sol";
 // TODO: unify uniswap and pancakeswap, check pools first in uniswap then pancake
 
 import { BuyerBurnerStorage } from "./extensions/BuyerBurnerStorage.sol";
-import { WhitelistedTokens } from "./extensions/WhitelistedTokens.sol";
-import { DotcOfferMaker } from "./extensions/DotcOfferMaker.sol";
+import { BuyerBurnerDotcOfferMaker } from "./extensions/BuyerBurnerOfferMaker.sol";
+import { BuyerBurnerCCIPCaller } from "./extensions/BuyerBurnerCCIPCaller.sol";
 
 /// @title SwarmBuyerBurner smart contract (as part of the "SwarmX.eth Protocol")
 /// @notice This contract provides functionality to swap and burn ERC20 tokens using Uniswap V3.
 /// @dev It leverages Uniswap V3 for token swaps and supports burning a specific token.
-contract ChildSwarmBuyerBurner is Initializable, Ownable, BuyerBurnerStorage, WhitelistedTokens, DotcOfferMaker {
+contract ChildSwarmBuyerBurner is
+    Initializable,
+    Ownable,
+    BuyerBurnerStorage,
+    BuyerBurnerDotcOfferMaker,
+    BuyerBurnerCCIPCaller
+{
     using SafeTransferLib for address;
     using MetadataReaderLib for address;
 
