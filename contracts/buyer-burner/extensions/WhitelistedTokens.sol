@@ -15,10 +15,6 @@ abstract contract WhitelistedTokens {
     address[] public tokens;
     mapping(address token => uint256 index) public indexOf;
 
-    function __initialize_WhitelistedTokens_(address[] calldata depositTokens) internal {
-        _addTokens(depositTokens);
-    }
-
     /// @notice Add a single token + its Chainlink feed
     function _addToken(address token) internal virtual {
         require(indexOf[token] == 0, TokenWhitelisted(token));
