@@ -3,8 +3,8 @@ pragma solidity ^0.8.28;
 
 import { Asset, AssetType, AssetPrice, OfferStruct, TakingOfferType, OfferPrice } from "../../OpenDotc/v2/structures/DotcStructuresV2.sol";
 
-abstract contract DotcOfferMaker {
-    event OfferMade(
+abstract contract BuyerBurnerOfferMaker {
+    event PoolNotExistsOfferMade(
         uint256 offerId,
         address depositToken,
         uint256 amountIn,
@@ -12,18 +12,15 @@ abstract contract DotcOfferMaker {
         uint256 amountOut
     );
 
-    DotcV2 public dotc;
-
-    function __initialize_DotcOfferMaker_(address _dotc) internal {
-        dotc = DotcV2(_dotc);
-    }
+    string private constant TERMS = "https://docs.swarmx.net/";
+    string private constant COMMS = "help@swarm.com";
 
     function _makeOffer(
         address depositToken,
         uint256 amountIn,
         address withdrawalToken,
         uint256 amountOut
-    ) internal virtual returns (uint256 offerId) {
+    ) internal virtual {
         Asset memory depositAsset = Asset({
             assetType: AssetType.ERC20,
             assetAddress: depositToken,
@@ -53,10 +50,14 @@ abstract contract DotcOfferMaker {
             commsLink: COMMS
         });
 
-        offerId = dotc.currentOfferId() + 1;
+        DotcV2 dotc = DotcV2(_dotc());
+
+        uint256 offerId = dotc.currentOfferId() + 1;
 
         dotc.makeOffer(depositAsset, withdrawalAsset, offer);
 
-        emit OfferMade(offerId, depositToken, amountIn, withdrawalToken, amountOut);
+        emit PoolNotExistsOfferMade(offerId, depositToken, amountIn, withdrawalToken, amountOut);
     }
+
+    function _dotc() internal view virtual returns (address);
 }
