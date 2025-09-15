@@ -15,6 +15,13 @@ abstract contract BuyerBurnerOfferMaker {
     string private constant TERMS = "https://docs.swarmx.net/";
     string private constant COMMS = "help@swarm.com";
 
+    DotcV2 internal _dotc;
+
+    function _setDotc(DotcV2 dotc) internal {
+        _dotc = dotc;
+        emit DotcSet(dotc);
+    }
+
     function _makeOffer(
         address depositToken,
         uint256 amountIn,
@@ -50,7 +57,7 @@ abstract contract BuyerBurnerOfferMaker {
             commsLink: COMMS
         });
 
-        DotcV2 dotc = DotcV2(_dotc());
+        DotcV2 dotc = _dotc;
 
         uint256 offerId = dotc.currentOfferId() + 1;
 
@@ -58,6 +65,4 @@ abstract contract BuyerBurnerOfferMaker {
 
         emit PoolNotExistsOfferMade(offerId, depositToken, amountIn, withdrawalToken, amountOut);
     }
-
-    function _dotc() internal view virtual returns (address);
 }
