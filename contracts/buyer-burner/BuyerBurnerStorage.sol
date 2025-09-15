@@ -4,9 +4,9 @@ pragma solidity ^0.8.19;
 contract BuyerBurnerStorage {
     error ArraySizesNotEq();
 
-    event DexConfigSet(DEXType dexType, PaymentConfig config);
+    event DexConfigSet(DEXType dexType, DexConfig config);
 
-    struct PaymentConfig {
+    struct DexConfig {
         uint24 poolFee;
         address smt;
         address wNative;
@@ -21,13 +21,13 @@ contract BuyerBurnerStorage {
         PancakeswapV3
     }
 
-    mapping(DEXType dexType => PaymentConfig config) public dexConfigs;
+    mapping(DEXType dexType => DexConfig config) public dexConfigs;
 
-    function __initialize_BuyerBurnerStorage(DEXType[] calldata dexTypes, PaymentConfig[] calldata configs) internal {
+    function __initialize_BuyerBurnerStorage(DEXType[] calldata dexTypes, DexConfig[] calldata configs) internal {
         _setDexConfigs(dexTypes, configs);
     }
 
-    function _setDexConfigs(DEXType[] calldata dexTypes, PaymentConfig[] calldata configs) internal {
+    function _setDexConfigs(DEXType[] calldata dexTypes, DexConfig[] calldata configs) internal {
         require(dexTypes.length == configs.length, ArraySizesNotEq());
 
         for (uint256 i; i < dexTypes.length; ++i) {
