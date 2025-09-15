@@ -169,21 +169,11 @@ contract ChildSwarmBuyerBurner is Initializable, Ownable, BuyerBurnerStorage, Wh
         _removeTokens(tokensToRemove);
     }
 
-    /// @notice Burns a specific amount of SMTs.
-    /// @param amount The amount of SMTs to burn.
-    function burnSMT(uint256 amount) external onlyOwner {
-        _burnSmt(amount);
-    }
-
     /// @notice Allows the owner to withdraw a specified amount of `token`'s.
     /// @param token The token address to withdraw.
     /// @param amount The amount of the `token`s to withdraw.
     function withdrawTokens(address token, uint256 amount) external onlyOwner {
         token.safeTransfer(to, amount);
-    }
-
-    function _burnSmt(uint256 amount) internal {
-        IERC20Burner(SMT).burn(amount);
     }
 
     function _toApprove() internal view override returns (address) {
