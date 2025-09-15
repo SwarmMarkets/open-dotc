@@ -2,8 +2,6 @@
 pragma solidity ^0.8.25;
 
 abstract contract BuyerBurnerWhitelistedTokens {
-    using SafeTransferLib for address;
-
     error TokenWhitelisted(address token);
     error TokenNotWhitelisted(address token);
 
@@ -19,8 +17,6 @@ abstract contract BuyerBurnerWhitelistedTokens {
 
         tokens.push(token);
         indexOf[token] = tokens.length; // 1-based
-
-        token.safeApproveWithRetry(_toApprove(), type(uint256).max);
 
         emit Whitelisted(token);
     }
@@ -39,8 +35,6 @@ abstract contract BuyerBurnerWhitelistedTokens {
         tokens.pop();
 
         delete indexOf[token];
-
-        token.safeApproveWithRetry(_toApprove(), 0);
 
         emit Unwhitelisted(token);
     }
@@ -69,5 +63,5 @@ abstract contract BuyerBurnerWhitelistedTokens {
         require(indexOf[token] == 0, TokenWhitelisted(token));
     }
 
-    function _toApprove() internal view virtual returns (address) {}
+    function _toApprove() internal view virtual returns (address);
 }
