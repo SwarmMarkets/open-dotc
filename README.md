@@ -6,6 +6,35 @@
 
 The overarching goal of this project is to provide a secure, decentralized platform for trading various types of digital assets without needing a centralized authority. This approach enhances transparency, security, and trust among participants while also leveraging blockchain technology to automate many aspects of traditional OTC trading. By using smart contracts, the platform can reduce the risk of fraud, speed up transactions, and decrease the costs associated with trading, thereby making it accessible to a broader range of participants globally.
 
+## Technology Stack
+
+Blockchain: Ethereum, Polygon, BASE, BNB Smart Chain
+Smart Contracts: Solidity ^0.8.10
+Frontend: React, Vue, Thirdweb, TheGraph, Alchemy, ethers
+Development: Hardhat, Foundry
+
+## Supported Networks
+Ethereum Mainnet (Chain ID: 1)
+Polygon Mainnet (Chain ID: 137)
+Base Mainet (Chain ID: 8453)
+BNB Smart Chain Mainnet (Chain ID: 56)
+
+## Contract Addresses
+
+| Network  | Core Contract |
+|----------|---------------|
+| Ethereum    | 0x0a103eE32F4209926D8ba7e528AFf8a831Ed3daE |
+| Polygon Mainnet | 0x22593B8749a4e4854C449c30054bb4d896374fa1 |
+| Base Mainnet | 0xcfFD07806F6A8fc623d6d61ddC3532BF1D2eB8b9 |
+| BNB Mainnet | 0x17Fe797082FA229789c9197FE10fD205540cAbDD |
+
+## Features
+
+- [Peer-to-Peer OTC Trading – Direct, on-chain settlement of trades between counterparties without intermediaries.]  
+- [Asset-Backed RWAs – Supports tokenized real-world assets (e.g., stocks, bonds, tokenized gold) issued under the SX1155]  
+- [Customizable Offers – Flexible trade terms, including price, size, settlement time window, and counterparty restrictions.]  
+- [Batch Settlement – Offers can be aggregated and settled in batches via Gnosis Safe for efficiency.]  
+
 ## How to add price feed/authorization address
 
 1. Fork a repo
