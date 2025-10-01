@@ -10,6 +10,8 @@ import { IV3SwapRouter } from "../interfaces/IV3SwapRouter.sol";
 import { IV3SwapQuoter } from "../interfaces/IV3SwapQuoter.sol";
 
 import { BuyerBurnerWhitelistedTokens } from "./BuyerBurnerWhitelistedTokens.sol";
+import { BuyerBurnerOfferMaker } from "./BuyerBurnerOfferMaker.sol";
+import { TokenInfo } from "../structures/BuyerBurnerStructures.sol";
 
 abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens {
     using SafeTransferLib for address;
@@ -38,7 +40,7 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens {
     struct DexConfig {
         uint24 poolFee;
         address intermediateToken;
-        address finalToken;
+        TokenInfo finalToken;
         address swapV3Router;
         IV3SwapQuoter swapV3Quoter;
         IV3SwapFactory swapV3Factory;
@@ -59,22 +61,22 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens {
     }
 
     function _swap(DEXType dexType) internal returns (uint256 fullAmountOut) {
-        address[] memory _tokens = tokens;
+        TokenInfo[] memory _tokens = tokens;
         DexConfig memory config = _dexConfigs[dexType];
 
         for (uint256 i = 0; i < _tokens.length; ++i) {
-            uint256 amountIn = _tokens[i].balanceOf(address(this));
+            uint256 amountIn = _tokens[i].token.balanceOf(address(this));
             if (amountIn == 0) {
-                emit ZeroBalance(_tokens[i]);
+                emit ZeroBalance(_tokens[i].token);
                 continue; // Skip if no tokens are available for swapping
             }
 
-            bool isWrappedNative = _tokens[i] == config.intermediateToken;
+            bool isWrappedNative = _tokens[i].token == config.intermediateToken;
 
             bytes memory path;
             uint256 amountOut;
             if (isWrappedNative) {
-                path = abi.encodePacked(config.intermediateToken, config.poolFee, config.finalToken);
+                path = abi.encodePacked(config.intermediateToken, config.poolFee, config.finalToken.token);
             } else {
                 if (config.swapV3Factory.getPool(_tokens[i], config.intermediateToken, config.poolFee) == address(0)) {
                     amountOut = 1; //TODO: take this 1 from getPrice() that relies on AggregatorV2V3Interface
@@ -83,11 +85,11 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens {
                     continue;
                 }
                 path = abi.encodePacked(
-                    _tokens[i],
+                    _tokens[i].token,
                     config.poolFee,
                     config.intermediateToken,
                     config.poolFee,
-                    config.finalToken
+                    config.finalToken.token
                 );
             }
 
@@ -109,14 +111,14 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens {
                 amountOutMinimum: amountOutMinimum
             });
 
-            _tokens[i].safeApproveWithRetry(config.swapV3Router, amountIn);
+            _tokens[i].token.safeApproveWithRetry(config.swapV3Router, amountIn);
 
             amountOut = IV3SwapRouter(config.swapV3Router).exactInput(params);
             fullAmountOut += amountOut;
 
-            _tokens[i].safeApprove(config.swapV3Router, amountIn);
+            _tokens[i].token.safeApprove(config.swapV3Router, amountIn);
 
-            emit Swapped(tokens[i], amountOut);
+            emit Swapped(_tokens[i].token, amountOut);
         }
 
         _finishSwap(config.finalToken, fullAmountOut);

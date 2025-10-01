@@ -1,18 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.25;
 
+import { TokenInfo } from "../structures/BuyerBurnerStructures.sol";
+
 abstract contract BuyerBurnerWhitelistedTokens {
     error TokenWhitelisted(address token);
     error TokenNotWhitelisted(address token);
 
     event Whitelisted(TokenInfo tokenInfo);
     event Unwhitelisted(address token);
-
-    struct TokenInfo {
-        address token;
-        address priceFeed;
-        uint256 maxPriceFeedDelay;
-    }
 
     TokenInfo[] public tokens;
     mapping(address token => uint256 index) public indexOf;

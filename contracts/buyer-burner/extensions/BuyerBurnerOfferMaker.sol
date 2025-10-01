@@ -4,6 +4,8 @@ pragma solidity ^0.8.25;
 import { DotcV2 } from "../../OpenDotc/v2/DotcV2.sol";
 import { Asset, AssetType, AssetPrice, OfferStruct, TakingOfferType, OfferPrice, OfferPricingType, PercentageType } from "../../OpenDotc/v2/structures/DotcStructuresV2.sol";
 
+import { TokenInfo } from "../structures/BuyerBurnerStructures.sol";
+
 abstract contract BuyerBurnerOfferMaker {
     event DotcSet(DotcV2 dotc);
     event PoolNotExistsOfferMade(
@@ -25,25 +27,24 @@ abstract contract BuyerBurnerOfferMaker {
     }
 
     function _makeOffer(
-        address depositToken,
+        TokenInfo memory depositToken,
         uint256 amountIn,
-        address withdrawalToken,
-        uint256 amountOut
+        TokenInfo memory withdrawalToken
     ) internal virtual {
         Asset memory depositAsset = Asset({
             assetType: AssetType.ERC20,
-            assetAddress: depositToken,
+            assetAddress: depositToken.token,
             amount: amountIn,
             tokenId: 0,
-            assetPrice: AssetPrice(address(0), 0, 0)
+            assetPrice: AssetPrice(depositToken.priceFeed, 0, 0)
         });
 
         Asset memory withdrawalAsset = Asset({
             assetType: AssetType.ERC20,
-            assetAddress: withdrawalToken,
-            amount: amountOut,
+            assetAddress: withdrawalToken.token,
+            amount: 0,
             tokenId: 0,
-            assetPrice: AssetPrice(address(0), 0, 0)
+            assetPrice: AssetPrice(withdrawalToken.priceFeed, 0, 0)
         });
 
         address[] memory addresses = new address[](0);
@@ -61,7 +62,7 @@ abstract contract BuyerBurnerOfferMaker {
 
         DotcV2 dotc = _dotc;
 
-        uint256 offerId = dotc.currentOfferId() + 1;
+        depositToken.token.safeApprove(address(dotc), amountIn);
 
         dotc.makeOffer(depositAsset, withdrawalAsset, offer);
 

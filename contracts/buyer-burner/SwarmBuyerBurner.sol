@@ -4,6 +4,7 @@ pragma solidity ^0.8.25;
 import { SwarmBuyerBurnerBase, DotcV2 } from "./SwarmBuyerBurnerBase.sol";
 
 import { IERC20Burnable } from "./interfaces/IERC20Burnable.sol";
+import { TokenInfo } from "./structures/BuyerBurnerStructures.sol";
 
 /// @title SwarmBuyerBurner smart contract (as part of the "SwarmX.eth Protocol")
 /// @notice This contract provides functionality to swap and burn ERC20 tokens using Uniswap V3.
@@ -13,7 +14,7 @@ contract SwarmBuyerBurner is SwarmBuyerBurnerBase {
         DotcV2 dotc,
         DEXType[] calldata dexTypes,
         DexConfig[] calldata dexConfigs,
-        address[] calldata depositTokens
+        TokenInfo[] calldata depositTokens
     ) external initializer {
         _setDotc(dotc);
         _setDexConfigs(dexTypes, dexConfigs);
