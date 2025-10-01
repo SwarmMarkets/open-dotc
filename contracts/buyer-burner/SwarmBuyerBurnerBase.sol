@@ -44,4 +44,8 @@ abstract contract SwarmBuyerBurnerBase is Initializable, Ownable, BuyerBurnerSwa
     function withdrawTokens(address token, uint256 amount) external onlyOwner {
         SafeTransferLib.safeTransfer(token, msg.sender, amount);
     }
+
+    function cancelOffer(uint256 offerId) external onlyOwner {
+        _cancelOffer(offerId);
+    }
 }

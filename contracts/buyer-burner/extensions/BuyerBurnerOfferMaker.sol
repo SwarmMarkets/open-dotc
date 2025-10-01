@@ -67,6 +67,10 @@ abstract contract BuyerBurnerOfferMaker {
         dotc.makeOffer(depositAsset, withdrawalAsset, offer);
 
         // TODO: BE should check this event
-        emit PoolNotExistsOfferMade(offerId, depositToken, amountIn, withdrawalToken, amountOut);
+        emit PoolNotExistsOfferMade(offerId, depositToken, amountIn, withdrawalToken.token);
+    }
+
+    function _cancelOffer(uint256 offerId) internal {
+        _dotc.cancelOffer(offerId);
     }
 }
