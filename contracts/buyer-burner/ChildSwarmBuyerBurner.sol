@@ -23,10 +23,6 @@ contract ChildSwarmBuyerBurner is SwarmBuyerBurnerBase, BuyerBurnerCCIPCaller {
         _setOwner(msg.sender);
     }
 
-    function _ifPoolsNA(address tokenIn, uint256 amountIn, address tokenOut, uint256 amountOut) internal override {
-        _makeOffer(tokenIn, amountIn, tokenOut, amountOut);
-    }
-
     function _finishSwap(address token, uint256 amount) internal override {
         _ccipTransfer(token, amount);
     }

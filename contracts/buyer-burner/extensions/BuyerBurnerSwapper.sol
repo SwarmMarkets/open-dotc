@@ -78,7 +78,7 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens {
             } else {
                 if (config.swapV3Factory.getPool(_tokens[i], config.intermediateToken, config.poolFee) == address(0)) {
                     amountOut = 1; //TODO: take this 1 from getPrice() that relies on AggregatorV2V3Interface
-                    _ifPoolsNA(_tokens[i], amountIn, config.finalToken, amountOut);
+                    _makeOffer(_tokens[i], amountIn, config.finalToken);
 
                     continue;
                 }

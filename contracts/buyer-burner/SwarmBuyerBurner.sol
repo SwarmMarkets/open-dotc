@@ -27,10 +27,6 @@ contract SwarmBuyerBurner is SwarmBuyerBurnerBase {
         IERC20Burnable(token).burn(amount);
     }
 
-    function _ifPoolsNA(address tokenIn, uint256 amountIn, address tokenOut, uint256 amountOut) internal override {
-        _makeOffer(tokenIn, amountIn, tokenOut, amountOut);
-    }
-
     function _finishSwap(address token, uint256 amount) internal override {
         IERC20Burnable(token).burn(amount);
     }
