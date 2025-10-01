@@ -1,20 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.25;
 
+import { SafeTransferLib } from "solady/src/utils/SafeTransferLib.sol";
+
 import { DotcV2 } from "../../OpenDotc/v2/DotcV2.sol";
 import { Asset, AssetType, AssetPrice, OfferStruct, TakingOfferType, OfferPrice, OfferPricingType, PercentageType } from "../../OpenDotc/v2/structures/DotcStructuresV2.sol";
 
 import { TokenInfo } from "../structures/BuyerBurnerStructures.sol";
 
 abstract contract BuyerBurnerOfferMaker {
-    event DotcSet(DotcV2 dotc);
-    event PoolNotExistsOfferMade(
-        uint256 offerId,
-        address depositToken,
-        uint256 amountIn,
-        address withdrawalToken,
-        uint256 amountOut
-    );
+    using SafeTransferLib for address;
+
+    event DotcSet(address dotc);
+    event PoolNotExistOfferMade(uint256 offerId, address depositToken, uint256 amountIn, address withdrawalToken);
 
     string private constant TERMS = "https://docs.swarmx.net/";
     string private constant COMMS = "help@swarm.com";
