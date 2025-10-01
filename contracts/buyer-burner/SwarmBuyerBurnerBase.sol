@@ -6,12 +6,12 @@ import { Ownable } from "solady/src/auth/Ownable.sol";
 import { SafeTransferLib } from "solady/src/utils/SafeTransferLib.sol";
 
 import { BuyerBurnerSwapper } from "./extensions/BuyerBurnerSwapper.sol";
-import { BuyerBurnerOfferMaker, DotcV2 } from "./extensions/BuyerBurnerOfferMaker.sol";
+import { TokenInfo } from "./structures/BuyerBurnerStructures.sol";
 
 /// @title SwarmBuyerBurner smart contract (as part of the "SwarmX.eth Protocol")
 /// @notice This contract provides functionality to swap and burn ERC20 tokens using Uniswap V3.
 /// @dev It leverages Uniswap V3 for token swaps and supports burning a specific token.
-abstract contract SwarmBuyerBurnerBase is Initializable, Ownable, BuyerBurnerSwapper, BuyerBurnerOfferMaker {
+abstract contract SwarmBuyerBurnerBase is Initializable, Ownable, BuyerBurnerSwapper {
     /// @notice Swaps `token` for SMT through WETH9, with the exact input amount.
     /// @dev Requires approval for spending `token`.
     /// @return fullAmountOut The amount of SMT burned.
@@ -25,7 +25,7 @@ abstract contract SwarmBuyerBurnerBase is Initializable, Ownable, BuyerBurnerSwa
     /// @dev The function will emit a `Whitelisted` event for each token added.
     /// @dev The function will revert if any of the tokens are already whitelisted.
     /// @param tokensToAdd The list of token addresses to add to the whitelist.
-    function addTokens(address[] calldata tokensToAdd) external onlyOwner {
+    function addTokens(TokenInfo[] calldata tokensToAdd) external onlyOwner {
         _addTokens(tokensToAdd);
     }
 
