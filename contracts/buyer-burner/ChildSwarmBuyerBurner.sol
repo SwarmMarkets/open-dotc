@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.25;
 
-import { SwarmBuyerBurnerBase, DotcV2 } from "./SwarmBuyerBurnerBase.sol";
+import { SwarmBuyerBurnerBase } from "./SwarmBuyerBurnerBase.sol";
 import { BuyerBurnerCCIPCaller } from "./extensions/BuyerBurnerCCIPCaller.sol";
 import { TokenInfo } from "./structures/BuyerBurnerStructures.sol";
 
@@ -10,7 +10,7 @@ import { TokenInfo } from "./structures/BuyerBurnerStructures.sol";
 /// @dev It leverages Uniswap V3 for token swaps and supports burning a specific token.
 contract ChildSwarmBuyerBurner is SwarmBuyerBurnerBase, BuyerBurnerCCIPCaller {
     function initialize(
-        DotcV2 dotc,
+        address dotc,
         CCIPConfig calldata ccipConfig,
         DEXType[] calldata dexTypes,
         DexConfig[] calldata dexConfigs,

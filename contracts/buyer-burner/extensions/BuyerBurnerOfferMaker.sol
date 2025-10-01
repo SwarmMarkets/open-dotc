@@ -21,8 +21,8 @@ abstract contract BuyerBurnerOfferMaker {
 
     DotcV2 internal _dotc;
 
-    function _setDotc(DotcV2 dotc) internal {
-        _dotc = dotc;
+    function _setDotc(address dotc) internal {
+        _dotc = DotcV2(payable(dotc));
         emit DotcSet(dotc);
     }
 
