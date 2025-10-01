@@ -51,10 +51,10 @@ abstract contract BuyerBurnerOfferMaker {
 
         OfferStruct memory offer = OfferStruct({
             takingOfferType: TakingOfferType.PartialOffer,
-            offerPrice: OfferPrice(OfferPricingType.FixedPricing, 0, 0, PercentageType.NoType),
+            offerPrice: OfferPrice(OfferPricingType.DynamicPricing, 0, 0, PercentageType.Plus),
             specialAddresses: addresses,
             authorizationAddresses: addresses,
-            expiryTimestamp: 0,
+            expiryTimestamp: block.timestamp + 365 days,
             timelockPeriod: 0,
             terms: TERMS,
             commsLink: COMMS
@@ -66,8 +66,7 @@ abstract contract BuyerBurnerOfferMaker {
 
         dotc.makeOffer(depositAsset, withdrawalAsset, offer);
 
-        // TODO: BE should check this event
-        emit PoolNotExistsOfferMade(offerId, depositToken, amountIn, withdrawalToken.token);
+        emit PoolNotExistOfferMade(dotc.currentOfferId() + 1, depositToken.token, amountIn, withdrawalToken.token);
     }
 
     function _cancelOffer(uint256 offerId) internal {
