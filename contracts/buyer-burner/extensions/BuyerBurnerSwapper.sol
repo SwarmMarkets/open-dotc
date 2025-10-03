@@ -14,8 +14,6 @@ import { TokenInfo } from "../structures/BuyerBurnerStructures.sol";
 abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens, BuyerBurnerOfferMaker {
     using SafeTransferLib for address;
 
-    error ArraySizesNotEq();
-
     event DexConfigSet(DEXType dexType, DexConfig config);
     /// @notice Emitted when a `token` is swapped to SMT using WETH9 as an intermediary.
     /// @param amountOut The amount of SMT received.
@@ -29,6 +27,7 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens, BuyerBurne
     }
 
     struct DexConfig {
+        DEXType dexType;
         uint24 poolFee;
         address intermediateToken;
         TokenInfo finalToken;
@@ -39,15 +38,11 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens, BuyerBurne
 
     mapping(DEXType dexType => DexConfig config) internal _dexConfigs;
 
-    function _setDexConfigs(DEXType[] calldata dexTypes, DexConfig[] calldata dexConfigs) internal {
-        if (dexTypes.length != dexConfigs.length) {
-            revert ArraySizesNotEq();
-        }
+    function _setDexConfigs(DexConfig[] calldata dexConfigs) internal {
+        for (uint256 i; i < dexConfigs.length; ++i) {
+            _dexConfigs[dexConfigs[i].dexType] = dexConfigs[i];
 
-        for (uint256 i; i < dexTypes.length; ++i) {
-            _dexConfigs[dexTypes[i]] = dexConfigs[i];
-
-            emit DexConfigSet(dexTypes[i], dexConfigs[i]);
+            emit DexConfigSet(dexConfigs[i].dexType, dexConfigs[i]);
         }
     }
 
