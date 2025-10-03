@@ -12,13 +12,12 @@ contract ChildSwarmBuyerBurner is SwarmBuyerBurnerBase, BuyerBurnerCCIPCaller {
     function initialize(
         address dotc,
         CCIPConfig calldata ccipConfig,
-        DEXType[] calldata dexTypes,
         DexConfig[] calldata dexConfigs,
         TokenInfo[] calldata depositTokens
     ) external initializer {
         _setDotc(dotc);
         _setCCIPConfig(ccipConfig);
-        _setDexConfigs(dexTypes, dexConfigs);
+        _setDexConfigs(dexConfigs);
         _addTokens(depositTokens);
 
         _setOwner(msg.sender);

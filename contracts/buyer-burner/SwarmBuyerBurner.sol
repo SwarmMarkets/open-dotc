@@ -12,20 +12,19 @@ import { TokenInfo } from "./structures/BuyerBurnerStructures.sol";
 contract SwarmBuyerBurner is SwarmBuyerBurnerBase {
     function initialize(
         address dotc,
-        DEXType[] calldata dexTypes,
         DexConfig[] calldata dexConfigs,
         TokenInfo[] calldata depositTokens
     ) external initializer {
         _setDotc(dotc);
-        _setDexConfigs(dexTypes, dexConfigs);
+        _setDexConfigs(dexConfigs);
         _addTokens(depositTokens);
 
         _setOwner(msg.sender);
     }
     /// @notice Burns a specific amount of SMTs.
     /// @param amount The amount of SMTs to burn.
-    function burnSMT(address token, uint256 amount) external onlyOwner {
-        IERC20Burnable(token).burn(amount);
+    function burnSMT(uint256 amount) external onlyOwner {
+        IERC20Burnable(_dexConfigs[DEXType.UniswapV3].finalToken.token).burn(amount);
     }
 
     function _finishSwap(address token, uint256 amount) internal override {
