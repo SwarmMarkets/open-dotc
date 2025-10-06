@@ -60,11 +60,13 @@ abstract contract BuyerBurnerOfferMaker {
 
         DotcV2 dotc = _dotc;
 
+        uint256 offerId = dotc.currentOfferId();
+
         depositToken.token.safeApprove(address(dotc), amountIn);
 
         dotc.makeOffer(depositAsset, withdrawalAsset, offer);
 
-        emit PoolNotExistOfferMade(dotc.currentOfferId() + 1, depositToken.token, amountIn, withdrawalToken.token);
+        emit PoolNotExistOfferMade(offerId, depositToken.token, amountIn, withdrawalToken.token);
     }
 
     function _cancelOffer(uint256 offerId) internal {
