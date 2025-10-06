@@ -45,6 +45,14 @@ abstract contract SwarmBuyerBurnerBase is Initializable, Ownable, BuyerBurnerSwa
         SafeTransferLib.safeTransfer(token, msg.sender, amount);
     }
 
+    function setDexConfigs(DexConfig[] calldata dexConfigs) external onlyOwner {
+        _setDexConfigs(dexConfigs);
+    }
+
+    function removeDexConfig(DEXType dexType) external onlyOwner {
+        _removeDexConfigs(dexType);
+    }
+
     function cancelOffer(uint256 offerId) external onlyOwner {
         _cancelOffer(offerId);
     }
