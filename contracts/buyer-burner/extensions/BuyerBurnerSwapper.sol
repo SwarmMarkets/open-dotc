@@ -53,37 +53,35 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens, BuyerBurne
     }
 
     function _swap(DEXType dexType) internal returns (uint256 fullAmountOut) {
-        TokenInfo[] memory _tokens = tokens;
+        TokenInfo[] memory tokens = _tokens;
         DexConfig memory config = _dexConfigs[dexType];
 
-        for (uint256 i = 0; i < _tokens.length; ++i) {
-            uint256 amountIn = _tokens[i].token.balanceOf(address(this));
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            uint256 amountIn = tokens[i].token.balanceOf(address(this));
             if (amountIn == 0) {
-                emit ZeroBalance(_tokens[i].token);
+                emit ZeroBalance(tokens[i].token);
                 continue; // Skip if no tokens are available for swapping
             }
 
-            bool isWrappedNative = _tokens[i].token == config.intermediateToken;
-
             bytes memory path;
-
-            if (isWrappedNative) {
+            if (tokens[i].token == config.intermediateToken) {
                 path = abi.encodePacked(config.intermediateToken, config.poolFee, config.finalToken.token);
             } else {
                 if (
-                    config.swapV3Factory.getPool(_tokens[i].token, config.intermediateToken, config.poolFee) ==
+                    config.swapV3Factory.getPool(tokens[i].token, config.intermediateToken, config.poolFee) !=
                     address(0)
                 ) {
-                    _makeOffer(_tokens[i], amountIn, config.finalToken);
+                    path = abi.encodePacked(
+                        tokens[i].token,
+                        config.poolFee,
+                        config.intermediateToken,
+                        config.poolFee,
+                        config.finalToken.token
+                    );
+                } else {
+                    _makeOffer(tokens[i], amountIn, config.finalToken);
                     continue;
                 }
-                path = abi.encodePacked(
-                    _tokens[i].token,
-                    config.poolFee,
-                    config.intermediateToken,
-                    config.poolFee,
-                    config.finalToken.token
-                );
             }
 
             uint256 amountOutMinimum = config.swapV3Quoter.quoteExactInput(path, amountIn);
@@ -104,14 +102,14 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens, BuyerBurne
                 amountOutMinimum: amountOutMinimum
             });
 
-            _tokens[i].token.safeApproveWithRetry(config.swapV3Router, amountIn);
+            tokens[i].token.safeApproveWithRetry(config.swapV3Router, amountIn);
 
             uint256 amountOut = IV3SwapRouter(config.swapV3Router).exactInput(params);
             fullAmountOut += amountOut;
 
-            _tokens[i].token.safeApprove(config.swapV3Router, amountIn);
+            tokens[i].token.safeApprove(config.swapV3Router, amountIn);
 
-            emit Swapped(_tokens[i].token, amountOut);
+            emit Swapped(tokens[i].token, amountOut);
         }
 
         _finishSwap(config.finalToken.token, fullAmountOut);
