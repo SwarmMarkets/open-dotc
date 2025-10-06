@@ -15,6 +15,7 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens, BuyerBurne
     using SafeTransferLib for address;
 
     event DexConfigSet(DEXType dexType, DexConfig config);
+    event DexConfigRemoved(DEXType dexType);
     /// @notice Emitted when a `token` is swapped to SMT using WETH9 as an intermediary.
     /// @param amountOut The amount of SMT received.
     event Swapped(address token, uint256 amountOut);
@@ -44,6 +45,11 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens, BuyerBurne
 
             emit DexConfigSet(dexConfigs[i].dexType, dexConfigs[i]);
         }
+    }
+
+    function _removeDexConfigs(DEXType dexType) internal {
+        delete _dexConfigs[dexType];
+        emit DexConfigRemoved(dexType);
     }
 
     function _swap(DEXType dexType) internal returns (uint256 fullAmountOut) {
