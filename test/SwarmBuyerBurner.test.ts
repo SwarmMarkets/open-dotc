@@ -1,11 +1,12 @@
 import hre, { ethers, network, upgrades } from 'hardhat';
 import { BigNumber, ContractFactory } from 'ethers';
 import { expect } from 'chai';
-import { SwarmBuyerBurner, IERC20Metadata, BuyerBurnerSwapper } from '../typechain';
+import { SwarmBuyerBurner, IERC20Metadata, BuyerBurnerSwapper, DotcV2 } from '../typechain';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { getChainRpc } from '../utils/getChainRpc';
 import { getAllEventArgs, getEventArg } from './utils';
+import { TokenInfoStruct } from 'typechain/contracts/buyer-burner/ChildSwarmBuyerBurner';
 
 enum DEXType {
   NoType,
@@ -40,6 +41,26 @@ const POOL_FEE = 3000;
 
 describe.only('SwarmBuyerBurner', () => {
   const addressZero = ethers.constants.AddressZero;
+
+  const uniswapConfig: BuyerBurnerSwapper.DexConfigStruct = {
+    dexType: DEXType.UniswapV3,
+    poolFee: 3000,
+    intermediateToken: WETH_ADDRESS,
+    finalToken: { token: SMT_ADDRESS, priceFeed: SMT_PRICE_FEED },
+    swapV3Router: UNISWAP_ROUTER_ADDRESS,
+    swapV3Quoter: UNISWAP_QUOTER_ADDRESS,
+    swapV3Factory: UNISWAP_FACTORY_ADDRESS,
+  };
+
+  const pancakeswapConfig: BuyerBurnerSwapper.DexConfigStruct = {
+    dexType: DEXType.PancakeswapV3,
+    poolFee: 2500,
+    intermediateToken: addressZero,
+    finalToken: { token: SMT_ADDRESS, priceFeed: SMT_PRICE_FEED },
+    swapV3Router: PANCAKESWAP_ROUTER_ADDRESS,
+    swapV3Quoter: PANCAKESWAP_QUOTER_ADDRESS,
+    swapV3Factory: PANCAKESWAP_FACTORY_ADDRESS,
+  };
 
   before(async function () {
     await network.provider.request({
@@ -76,26 +97,6 @@ describe.only('SwarmBuyerBurner', () => {
     const WETH = await getToken(WETH_ADDRESS);
     const WBTC = await getToken(WBTC_ADDRESS);
 
-    const uniswapConfig: BuyerBurnerSwapper.DexConfigStruct = {
-      dexType: DEXType.UniswapV3,
-      poolFee: 3000,
-      intermediateToken: WETH_ADDRESS,
-      finalToken: { token: SMT_ADDRESS, priceFeed: SMT_PRICE_FEED },
-      swapV3Router: UNISWAP_ROUTER_ADDRESS,
-      swapV3Quoter: UNISWAP_QUOTER_ADDRESS,
-      swapV3Factory: UNISWAP_FACTORY_ADDRESS,
-    };
-
-    const pancakeswapConfig: BuyerBurnerSwapper.DexConfigStruct = {
-      dexType: DEXType.PancakeswapV3,
-      poolFee: 2500,
-      intermediateToken: WETH_ADDRESS,
-      finalToken: { token: SMT_ADDRESS, priceFeed: SMT_PRICE_FEED },
-      swapV3Router: PANCAKESWAP_ROUTER_ADDRESS,
-      swapV3Quoter: PANCAKESWAP_QUOTER_ADDRESS,
-      swapV3Factory: PANCAKESWAP_FACTORY_ADDRESS,
-    };
-
     const SwarmBuyerBurner: ContractFactory = await ethers.getContractFactory('SwarmBuyerBurner');
     const buyerBurner: SwarmBuyerBurner = (await upgrades.deployProxy(
       SwarmBuyerBurner,
@@ -116,6 +117,7 @@ describe.only('SwarmBuyerBurner', () => {
     await buyerBurner.deployed();
 
     const quoter = await hre.ethers.getContractAt('IV3SwapQuoter', UNISWAP_QUOTER_ADDRESS);
+    const dotc: DotcV2 = await hre.ethers.getContractAt('DotcV2', DOTC);
 
     return {
       SMT_whale,
@@ -127,12 +129,31 @@ describe.only('SwarmBuyerBurner', () => {
       USDC,
       WETH,
       WBTC,
+      dotc,
       buyerBurner,
       quoter,
     };
   }
 
-  describe('Swaps', () => {
+  describe('Deployment', () => {
+    it('Wont be initialized again', async () => {
+      const { buyerBurner } = await loadFixture(fixture);
+
+      await expect(
+        buyerBurner.initialize(
+          DOTC,
+          [uniswapConfig, pancakeswapConfig],
+          [
+            { token: USDC_ADDRESS, priceFeed: USDC_PRICE_FEED },
+            { token: WETH_ADDRESS, priceFeed: ETH_PRICE_FEED },
+            { token: WBTC_ADDRESS, priceFeed: BTC_PRICE_FEED },
+          ],
+        ),
+      ).to.be.revertedWithCustomError(buyerBurner, 'InvalidInitialization');
+    });
+  });
+
+  describe('Swap', () => {
     it('swap(USDC to SMT); burn(SMT)', async () => {
       const { USDC_whale, USDC, SMT, buyerBurner, quoter } = await loadFixture(fixture);
 
@@ -242,28 +263,272 @@ describe.only('SwarmBuyerBurner', () => {
     });
   });
 
-  it('Withdraw tokens', async () => {
-    const { USDC_whale, USDC, buyerBurner, deployer } = await loadFixture(fixture);
+  describe('MakeOffer', () => {
+    it('trying swap(USDC to SMT); makeOffer(SMT)', async () => {
+      const { USDC_whale, USDC, SMT, dotc, buyerBurner } = await loadFixture(fixture);
 
-    const usdc_amount = 120 * 1e6;
+      const usdcAmount: BigNumber = BigNumber.from(120 * 1e6);
 
-    await USDC.connect(USDC_whale).transfer(buyerBurner.address, usdc_amount);
+      await USDC.connect(USDC_whale).transfer(buyerBurner.address, usdcAmount);
 
-    await buyerBurner.connect(deployer).withdrawTokens(USDC.address, usdc_amount);
+      const futureOfferId = await dotc.currentOfferId();
+      const swapTx = await buyerBurner.swap(DEXType.PancakeswapV3);
+      const swapReceipt = await swapTx.wait();
+      const offerId = getEventArg(swapReceipt, 'PoolNotExistOfferMade', 'offerId');
 
-    expect(await USDC.balanceOf(await buyerBurner.owner())).to.be.eq(usdc_amount);
+      expect(offerId).to.eq(futureOfferId);
+      await expect(swapTx)
+        .to.emit(buyerBurner, 'PoolNotExistOfferMade')
+        .withArgs(offerId, USDC.address, usdcAmount, SMT.address);
+      await expect(swapTx).to.emit(dotc, 'CreatedOffer');
+      expect((await dotc.allOffers(offerId)).depositAsset.assetAddress).to.eq(USDC.address);
+      expect((await dotc.allOffers(offerId)).depositAsset.amount).to.eq(usdcAmount);
+      expect((await dotc.allOffers(offerId)).depositAsset.assetPrice.priceFeedAddress).to.eq(USDC_PRICE_FEED);
+      expect((await dotc.allOffers(offerId)).withdrawalAsset.assetAddress).to.eq(SMT.address);
+      expect((await dotc.allOffers(offerId)).withdrawalAsset.amount).to.gt(0);
+      expect((await dotc.allOffers(offerId)).withdrawalAsset.assetPrice.priceFeedAddress).to.eq(SMT_PRICE_FEED);
+
+      await expect(buyerBurner.connect(USDC_whale).cancelOffer(offerId)).to.be.revertedWithCustomError(
+        buyerBurner,
+        'Unauthorized',
+      );
+      const cancelTx = await buyerBurner.cancelOffer(offerId);
+      await expect(cancelTx).to.emit(dotc, 'CanceledOffer');
+    });
+
+    it('trying swap(WETH to ETH); makeOffer(SMT)', async () => {
+      const { WETH_whale, WETH, SMT, dotc, buyerBurner } = await loadFixture(fixture);
+
+      const wethAmount: BigNumber = BigNumber.from(120 * 1e6);
+
+      await WETH.connect(WETH_whale).transfer(buyerBurner.address, wethAmount);
+
+      const futureOfferId = await dotc.currentOfferId();
+      const swapTx = await buyerBurner.swap(DEXType.PancakeswapV3);
+      const swapReceipt = await swapTx.wait();
+      const offerId = getEventArg(swapReceipt, 'PoolNotExistOfferMade', 'offerId');
+
+      expect(offerId).to.eq(futureOfferId);
+      await expect(swapTx)
+        .to.emit(buyerBurner, 'PoolNotExistOfferMade')
+        .withArgs(offerId, WETH.address, wethAmount, SMT.address);
+      await expect(swapTx).to.emit(dotc, 'CreatedOffer');
+      expect((await dotc.allOffers(offerId)).depositAsset.assetAddress).to.eq(WETH.address);
+      expect((await dotc.allOffers(offerId)).depositAsset.amount).to.eq(wethAmount);
+      expect((await dotc.allOffers(offerId)).depositAsset.assetPrice.priceFeedAddress).to.eq(ETH_PRICE_FEED);
+      expect((await dotc.allOffers(offerId)).withdrawalAsset.assetAddress).to.eq(SMT.address);
+      expect((await dotc.allOffers(offerId)).withdrawalAsset.amount).to.gt(0);
+      expect((await dotc.allOffers(offerId)).withdrawalAsset.assetPrice.priceFeedAddress).to.eq(SMT_PRICE_FEED);
+
+      await expect(buyerBurner.connect(WETH_whale).cancelOffer(offerId)).to.be.revertedWithCustomError(
+        buyerBurner,
+        'Unauthorized',
+      );
+      const cancelTx = await buyerBurner.cancelOffer(offerId);
+      await expect(cancelTx).to.emit(dotc, 'CanceledOffer');
+    });
+
+    it('trying swap(WBTC to ETH); makeOffer(SMT)', async () => {
+      const { WBTC_whale, WBTC, SMT, dotc, buyerBurner } = await loadFixture(fixture);
+
+      const wbtcAmount: BigNumber = BigNumber.from(120 * 1e6);
+
+      await WBTC.connect(WBTC_whale).transfer(buyerBurner.address, wbtcAmount);
+
+      const futureOfferId = await dotc.currentOfferId();
+      const swapTx = await buyerBurner.swap(DEXType.PancakeswapV3);
+      const swapReceipt = await swapTx.wait();
+      const offerId = getEventArg(swapReceipt, 'PoolNotExistOfferMade', 'offerId');
+
+      expect(offerId).to.eq(futureOfferId);
+      await expect(swapTx)
+        .to.emit(buyerBurner, 'PoolNotExistOfferMade')
+        .withArgs(offerId, WBTC.address, wbtcAmount, SMT.address);
+      await expect(swapTx).to.emit(dotc, 'CreatedOffer');
+      expect((await dotc.allOffers(offerId)).depositAsset.assetAddress).to.eq(WBTC.address);
+      expect((await dotc.allOffers(offerId)).depositAsset.amount).to.eq(wbtcAmount);
+      expect((await dotc.allOffers(offerId)).depositAsset.assetPrice.priceFeedAddress).to.eq(BTC_PRICE_FEED);
+      expect((await dotc.allOffers(offerId)).withdrawalAsset.assetAddress).to.eq(SMT.address);
+      expect((await dotc.allOffers(offerId)).withdrawalAsset.amount).to.gt(0);
+      expect((await dotc.allOffers(offerId)).withdrawalAsset.assetPrice.priceFeedAddress).to.eq(SMT_PRICE_FEED);
+
+      await expect(buyerBurner.connect(WBTC_whale).cancelOffer(offerId)).to.be.revertedWithCustomError(
+        buyerBurner,
+        'Unauthorized',
+      );
+      const cancelTx = await buyerBurner.cancelOffer(offerId);
+      await expect(cancelTx).to.emit(dotc, 'CanceledOffer');
+    });
+
+    it('trying swap(all tokens for SMT); makeOffers(SMT)', async () => {
+      const { USDC_whale, USDC, WETH_whale, WETH, WBTC_whale, WBTC, SMT, buyerBurner, dotc } = await loadFixture(
+        fixture,
+      );
+
+      const usdcAmount: BigNumber = BigNumber.from(120 * 1e6);
+      const wethAmount: BigNumber = BigNumber.from(120 * 1e6);
+      const wbtcAmount: BigNumber = BigNumber.from(120 * 1e6);
+
+      await USDC.connect(USDC_whale).transfer(buyerBurner.address, usdcAmount);
+      await WETH.connect(WETH_whale).transfer(buyerBurner.address, wethAmount);
+      await WBTC.connect(WBTC_whale).transfer(buyerBurner.address, wbtcAmount);
+
+      const futureOfferId = await dotc.currentOfferId();
+      const swapTx = await buyerBurner.swap(DEXType.PancakeswapV3);
+      const swapReceipt = await swapTx.wait();
+      const offerIds = getAllEventArgs(swapReceipt, 'PoolNotExistOfferMade', 'offerId');
+
+      expect(offerIds[0]).to.eq(futureOfferId);
+      expect(offerIds[1]).to.eq(futureOfferId.add(1));
+      expect(offerIds[2]).to.eq(futureOfferId.add(2));
+      await expect(swapTx)
+        .to.emit(buyerBurner, 'PoolNotExistOfferMade')
+        .withArgs(offerIds[0], USDC.address, usdcAmount, SMT.address);
+      await expect(swapTx)
+        .to.emit(buyerBurner, 'PoolNotExistOfferMade')
+        .withArgs(offerIds[1], WETH.address, wethAmount, SMT.address);
+      await expect(swapTx)
+        .to.emit(buyerBurner, 'PoolNotExistOfferMade')
+        .withArgs(offerIds[2], WBTC.address, wbtcAmount, SMT.address);
+      await expect(swapTx).to.emit(dotc, 'CreatedOffer');
+
+      expect((await dotc.allOffers(offerIds[0])).depositAsset.assetAddress).to.eq(USDC.address);
+      expect((await dotc.allOffers(offerIds[0])).depositAsset.amount).to.eq(usdcAmount);
+      expect((await dotc.allOffers(offerIds[0])).depositAsset.assetPrice.priceFeedAddress).to.eq(USDC_PRICE_FEED);
+      expect((await dotc.allOffers(offerIds[0])).withdrawalAsset.assetAddress).to.eq(SMT.address);
+      expect((await dotc.allOffers(offerIds[0])).withdrawalAsset.amount).to.gt(0);
+      expect((await dotc.allOffers(offerIds[0])).withdrawalAsset.assetPrice.priceFeedAddress).to.eq(SMT_PRICE_FEED);
+
+      expect((await dotc.allOffers(offerIds[1])).depositAsset.amount).to.eq(wethAmount);
+      expect((await dotc.allOffers(offerIds[1])).depositAsset.assetAddress).to.eq(WETH.address);
+      expect((await dotc.allOffers(offerIds[1])).depositAsset.assetPrice.priceFeedAddress).to.eq(ETH_PRICE_FEED);
+      expect((await dotc.allOffers(offerIds[1])).withdrawalAsset.assetAddress).to.eq(SMT.address);
+      expect((await dotc.allOffers(offerIds[1])).withdrawalAsset.amount).to.gt(0);
+      expect((await dotc.allOffers(offerIds[1])).withdrawalAsset.assetPrice.priceFeedAddress).to.eq(SMT_PRICE_FEED);
+
+      expect((await dotc.allOffers(offerIds[2])).depositAsset.assetAddress).to.eq(WBTC.address);
+      expect((await dotc.allOffers(offerIds[2])).depositAsset.amount).to.eq(wbtcAmount);
+      expect((await dotc.allOffers(offerIds[2])).depositAsset.assetPrice.priceFeedAddress).to.eq(BTC_PRICE_FEED);
+      expect((await dotc.allOffers(offerIds[2])).withdrawalAsset.assetAddress).to.eq(SMT.address);
+      expect((await dotc.allOffers(offerIds[2])).withdrawalAsset.amount).to.gt(0);
+      expect((await dotc.allOffers(offerIds[2])).withdrawalAsset.assetPrice.priceFeedAddress).to.eq(SMT_PRICE_FEED);
+
+      let cancelTx = await buyerBurner.cancelOffer(offerIds[0]);
+      await expect(cancelTx).to.emit(dotc, 'CanceledOffer');
+
+      cancelTx = await buyerBurner.cancelOffer(offerIds[1]);
+      await expect(cancelTx).to.emit(dotc, 'CanceledOffer');
+
+      cancelTx = await buyerBurner.cancelOffer(offerIds[2]);
+      await expect(cancelTx).to.emit(dotc, 'CanceledOffer');
+    });
   });
 
-  it('Burn SMT', async () => {
-    const { SMT_whale, SMT, buyerBurner, deployer } = await loadFixture(fixture);
+  describe('Admin functions', () => {
+    it('Set Dex config', async () => {
+      const { buyerBurner, SMT_whale } = await loadFixture(fixture);
 
-    const smt_amount = ethers.utils.parseEther('1');
+      await buyerBurner.removeDexConfig(DEXType.PancakeswapV3);
 
-    await SMT.connect(SMT_whale).transfer(buyerBurner.address, smt_amount);
+      await expect(buyerBurner.connect(SMT_whale).setDexConfigs([pancakeswapConfig])).to.be.revertedWithCustomError(
+        buyerBurner,
+        'Unauthorized',
+      );
 
-    await buyerBurner.connect(deployer).burnSMT(smt_amount);
+      const removeTx = await buyerBurner.setDexConfigs([pancakeswapConfig]);
 
-    expect(await SMT.balanceOf(buyerBurner.address)).to.be.eq(0);
+      await expect(removeTx).to.emit(buyerBurner, 'DexConfigSet');
+    });
+
+    it('Remove Dex config', async () => {
+      const { buyerBurner, SMT_whale } = await loadFixture(fixture);
+
+      await expect(buyerBurner.connect(SMT_whale).removeDexConfig(DEXType.PancakeswapV3)).to.be.revertedWithCustomError(
+        buyerBurner,
+        'Unauthorized',
+      );
+
+      const removeTx = await buyerBurner.removeDexConfig(DEXType.PancakeswapV3);
+
+      await expect(removeTx).to.emit(buyerBurner, 'DexConfigRemoved').withArgs(DEXType.PancakeswapV3);
+    });
+
+    it('Add tokens', async () => {
+      const { buyerBurner, USDC_whale } = await loadFixture(fixture);
+
+      const tokenToAdd: TokenInfoStruct = {
+        token: buyerBurner.address,
+        priceFeed: USDC_PRICE_FEED,
+      };
+
+      await expect(buyerBurner.connect(USDC_whale).addTokens([tokenToAdd])).to.be.revertedWithCustomError(
+        buyerBurner,
+        'Unauthorized',
+      );
+      const addTx = await buyerBurner.addTokens([tokenToAdd]);
+
+      await expect(buyerBurner.addTokens([tokenToAdd]))
+        .to.be.revertedWithCustomError(buyerBurner, 'TokenWhitelisted')
+        .withArgs(buyerBurner.address);
+
+      await expect(addTx).to.emit(buyerBurner, 'Whitelisted');
+    });
+
+    it('Remove tokens', async () => {
+      const { buyerBurner, USDC_whale } = await loadFixture(fixture);
+
+      const tokenToAdd: TokenInfoStruct = {
+        token: buyerBurner.address,
+        priceFeed: USDC_PRICE_FEED,
+      };
+      await buyerBurner.addTokens([tokenToAdd]);
+
+      await expect(buyerBurner.connect(USDC_whale).removeTokens([buyerBurner.address])).to.be.revertedWithCustomError(
+        buyerBurner,
+        'Unauthorized',
+      );
+
+      const removeTx = await buyerBurner.removeTokens([buyerBurner.address]);
+
+      await expect(buyerBurner.removeTokens([buyerBurner.address]))
+        .to.be.revertedWithCustomError(buyerBurner, 'TokenNotWhitelisted')
+        .withArgs(buyerBurner.address);
+
+      await expect(removeTx).to.emit(buyerBurner, 'Unwhitelisted').withArgs(buyerBurner.address);
+    });
+
+    it('Withdraw tokens', async () => {
+      const { USDC_whale, USDC, buyerBurner } = await loadFixture(fixture);
+
+      const usdc_amount = 120 * 1e6;
+
+      await USDC.connect(USDC_whale).transfer(buyerBurner.address, usdc_amount);
+
+      await expect(
+        buyerBurner.connect(USDC_whale).withdrawTokens(USDC.address, usdc_amount),
+      ).to.be.revertedWithCustomError(buyerBurner, 'Unauthorized');
+
+      await buyerBurner.withdrawTokens(USDC.address, usdc_amount);
+
+      expect(await USDC.balanceOf(await buyerBurner.owner())).to.be.eq(usdc_amount);
+    });
+
+    it('Burn SMT', async () => {
+      const { SMT_whale, SMT, buyerBurner } = await loadFixture(fixture);
+
+      const smt_amount = ethers.utils.parseEther('1');
+
+      await SMT.connect(SMT_whale).transfer(buyerBurner.address, smt_amount);
+
+      await expect(buyerBurner.connect(SMT_whale).burnSMT(smt_amount)).to.be.revertedWithCustomError(
+        buyerBurner,
+        'Unauthorized',
+      );
+
+      await buyerBurner.burnSMT(smt_amount);
+
+      expect(await SMT.balanceOf(buyerBurner.address)).to.be.eq(0);
+    });
   });
 });
 
