@@ -40,7 +40,7 @@ abstract contract BuyerBurnerOfferMaker {
         Asset memory withdrawalAsset = Asset({
             assetType: AssetType.ERC20,
             assetAddress: withdrawalToken.token,
-            amount: 0,
+            amount: 1,
             tokenId: 0,
             assetPrice: AssetPrice(withdrawalToken.priceFeed, 0, 0)
         });
