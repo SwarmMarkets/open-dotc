@@ -10,37 +10,37 @@ abstract contract BuyerBurnerWhitelistedTokens {
     event Whitelisted(TokenInfo tokenInfo);
     event Unwhitelisted(address token);
 
-    TokenInfo[] public tokens;
-    mapping(address token => uint256 index) public indexOf;
+    TokenInfo[] internal _tokens;
+    mapping(address token => uint256 index) internal _indexOfToken;
 
     /// @notice Add a single token + its Chainlink feed
     function _addToken(TokenInfo calldata tokenInfo) internal virtual {
-        if (indexOf[tokenInfo.token] != 0) {
+        if (_indexOfToken[tokenInfo.token] != 0) {
             revert TokenWhitelisted(tokenInfo.token);
         }
 
-        tokens.push(tokenInfo);
-        indexOf[tokenInfo.token] = tokens.length; // 1-based
+        _tokens.push(tokenInfo);
+        _indexOfToken[tokenInfo.token] = _tokens.length; // 1-based
 
         emit Whitelisted(tokenInfo);
     }
 
     /// @notice Remove a single token
     function _removeToken(address token) internal virtual {
-        uint256 index = indexOf[token];
+        uint256 index = _indexOfToken[token];
         if (index == 0) {
             revert TokenNotWhitelisted(token);
         }
 
         // swap-and-pop
-        uint256 last = tokens.length;
-        TokenInfo memory lastTokenInfo = tokens[last - 1];
-        tokens[index - 1] = lastTokenInfo;
-        indexOf[lastTokenInfo.token] = index;
+        uint256 last = _tokens.length;
+        TokenInfo memory lastTokenInfo = _tokens[last - 1];
+        _tokens[index - 1] = lastTokenInfo;
+        _indexOfToken[lastTokenInfo.token] = index;
 
-        tokens.pop();
+        _tokens.pop();
 
-        delete indexOf[token];
+        delete _indexOfToken[token];
 
         emit Unwhitelisted(token);
     }
@@ -56,20 +56,6 @@ abstract contract BuyerBurnerWhitelistedTokens {
     function _removeTokens(address[] calldata tokensToRemove) internal {
         for (uint256 i; i < tokensToRemove.length; ++i) {
             _removeToken(tokensToRemove[i]);
-        }
-    }
-
-    /// @notice Revert if not whitelisted
-    function _ensureWhitelisted(address token) internal view virtual {
-        if (indexOf[token] == 0) {
-            revert TokenNotWhitelisted(token);
-        }
-    }
-
-    /// @notice Revert if already whitelisted
-    function _ensureNotWhitelisted(address token) internal view virtual {
-        if (indexOf[token] != 0) {
-            revert TokenWhitelisted(token);
         }
     }
 }
