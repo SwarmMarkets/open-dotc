@@ -24,6 +24,9 @@ contract ChildSwarmBuyerBurner is SwarmBuyerBurnerBase, BuyerBurnerCCIPCaller {
     }
 
     function _finishSwap(address token, uint256 amount) internal override {
+        if (amount == 0) {
+            return;
+        }
         _ccipTransfer(token, amount);
     }
 }
