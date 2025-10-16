@@ -182,5 +182,38 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens, BuyerBurne
         _finishSwap(config.finalToken.token, fullAmountOut);
     }
 
+    function _firstLivePool(
+        IV3SwapFactory factory,
+        address tokenA,
+        address tokenB,
+        PoolFees memory fees
+    ) internal view virtual returns (bool ok, uint24 feeChosen) {
+        (ok, feeChosen) = _checkFee(factory, tokenA, tokenB, fees.tier3);
+        if (ok) return (true, feeChosen);
+
+        (ok, feeChosen) = _checkFee(factory, tokenA, tokenB, fees.tier2);
+        if (ok) return (true, feeChosen);
+
+        (ok, feeChosen) = _checkFee(factory, tokenA, tokenB, fees.tier4);
+        if (ok) return (true, feeChosen);
+
+        (ok, feeChosen) = _checkFee(factory, tokenA, tokenB, fees.tier1);
+        if (ok) return (true, feeChosen);
+
+        return (false, 0);
+    }
+
+    function _checkFee(
+        IV3SwapFactory factory,
+        address tokenA,
+        address tokenB,
+        uint24 fee
+    ) internal view virtual returns (bool, uint24) {
+        address pool = factory.getPool(tokenA, tokenB, fee);
+        if (pool == address(0)) return (false, 0);
+        if (IV3SwapPool(pool).liquidity() == 0) return (false, 0);
+        return (true, fee);
+    }
+
     function _finishSwap(address token, uint256 amount) internal virtual;
 }
