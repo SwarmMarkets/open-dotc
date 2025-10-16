@@ -8,8 +8,8 @@ import { ITokenTransferor } from "../interfaces/ITokenTransferor.sol";
 abstract contract BuyerBurnerCCIPCaller {
     using SafeTransferLib for address;
 
-    event CcipConfigSet(CCIPConfig config);
-    event CCIPTransferSubmited(bytes32 messageId, address token, uint256 amount);
+    event CCIPConfigSet(CCIPConfig config);
+    event CCIPTransferSubmitted(bytes32 messageId, address token, uint256 amount);
 
     struct CCIPConfig {
         uint64 destinationChainSelector;
@@ -21,7 +21,7 @@ abstract contract BuyerBurnerCCIPCaller {
 
     function _setCCIPConfig(CCIPConfig calldata ccipConfig) internal {
         _ccipConfig = ccipConfig;
-        emit CcipConfigSet(ccipConfig);
+        emit CCIPConfigSet(ccipConfig);
     }
 
     function _ccipTransfer(address token, uint256 amount) internal virtual {
@@ -38,6 +38,6 @@ abstract contract BuyerBurnerCCIPCaller {
         if (fees < msg.value) {
             SafeTransferLib.safeTransferETH(msg.sender, msg.value - fees);
         }
-        emit CCIPTransferSubmited(messageId, token, amount);
+        emit CCIPTransferSubmitted(messageId, token, amount);
     }
 }
