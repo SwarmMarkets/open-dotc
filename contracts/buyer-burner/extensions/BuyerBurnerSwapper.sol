@@ -5,7 +5,7 @@ import { SafeTransferLib } from "solady/src/utils/SafeTransferLib.sol";
 
 import { IV3SwapFactory } from "../interfaces/IV3SwapFactory.sol";
 import { IV3SwapRouter } from "../interfaces/IV3SwapRouter.sol";
-import { IV3SwapQuoter, IV3SwapQuoterV2 } from "../interfaces/IV3SwapQuoter.sol";
+import { IV3SwapQuoterV2 } from "../interfaces/IV3SwapQuoterV2.sol";
 import { IV3SwapPool } from "../interfaces/IV3SwapPool.sol";
 
 import { BuyerBurnerWhitelistedTokens } from "./BuyerBurnerWhitelistedTokens.sol";
@@ -137,22 +137,11 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens, BuyerBurne
                 }
                 amountOutMinimum = out;
             } catch {
-                try IV3SwapQuoter(config.swapV3Quoter).quoteExactInput(path, amountIn) returns (uint256 out1) {
-                    if (out1 == 0) {
-                        _makeOffer(tokens[i], amountIn, config.finalToken);
-                        unchecked {
-                            ++i;
-                        }
-                        continue;
-                    }
-                    amountOutMinimum = out1;
-                } catch {
-                    _makeOffer(tokens[i], amountIn, config.finalToken);
-                    unchecked {
-                        ++i;
-                    }
-                    continue;
+                _makeOffer(tokens[i], amountIn, config.finalToken);
+                unchecked {
+                    ++i;
                 }
+                continue;
             }
 
             // ------- Execute swap -------
