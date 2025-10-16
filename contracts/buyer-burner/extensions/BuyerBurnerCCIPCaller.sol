@@ -6,6 +6,8 @@ import { SafeTransferLib } from "solady/src/utils/SafeTransferLib.sol";
 import { ITokenTransferor } from "../interfaces/ITokenTransferor.sol";
 
 abstract contract BuyerBurnerCCIPCaller {
+    using SafeTransferLib for address;
+
     event CcipConfigSet(CCIPConfig config);
     event CCIPTransferSubmited(bytes32 messageId, address token, uint256 amount);
 
@@ -23,15 +25,12 @@ abstract contract BuyerBurnerCCIPCaller {
     }
 
     function _ccipTransfer(address token, uint256 amount) internal virtual {
-        uint256 fees = _ccipConfig.bridge.estimateFees(
-            _ccipConfig.destinationChainSelector,
-            _ccipConfig.receiver,
-            token,
-            amount
-        );
-        bytes32 messageId = _ccipConfig.bridge.bridgeTokens{ value: fees }(
-            _ccipConfig.destinationChainSelector,
-            _ccipConfig.receiver,
+        CCIPConfig memory config = _ccipConfig;
+        uint256 fees = config.bridge.estimateFees(config.destinationChainSelector, config.receiver, token, amount);
+        token.safeApproveWithRetry(address(config.bridge), amount);
+        bytes32 messageId = config.bridge.bridgeTokens{ value: fees }(
+            config.destinationChainSelector,
+            config.receiver,
             token,
             amount
         );
