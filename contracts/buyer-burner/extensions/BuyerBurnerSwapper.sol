@@ -29,13 +29,20 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens, BuyerBurne
         PancakeswapV3
     }
 
+    struct PoolFees {
+        uint24 tier1; // e.g. Uni: 100 (0.01%) | PCS: 100 (optional/not always)
+        uint24 tier2; // 500  (0.05%)
+        uint24 tier3; // Uni: 3000 (0.30%) | PCS: 2500 (0.25%)
+        uint24 tier4; // 10000 (1.00%)
+    }
+
     struct DexConfig {
         DEXType dexType;
-        uint24 poolFee;
+        PoolFees poolFees;
         address intermediateToken;
         TokenInfo finalToken;
         address swapV3Router;
-        IV3SwapQuoter swapV3Quoter;
+        address swapV3Quoter;
         IV3SwapFactory swapV3Factory;
     }
 
