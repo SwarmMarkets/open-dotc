@@ -5,11 +5,13 @@ import { SafeTransferLib } from "solady/src/utils/SafeTransferLib.sol";
 
 import { IV3SwapFactory } from "../interfaces/IV3SwapFactory.sol";
 import { IV3SwapRouter } from "../interfaces/IV3SwapRouter.sol";
-import { IV3SwapQuoter } from "../interfaces/IV3SwapQuoter.sol";
+import { IV3SwapQuoter, IV3SwapQuoterV2 } from "../interfaces/IV3SwapQuoter.sol";
+import { IV3SwapPool } from "../interfaces/IV3SwapPool.sol";
 
 import { BuyerBurnerWhitelistedTokens } from "./BuyerBurnerWhitelistedTokens.sol";
 import { BuyerBurnerOfferMaker } from "./BuyerBurnerOfferMaker.sol";
 import { TokenInfo } from "../structures/BuyerBurnerStructures.sol";
+import { PathSanity } from "./PathSanity.sol";
 
 abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens, BuyerBurnerOfferMaker {
     using SafeTransferLib for address;
