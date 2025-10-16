@@ -31,7 +31,7 @@ const WBTC_WHALE_ADDRESS = '0xed805ac246F441Ea0D057B81d910EF1e39EB5995';
 const DOTC = '0x0a103eE32F4209926D8ba7e528AFf8a831Ed3daE';
 const UNISWAP_FACTORY_ADDRESS = '0x1F98431c8aD98523631AE4a59f267346ea31F984';
 const UNISWAP_ROUTER_ADDRESS = '0xE592427A0AEce92De3Edee1F18E0157C05861564';
-const UNISWAP_QUOTER_ADDRESS = '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6';
+const UNISWAP_QUOTER_ADDRESS = '0x61fFE014bA17989E743c5F6cB21bF9697530B21e';
 
 const PANCAKESWAP_FACTORY_ADDRESS = '0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865';
 const PANCAKESWAP_ROUTER_ADDRESS = '0x1b81D678ffb9C0263b24A97847620C99d213eB14';
@@ -39,12 +39,17 @@ const PANCAKESWAP_QUOTER_ADDRESS = '0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997';
 
 const POOL_FEE = 3000;
 
-describe.only('SwarmBuyerBurner', () => {
+describe('SwarmBuyerBurner', () => {
   const addressZero = ethers.constants.AddressZero;
 
   const uniswapConfig: BuyerBurnerSwapper.DexConfigStruct = {
     dexType: DEXType.UniswapV3,
-    poolFee: 3000,
+    poolFees: {
+      tier1: 100,
+      tier2: 500,
+      tier3: 3000,
+      tier4: 10000,
+    },
     intermediateToken: WETH_ADDRESS,
     finalToken: { token: SMT_ADDRESS, priceFeed: SMT_PRICE_FEED },
     swapV3Router: UNISWAP_ROUTER_ADDRESS,
@@ -54,7 +59,12 @@ describe.only('SwarmBuyerBurner', () => {
 
   const pancakeswapConfig: BuyerBurnerSwapper.DexConfigStruct = {
     dexType: DEXType.PancakeswapV3,
-    poolFee: 2500,
+    poolFees: {
+      tier1: 100,
+      tier2: 500,
+      tier3: 2500,
+      tier4: 10000,
+    },
     intermediateToken: addressZero,
     finalToken: { token: SMT_ADDRESS, priceFeed: SMT_PRICE_FEED },
     swapV3Router: PANCAKESWAP_ROUTER_ADDRESS,
@@ -171,7 +181,7 @@ describe.only('SwarmBuyerBurner', () => {
       const smtAmountBurned = getEventArg(swapReceipt, 'Swapped', 'amountOut');
 
       expect(smtAmountBurned).to.eq(smtAmount);
-      await expect(swapTx).to.emit(buyerBurner, 'Swapped').withArgs(USDC_ADDRESS, smtAmount);
+      await expect(swapTx).to.emit(buyerBurner, 'Swapped').withArgs(USDC_ADDRESS, SMT_ADDRESS, smtAmount);
       await expect(swapTx).to.emit(SMT, 'Transfer').withArgs(buyerBurner.address, addressZero, smtAmount);
     });
 
@@ -189,7 +199,7 @@ describe.only('SwarmBuyerBurner', () => {
       const smtAmountBurned = getEventArg(swapReceipt, 'Swapped', 'amountOut');
 
       expect(smtAmountBurned).to.eq(smtAmount);
-      await expect(swapTx).to.emit(buyerBurner, 'Swapped').withArgs(WETH_ADDRESS, smtAmount);
+      await expect(swapTx).to.emit(buyerBurner, 'Swapped').withArgs(WETH_ADDRESS, SMT_ADDRESS, smtAmount);
       await expect(swapTx).to.emit(SMT, 'Transfer').withArgs(buyerBurner.address, addressZero, smtAmount);
     });
 
@@ -210,7 +220,7 @@ describe.only('SwarmBuyerBurner', () => {
       const smtAmountBurned = getEventArg(swapReceipt, 'Swapped', 'amountOut');
 
       expect(smtAmountBurned).to.eq(smtAmount);
-      await expect(swapTx).to.emit(buyerBurner, 'Swapped').withArgs(WBTC_ADDRESS, smtAmount);
+      await expect(swapTx).to.emit(buyerBurner, 'Swapped').withArgs(WBTC_ADDRESS, SMT_ADDRESS, smtAmount);
       await expect(swapTx).to.emit(SMT, 'Transfer').withArgs(buyerBurner.address, addressZero, smtAmount);
     });
 
@@ -256,9 +266,15 @@ describe.only('SwarmBuyerBurner', () => {
       expect(smtAmountsBurnedArray[2]).to.be.lte(smtFromWbtcAmount);
       expect(actualSmtBurned).to.lte(smtfromUsdcAmount.add(smtFromWethAmount).add(smtFromWbtcAmount));
       expect(actualSmtBurned).to.be.lte(staticSmtBurned);
-      await expect(swapTx).to.emit(buyerBurner, 'Swapped').withArgs(USDC_ADDRESS, smtAmountsBurnedArray[0]);
-      await expect(swapTx).to.emit(buyerBurner, 'Swapped').withArgs(WETH_ADDRESS, smtAmountsBurnedArray[1]);
-      await expect(swapTx).to.emit(buyerBurner, 'Swapped').withArgs(WBTC_ADDRESS, smtAmountsBurnedArray[2]);
+      await expect(swapTx)
+        .to.emit(buyerBurner, 'Swapped')
+        .withArgs(USDC_ADDRESS, SMT_ADDRESS, smtAmountsBurnedArray[0]);
+      await expect(swapTx)
+        .to.emit(buyerBurner, 'Swapped')
+        .withArgs(WETH_ADDRESS, SMT_ADDRESS, smtAmountsBurnedArray[1]);
+      await expect(swapTx)
+        .to.emit(buyerBurner, 'Swapped')
+        .withArgs(WBTC_ADDRESS, SMT_ADDRESS, smtAmountsBurnedArray[2]);
       await expect(swapTx).to.emit(SMT, 'Transfer').withArgs(buyerBurner.address, addressZero, actualSmtBurned);
     });
   });
