@@ -23,7 +23,12 @@ abstract contract BuyerBurnerCCIPCaller {
     }
 
     function _ccipTransfer(address token, uint256 amount) internal virtual {
-        uint256 fees = _estimateFees(token, amount);
+        uint256 fees = _ccipConfig.bridge.estimateFees(
+            _ccipConfig.destinationChainSelector,
+            _ccipConfig.receiver,
+            token,
+            amount
+        );
         bytes32 messageId = _ccipConfig.bridge.bridgeTokens{ value: fees }(
             _ccipConfig.destinationChainSelector,
             _ccipConfig.receiver,
@@ -35,14 +40,5 @@ abstract contract BuyerBurnerCCIPCaller {
             SafeTransferLib.safeTransferETH(msg.sender, msg.value - fees);
         }
         emit CCIPTransferSubmited(messageId, token, amount);
-    }
-
-    function _estimateFees(address token, uint256 amount) internal view returns (uint256 fees) {
-        fees = _ccipConfig.bridge.estimateFees(
-            _ccipConfig.destinationChainSelector,
-            _ccipConfig.receiver,
-            token,
-            amount
-        );
     }
 }
