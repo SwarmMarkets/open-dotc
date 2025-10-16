@@ -21,5 +21,5 @@ interface IV3SwapQuoterV2 {
     function quoteExactInput(
         bytes calldata path,
         uint256 amountIn
-    ) external returns (uint256 amountOut, uint160, uint32, uint256);
+    ) external returns (uint256 amountOut, uint160[] memory, uint32[] memory, uint256);
 }
