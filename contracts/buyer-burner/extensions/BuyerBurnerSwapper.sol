@@ -16,6 +16,7 @@ import { PathSanity } from "./PathSanity.sol";
 abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens, BuyerBurnerOfferMaker {
     using SafeTransferLib for address;
 
+    error SwapFailed(address tokenIn, address tokenOut, uint256 amountIn);
     event DexConfigSet(DEXType dexType, DexConfig config);
     event DexConfigRemoved(DEXType dexType);
     /// @notice Emitted when a `token` is swapped to SMT using WETH9 as an intermediary.
@@ -144,8 +145,7 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens, BuyerBurne
                 continue;
             }
 
-            // ------- Execute swap -------
-            IV3SwapRouter.ExactInputParams memory params = IV3SwapRouter.ExactInputParams({
+            IV3SwapRouter.ExactInputParamsV1 memory swapParamsV1 = IV3SwapRouter.ExactInputParamsV1({
                 path: path,
                 recipient: address(this),
                 deadline: block.timestamp,
@@ -154,7 +154,23 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens, BuyerBurne
             });
 
             tokens[i].token.safeApproveWithRetry(config.swapV3Router, amountIn);
-            uint256 amountOut = IV3SwapRouter(config.swapV3Router).exactInput(params);
+            uint256 amountOut;
+
+            try IV3SwapRouter(config.swapV3Router).exactInput(swapParamsV1) returns (uint256 swapped) {
+                amountOut = swapped;
+            } catch {
+                IV3SwapRouter.ExactInputParamsV2 memory swapParamsV2 = IV3SwapRouter.ExactInputParamsV2({
+                    path: path,
+                    recipient: address(this),
+                    amountIn: amountIn,
+                    amountOutMinimum: amountOutMinimum
+                });
+                try IV3SwapRouter(config.swapV3Router).exactInput(swapParamsV2) returns (uint256 swapped) {
+                    amountOut = swapped;
+                } catch {
+                    revert SwapFailed(tokens[i].token, config.finalToken.token, amountIn);
+                }
+            }
             fullAmountOut += amountOut;
 
             // reset approval to zero (safer pattern)
