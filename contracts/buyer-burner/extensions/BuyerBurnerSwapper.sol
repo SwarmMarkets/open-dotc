@@ -65,44 +65,98 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens, BuyerBurne
         TokenInfo[] memory tokens = _tokens;
         DexConfig memory config = _dexConfigs[dexType];
 
-        for (uint256 i = 0; i < tokens.length; ++i) {
+        for (uint256 i = 0; i < tokens.length; ) {
             uint256 amountIn = tokens[i].token.balanceOf(address(this));
             if (amountIn == 0) {
                 emit ZeroBalance(tokens[i].token);
-                continue; // Skip if no tokens are available for swapping
+                unchecked {
+                    ++i;
+                }
+                continue;
+            }
+            if (tokens[i].token == config.finalToken.token) {
+                unchecked {
+                    ++i;
+                }
+                continue;
             }
 
             bytes memory path;
             if (tokens[i].token == config.intermediateToken) {
-                path = abi.encodePacked(config.intermediateToken, config.poolFee, config.finalToken.token);
-            } else {
-                if (
-                    config.swapV3Factory.getPool(tokens[i].token, config.intermediateToken, config.poolFee) !=
-                    address(0)
-                ) {
-                    path = abi.encodePacked(
-                        tokens[i].token,
-                        config.poolFee,
-                        config.intermediateToken,
-                        config.poolFee,
-                        config.finalToken.token
-                    );
-                } else {
+                (bool ok, uint24 fee) = _firstLivePool(
+                    config.swapV3Factory,
+                    config.intermediateToken,
+                    config.finalToken.token,
+                    config.poolFees
+                );
+                if (!ok) {
                     _makeOffer(tokens[i], amountIn, config.finalToken);
+                    unchecked {
+                        ++i;
+                    }
+                    continue;
+                }
+                path = abi.encodePacked(config.intermediateToken, fee, config.finalToken.token);
+            } else {
+                (bool ok1, uint24 fee1) = _firstLivePool(
+                    config.swapV3Factory,
+                    tokens[i].token,
+                    config.intermediateToken,
+                    config.poolFees
+                );
+                (bool ok2, uint24 fee2) = _firstLivePool(
+                    config.swapV3Factory,
+                    config.intermediateToken,
+                    config.finalToken.token,
+                    config.poolFees
+                );
+                if (!ok1 || !ok2) {
+                    _makeOffer(tokens[i], amountIn, config.finalToken);
+                    unchecked {
+                        ++i;
+                    }
+                    continue;
+                }
+                path = abi.encodePacked(tokens[i].token, fee1, config.intermediateToken, fee2, config.finalToken.token);
+            }
+
+            PathSanity.validateNoAdjacentEqualTokens(path);
+
+            uint256 amountOutMinimum;
+            try IV3SwapQuoterV2(config.swapV3Quoter).quoteExactInput(path, amountIn) returns (
+                uint256 out,
+                uint160,
+                uint32,
+                uint256
+            ) {
+                if (out == 0) {
+                    _makeOffer(tokens[i], amountIn, config.finalToken);
+                    unchecked {
+                        ++i;
+                    }
+                    continue;
+                }
+                amountOutMinimum = out;
+            } catch {
+                try IV3SwapQuoter(config.swapV3Quoter).quoteExactInput(path, amountIn) returns (uint256 out1) {
+                    if (out1 == 0) {
+                        _makeOffer(tokens[i], amountIn, config.finalToken);
+                        unchecked {
+                            ++i;
+                        }
+                        continue;
+                    }
+                    amountOutMinimum = out1;
+                } catch {
+                    _makeOffer(tokens[i], amountIn, config.finalToken);
+                    unchecked {
+                        ++i;
+                    }
                     continue;
                 }
             }
 
-            uint256 amountOutMinimum = config.swapV3Quoter.quoteExactInput(path, amountIn);
-
-            // Multiple pool swaps are encoded through bytes called a `path`.
-            // A path is a sequence of token addresses and POOL_FEEs that define the pools used in the swaps.
-            //
-            // The format for pool encoding is (tokenIn, fee, tokenOut/tokenIn, fee, tokenOut)
-            // where tokenIn/tokenOut parameter is the shared token across the pools.
-            //
-            // Since we are swapping `tokens[i]` to WETH9 and then WETH9 to SMT the path encoding
-            // is (`tokens[i]`, 0.3%, WETH9, 0.3%, SMT).
+            // ------- Execute swap -------
             IV3SwapRouter.ExactInputParams memory params = IV3SwapRouter.ExactInputParams({
                 path: path,
                 recipient: address(this),
@@ -112,13 +166,17 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens, BuyerBurne
             });
 
             tokens[i].token.safeApproveWithRetry(config.swapV3Router, amountIn);
-
             uint256 amountOut = IV3SwapRouter(config.swapV3Router).exactInput(params);
             fullAmountOut += amountOut;
 
-            tokens[i].token.safeApprove(config.swapV3Router, amountIn);
+            // reset approval to zero (safer pattern)
+            tokens[i].token.safeApprove(config.swapV3Router, 0);
 
             emit Swapped(tokens[i].token, amountOut);
+
+            unchecked {
+                ++i;
+            }
         }
 
         _finishSwap(config.finalToken.token, fullAmountOut);
