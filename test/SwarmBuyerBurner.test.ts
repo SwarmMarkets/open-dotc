@@ -126,7 +126,7 @@ describe('SwarmBuyerBurner', () => {
     )) as SwarmBuyerBurner;
     await buyerBurner.deployed();
 
-    const quoter = await hre.ethers.getContractAt('IV3SwapQuoter', UNISWAP_QUOTER_ADDRESS);
+    const quoter = await hre.ethers.getContractAt('IV3SwapQuoterV2', UNISWAP_QUOTER_ADDRESS);
     const dotc: DotcV2 = await hre.ethers.getContractAt('DotcV2', DOTC);
 
     return {
@@ -172,7 +172,7 @@ describe('SwarmBuyerBurner', () => {
         ['address', 'uint24', 'address', 'uint24', 'address'],
         [USDC_ADDRESS, POOL_FEE, WETH_ADDRESS, POOL_FEE, SMT_ADDRESS],
       );
-      const smtAmount = await quoter.callStatic.quoteExactInput(path, usdcAmount);
+      const { amountOut: smtAmount } = await quoter.callStatic.quoteExactInput(path, usdcAmount);
 
       await USDC.connect(USDC_whale).transfer(buyerBurner.address, usdcAmount);
 
@@ -190,7 +190,7 @@ describe('SwarmBuyerBurner', () => {
 
       const wethAmount: BigNumber = BigNumber.from(120 * 1e6);
       const path = ethers.utils.solidityPack(['address', 'uint24', 'address'], [WETH_ADDRESS, POOL_FEE, SMT_ADDRESS]);
-      const smtAmount = await quoter.callStatic.quoteExactInput(path, wethAmount);
+      const { amountOut: smtAmount } = await quoter.callStatic.quoteExactInput(path, wethAmount);
 
       await WETH.connect(WETH_whale).transfer(buyerBurner.address, wethAmount);
 
@@ -211,7 +211,7 @@ describe('SwarmBuyerBurner', () => {
         ['address', 'uint24', 'address', 'uint24', 'address'],
         [WBTC_ADDRESS, POOL_FEE, WETH_ADDRESS, POOL_FEE, SMT_ADDRESS],
       );
-      const smtAmount = await quoter.callStatic.quoteExactInput(path, wbtcAmount);
+      const { amountOut: smtAmount } = await quoter.callStatic.quoteExactInput(path, wbtcAmount);
 
       await WBTC.connect(WBTC_whale).transfer(buyerBurner.address, wbtcAmount);
 
@@ -234,21 +234,21 @@ describe('SwarmBuyerBurner', () => {
         ['address', 'uint24', 'address', 'uint24', 'address'],
         [USDC_ADDRESS, POOL_FEE, WETH_ADDRESS, POOL_FEE, SMT_ADDRESS],
       );
-      const smtfromUsdcAmount = await quoter.callStatic.quoteExactInput(usdcPath, usdcAmount);
+      const { amountOut: smtfromUsdcAmount } = await quoter.callStatic.quoteExactInput(usdcPath, usdcAmount);
 
       const wethAmount: BigNumber = BigNumber.from(120 * 1e6);
       const wethPath = ethers.utils.solidityPack(
         ['address', 'uint24', 'address'],
         [WETH_ADDRESS, POOL_FEE, SMT_ADDRESS],
       );
-      const smtFromWethAmount = await quoter.callStatic.quoteExactInput(wethPath, wethAmount);
+      const { amountOut: smtFromWethAmount } = await quoter.callStatic.quoteExactInput(wethPath, wethAmount);
 
       const wbtcAmount: BigNumber = BigNumber.from(120 * 1e6);
       const wbtcPath = ethers.utils.solidityPack(
         ['address', 'uint24', 'address', 'uint24', 'address'],
         [WBTC_ADDRESS, POOL_FEE, WETH_ADDRESS, POOL_FEE, SMT_ADDRESS],
       );
-      const smtFromWbtcAmount = await quoter.callStatic.quoteExactInput(wbtcPath, wbtcAmount);
+      const { amountOut: smtFromWbtcAmount } = await quoter.callStatic.quoteExactInput(wbtcPath, wbtcAmount);
 
       await USDC.connect(USDC_whale).transfer(buyerBurner.address, usdcAmount);
       await WETH.connect(WETH_whale).transfer(buyerBurner.address, wethAmount);

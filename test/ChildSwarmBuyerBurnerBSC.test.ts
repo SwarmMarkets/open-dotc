@@ -131,7 +131,7 @@ describe('ChildSwarmBuyerBurner BSC', () => {
     )) as SwarmBuyerBurner;
     await buyerBurner.deployed();
 
-    const quoter = await hre.ethers.getContractAt('IV3SwapQuoter', UNISWAP_QUOTER_ADDRESS);
+    const quoter = await hre.ethers.getContractAt('IV3SwapQuoterV2', UNISWAP_QUOTER_ADDRESS);
     const dotc: DotcV2 = await hre.ethers.getContractAt('DotcV2', DOTC);
 
     return {
