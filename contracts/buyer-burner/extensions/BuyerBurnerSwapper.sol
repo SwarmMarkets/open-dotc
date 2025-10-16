@@ -51,7 +51,6 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens, BuyerBurne
     function _setDexConfigs(DexConfig[] calldata dexConfigs) internal {
         for (uint256 i; i < dexConfigs.length; ++i) {
             _dexConfigs[dexConfigs[i].dexType] = dexConfigs[i];
-
             emit DexConfigSet(dexConfigs[i].dexType, dexConfigs[i]);
         }
     }
@@ -61,7 +60,7 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens, BuyerBurne
         emit DexConfigRemoved(dexType);
     }
 
-    function _swap(DEXType dexType) internal returns (uint256 fullAmountOut) {
+    function _swap(DEXType dexType) internal virtual returns (uint256 fullAmountOut) {
         TokenInfo[] memory tokens = _tokens;
         DexConfig memory config = _dexConfigs[dexType];
 
