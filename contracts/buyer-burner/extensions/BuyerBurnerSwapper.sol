@@ -20,7 +20,7 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens, BuyerBurne
     event DexConfigRemoved(DEXType dexType);
     /// @notice Emitted when a `token` is swapped to SMT using WETH9 as an intermediary.
     /// @param amountOut The amount of SMT received.
-    event Swapped(address token, uint256 amountOut);
+    event Swapped(address tokenFrom, address tokenTo, uint256 amountOut);
     event ZeroBalance(address token);
 
     enum DEXType {
@@ -124,8 +124,8 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens, BuyerBurne
             uint256 amountOutMinimum;
             try IV3SwapQuoterV2(config.swapV3Quoter).quoteExactInput(path, amountIn) returns (
                 uint256 out,
-                uint160,
-                uint32,
+                uint160[] memory,
+                uint32[] memory,
                 uint256
             ) {
                 if (out == 0) {
@@ -171,7 +171,7 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens, BuyerBurne
             // reset approval to zero (safer pattern)
             tokens[i].token.safeApprove(config.swapV3Router, 0);
 
-            emit Swapped(tokens[i].token, amountOut);
+            emit Swapped(tokens[i].token, config.finalToken.token, amountOut);
 
             unchecked {
                 ++i;
@@ -208,7 +208,12 @@ abstract contract BuyerBurnerSwapper is BuyerBurnerWhitelistedTokens, BuyerBurne
         address tokenB,
         uint24 fee
     ) internal view virtual returns (bool, uint24) {
-        address pool = factory.getPool(tokenA, tokenB, fee);
+        address pool;
+        try factory.getPool(tokenA, tokenB, fee) returns (address poolReturned) {
+            pool = poolReturned;
+        } catch {
+            return (false, 0);
+        }
         if (pool == address(0)) return (false, 0);
         if (IV3SwapPool(pool).liquidity() == 0) return (false, 0);
         return (true, fee);
