@@ -15,6 +15,7 @@ node_modules/
 bin/
 solc/
 _tmp/
+out/
 
 # files
 *.env
