@@ -84,7 +84,7 @@ describe('SwarmBuyerBurner', () => {
         {
           forking: {
             jsonRpcUrl: getChainRpc('mainnet'),
-            blockNumber: 23932727,
+            blockNumber: 22773991,
             enable: true,
           },
         },
@@ -590,6 +590,11 @@ async function getSignerFromAddress(address: string): Promise<SignerWithAddress>
   await hre.network.provider.request({
     method: 'hardhat_impersonateAccount',
     params: [address],
+  });
+  // Provide ETH for gas to impersonated accounts so transfers/swaps don't fail.
+  await hre.network.provider.request({
+    method: 'hardhat_setBalance',
+    params: [address, '0x56BC75E2D63100000'], // 100 ETH
   });
   return await ethers.getSigner(address);
 }
