@@ -15,8 +15,8 @@ abstract contract SwarmBuyerBurnerBase is Initializable, Ownable, BuyerBurnerSwa
     /// @notice Swaps `token` for SMT through WETH9, with the exact input amount.
     /// @dev Requires approval for spending `token`.
     /// @return fullAmountOut The amount of SMT burned.
-    function swap(DEXType dexType) external payable returns (uint256 fullAmountOut) {
-        fullAmountOut = _swap(dexType);
+    function swap(DEXType dexType, uint16 slippageBps) external payable returns (uint256 fullAmountOut) {
+        fullAmountOut = _swap(dexType, slippageBps);
     }
 
     /// @notice Adds a list of tokens to the whitelist.
