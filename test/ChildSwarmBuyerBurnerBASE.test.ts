@@ -80,7 +80,7 @@ describe('ChildSwarmBuyerBurner BASE', () => {
         {
           forking: {
             jsonRpcUrl: getChainRpc('base'),
-            blockNumber: 37258243,
+            blockNumber: 38783433,
             enable: true,
             accounts: { accountsBalance: '10000000000000000000000000' },
           },

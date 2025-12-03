@@ -41,6 +41,11 @@ const POOL_FEE = 3000;
 
 describe('SwarmBuyerBurner', () => {
   const addressZero = ethers.constants.AddressZero;
+  const defaultWhitelist: TokenInfoStruct[] = [
+    { token: USDC_ADDRESS, priceFeed: USDC_PRICE_FEED },
+    { token: WETH_ADDRESS, priceFeed: ETH_PRICE_FEED },
+    { token: WBTC_ADDRESS, priceFeed: BTC_PRICE_FEED },
+  ];
 
   const uniswapConfig: BuyerBurnerSwapper.DexConfigStruct = {
     dexType: DEXType.UniswapV3,
@@ -79,7 +84,7 @@ describe('SwarmBuyerBurner', () => {
         {
           forking: {
             jsonRpcUrl: getChainRpc('mainnet'),
-            blockNumber: 22773991,
+            blockNumber: 23932727,
             enable: true,
           },
         },
@@ -110,15 +115,7 @@ describe('SwarmBuyerBurner', () => {
     const SwarmBuyerBurner: ContractFactory = await ethers.getContractFactory('SwarmBuyerBurner');
     const buyerBurner: SwarmBuyerBurner = (await upgrades.deployProxy(
       SwarmBuyerBurner,
-      [
-        DOTC,
-        [uniswapConfig, pancakeswapConfig],
-        [
-          { token: USDC_ADDRESS, priceFeed: USDC_PRICE_FEED },
-          { token: WETH_ADDRESS, priceFeed: ETH_PRICE_FEED },
-          { token: WBTC_ADDRESS, priceFeed: BTC_PRICE_FEED },
-        ],
-      ],
+      [DOTC, [uniswapConfig, pancakeswapConfig], defaultWhitelist],
       {
         unsafeAllow: ['constructor'],
         unsafeAllowLinkedLibraries: true,
@@ -150,16 +147,57 @@ describe('SwarmBuyerBurner', () => {
       const { buyerBurner } = await loadFixture(fixture);
 
       await expect(
-        buyerBurner.initialize(
-          DOTC,
-          [uniswapConfig, pancakeswapConfig],
-          [
-            { token: USDC_ADDRESS, priceFeed: USDC_PRICE_FEED },
-            { token: WETH_ADDRESS, priceFeed: ETH_PRICE_FEED },
-            { token: WBTC_ADDRESS, priceFeed: BTC_PRICE_FEED },
-          ],
-        ),
+        buyerBurner.initialize(DOTC, [uniswapConfig, pancakeswapConfig], defaultWhitelist),
       ).to.be.revertedWithCustomError(buyerBurner, 'InvalidInitialization');
+    });
+  });
+
+  describe('Whitelisted tokens', () => {
+    it('returns the current whitelist', async () => {
+      const { buyerBurner } = await loadFixture(fixture);
+
+      const tokens = await buyerBurner.getWhitelistedTokens();
+
+      expect(tokens.map(({ token, priceFeed }) => ({ token, priceFeed }))).to.deep.equal(defaultWhitelist);
+
+      const tokenToAdd: TokenInfoStruct = { token: buyerBurner.address, priceFeed: USDC_PRICE_FEED };
+
+      await buyerBurner.addTokens([tokenToAdd]);
+
+      const tokensAfterAdd = await buyerBurner.getWhitelistedTokens();
+      expect(tokensAfterAdd.map(({ token, priceFeed }) => ({ token, priceFeed }))).to.deep.equal([
+        ...defaultWhitelist,
+        tokenToAdd,
+      ]);
+
+      await buyerBurner.removeTokens([defaultWhitelist[1].token]);
+
+      const tokensAfterRemove = await buyerBurner.getWhitelistedTokens();
+      expect(tokensAfterRemove.map(({ token, priceFeed }) => ({ token, priceFeed }))).to.deep.equal([
+        defaultWhitelist[0],
+        tokenToAdd,
+        defaultWhitelist[2],
+      ]);
+    });
+
+    it('checks whitelist membership', async () => {
+      const { buyerBurner } = await loadFixture(fixture);
+
+      for (const tokenInfo of defaultWhitelist) {
+        expect(await buyerBurner.isTokenWhitelisted(tokenInfo.token)).to.eq(true);
+      }
+
+      const tokenToAdd: TokenInfoStruct = { token: buyerBurner.address, priceFeed: USDC_PRICE_FEED };
+
+      expect(await buyerBurner.isTokenWhitelisted(tokenToAdd.token)).to.eq(false);
+
+      await buyerBurner.addTokens([tokenToAdd]);
+
+      expect(await buyerBurner.isTokenWhitelisted(tokenToAdd.token)).to.eq(true);
+
+      await buyerBurner.removeTokens([tokenToAdd.token]);
+
+      expect(await buyerBurner.isTokenWhitelisted(tokenToAdd.token)).to.eq(false);
     });
   });
 

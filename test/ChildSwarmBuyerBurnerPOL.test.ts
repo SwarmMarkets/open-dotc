@@ -79,7 +79,7 @@ describe('ChildSwarmBuyerBurner POL', () => {
         {
           forking: {
             jsonRpcUrl: getChainRpc('polygon'),
-            blockNumber: 77773910,
+            blockNumber: 79828788,
             enable: true,
           },
         },

@@ -80,7 +80,7 @@ describe('ChildSwarmBuyerBurner BSC', () => {
         {
           forking: {
             jsonRpcUrl: getChainRpc('bsc'),
-            blockNumber: 64578826,
+            blockNumber: 70348130,
             enable: true,
           },
         },
