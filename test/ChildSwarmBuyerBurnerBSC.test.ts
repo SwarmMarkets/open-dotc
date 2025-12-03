@@ -19,6 +19,8 @@ enum DEXType {
   PancakeswapV3,
 }
 
+const DEFAULT_SLIPPAGE_BPS = 9000;
+
 const USD1_ADDRESS = '0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d';
 const USD1_PRICE_FEED = '0xaD8b4e59A7f25B68945fAf0f3a3EAF027832FFB0';
 const CAKE_ADDRESS = '0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82';
@@ -175,7 +177,9 @@ describe('ChildSwarmBuyerBurner BSC', () => {
 
       await WBNB.connect(WBNB_whale).transfer(buyerBurner.address, wbnbAmount);
 
-      const swapTx = await buyerBurner.swap(DEXType.PancakeswapV3, { value: ethers.utils.parseEther('0.01') });
+      const swapTx = await buyerBurner.swap(DEXType.PancakeswapV3, DEFAULT_SLIPPAGE_BPS, {
+        value: ethers.utils.parseEther('0.01'),
+      });
       const swapReceipt = await swapTx.wait();
       const usd1AmountSwapped = getEventArg(swapReceipt, 'Swapped', 'amountOut');
       const messageId = getEventArg(swapReceipt, 'CCIPTransferSubmitted', 'messageId');
@@ -193,7 +197,9 @@ describe('ChildSwarmBuyerBurner BSC', () => {
 
       await CAKE.connect(CAKE_whale).transfer(buyerBurner.address, cakeAmount);
 
-      const swapTx = await buyerBurner.swap(DEXType.PancakeswapV3, { value: ethers.utils.parseEther('0.01') });
+      const swapTx = await buyerBurner.swap(DEXType.PancakeswapV3, DEFAULT_SLIPPAGE_BPS, {
+        value: ethers.utils.parseEther('0.01'),
+      });
       const swapReceipt = await swapTx.wait();
       const usd1AmountSwapped = getEventArg(swapReceipt, 'Swapped', 'amountOut');
       const messageId = getEventArg(swapReceipt, 'CCIPTransferSubmitted', 'messageId');
@@ -212,7 +218,9 @@ describe('ChildSwarmBuyerBurner BSC', () => {
       await CAKE.connect(CAKE_whale).transfer(buyerBurner.address, amount);
       await WBNB.connect(WBNB_whale).transfer(buyerBurner.address, amount);
 
-      const swapTx = await buyerBurner.swap(DEXType.PancakeswapV3, { value: ethers.utils.parseEther('0.02') });
+      const swapTx = await buyerBurner.swap(DEXType.PancakeswapV3, DEFAULT_SLIPPAGE_BPS, {
+        value: ethers.utils.parseEther('0.02'),
+      });
       const swapReceipt = await swapTx.wait();
       const usd1AmountSwappedArray = getAllEventArgs(swapReceipt, 'Swapped', 'amountOut');
       const usd1AmountTransferred = getEventArg(swapReceipt, 'CCIPTransferSubmitted', 'amount');
@@ -239,7 +247,7 @@ describe('ChildSwarmBuyerBurner BSC', () => {
       await WBNB.connect(WBNB_whale).transfer(buyerBurner.address, wbnbAmount);
 
       const futureOfferId = await dotc.currentOfferId();
-      const swapTx = await buyerBurner.swap(DEXType.UniswapV3);
+      const swapTx = await buyerBurner.swap(DEXType.UniswapV3, DEFAULT_SLIPPAGE_BPS);
       const swapReceipt = await swapTx.wait();
       const offerId = getEventArg(swapReceipt, 'PoolNotExistOfferMade', 'offerId');
 
@@ -264,7 +272,7 @@ describe('ChildSwarmBuyerBurner BSC', () => {
       await CAKE.connect(CAKE_whale).transfer(buyerBurner.address, cakeAmount);
 
       const futureOfferId = await dotc.currentOfferId();
-      const swapTx = await buyerBurner.swap(DEXType.UniswapV3);
+      const swapTx = await buyerBurner.swap(DEXType.UniswapV3, DEFAULT_SLIPPAGE_BPS);
       const swapReceipt = await swapTx.wait();
       const offerId = getEventArg(swapReceipt, 'PoolNotExistOfferMade', 'offerId');
 
@@ -290,7 +298,7 @@ describe('ChildSwarmBuyerBurner BSC', () => {
       await WBNB.connect(WBNB_whale).transfer(buyerBurner.address, amount);
 
       const futureOfferId = await dotc.currentOfferId();
-      const swapTx = await buyerBurner.swap(DEXType.UniswapV3);
+      const swapTx = await buyerBurner.swap(DEXType.UniswapV3, DEFAULT_SLIPPAGE_BPS);
       const swapReceipt = await swapTx.wait();
       const offerIdArray = getAllEventArgs(swapReceipt, 'PoolNotExistOfferMade', 'offerId');
 

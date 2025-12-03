@@ -14,6 +14,8 @@ enum DEXType {
   PancakeswapV3,
 }
 
+const DEFAULT_SLIPPAGE_BPS = 9000;
+
 const SMT_ADDRESS = '0xB17548c7B510427baAc4e267BEa62e800b247173';
 const SMT_PRICE_FEED = '0x31C1e5AcBCb206e962939280613Cd812243bE8f5';
 const USDC_ADDRESS = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
@@ -214,7 +216,7 @@ describe('SwarmBuyerBurner', () => {
 
       await USDC.connect(USDC_whale).transfer(buyerBurner.address, usdcAmount);
 
-      const swapTx = await buyerBurner.swap(DEXType.UniswapV3);
+      const swapTx = await buyerBurner.swap(DEXType.UniswapV3, DEFAULT_SLIPPAGE_BPS);
       const swapReceipt = await swapTx.wait();
       const smtAmountBurned = getEventArg(swapReceipt, 'Swapped', 'amountOut');
 
@@ -232,7 +234,7 @@ describe('SwarmBuyerBurner', () => {
 
       await WETH.connect(WETH_whale).transfer(buyerBurner.address, wethAmount);
 
-      const swapTx = await buyerBurner.swap(DEXType.UniswapV3);
+      const swapTx = await buyerBurner.swap(DEXType.UniswapV3, DEFAULT_SLIPPAGE_BPS);
       const swapReceipt = await swapTx.wait();
       const smtAmountBurned = getEventArg(swapReceipt, 'Swapped', 'amountOut');
 
@@ -253,7 +255,7 @@ describe('SwarmBuyerBurner', () => {
 
       await WBTC.connect(WBTC_whale).transfer(buyerBurner.address, wbtcAmount);
 
-      const swapTx = await buyerBurner.swap(DEXType.UniswapV3);
+      const swapTx = await buyerBurner.swap(DEXType.UniswapV3, DEFAULT_SLIPPAGE_BPS);
       const swapReceipt = await swapTx.wait();
       const smtAmountBurned = getEventArg(swapReceipt, 'Swapped', 'amountOut');
 
@@ -292,7 +294,7 @@ describe('SwarmBuyerBurner', () => {
       await WETH.connect(WETH_whale).transfer(buyerBurner.address, wethAmount);
       await WBTC.connect(WBTC_whale).transfer(buyerBurner.address, wbtcAmount);
 
-      const swapTx = await buyerBurner.swap(DEXType.UniswapV3);
+      const swapTx = await buyerBurner.swap(DEXType.UniswapV3, DEFAULT_SLIPPAGE_BPS);
       const swapReceipt = await swapTx.wait();
       const smtAmountsBurnedArray = getAllEventArgs(swapReceipt, 'Swapped', 'amountOut');
 
@@ -326,7 +328,7 @@ describe('SwarmBuyerBurner', () => {
       await USDC.connect(USDC_whale).transfer(buyerBurner.address, usdcAmount);
 
       const futureOfferId = await dotc.currentOfferId();
-      const swapTx = await buyerBurner.swap(DEXType.PancakeswapV3);
+      const swapTx = await buyerBurner.swap(DEXType.PancakeswapV3, DEFAULT_SLIPPAGE_BPS);
       const swapReceipt = await swapTx.wait();
       const offerId = getEventArg(swapReceipt, 'PoolNotExistOfferMade', 'offerId');
 
@@ -358,7 +360,7 @@ describe('SwarmBuyerBurner', () => {
       await WETH.connect(WETH_whale).transfer(buyerBurner.address, wethAmount);
 
       const futureOfferId = await dotc.currentOfferId();
-      const swapTx = await buyerBurner.swap(DEXType.PancakeswapV3);
+      const swapTx = await buyerBurner.swap(DEXType.PancakeswapV3, DEFAULT_SLIPPAGE_BPS);
       const swapReceipt = await swapTx.wait();
       const offerId = getEventArg(swapReceipt, 'PoolNotExistOfferMade', 'offerId');
 
@@ -390,7 +392,7 @@ describe('SwarmBuyerBurner', () => {
       await WBTC.connect(WBTC_whale).transfer(buyerBurner.address, wbtcAmount);
 
       const futureOfferId = await dotc.currentOfferId();
-      const swapTx = await buyerBurner.swap(DEXType.PancakeswapV3);
+      const swapTx = await buyerBurner.swap(DEXType.PancakeswapV3, DEFAULT_SLIPPAGE_BPS);
       const swapReceipt = await swapTx.wait();
       const offerId = getEventArg(swapReceipt, 'PoolNotExistOfferMade', 'offerId');
 
@@ -428,7 +430,7 @@ describe('SwarmBuyerBurner', () => {
       await WBTC.connect(WBTC_whale).transfer(buyerBurner.address, wbtcAmount);
 
       const futureOfferId = await dotc.currentOfferId();
-      const swapTx = await buyerBurner.swap(DEXType.PancakeswapV3);
+      const swapTx = await buyerBurner.swap(DEXType.PancakeswapV3, DEFAULT_SLIPPAGE_BPS);
       const swapReceipt = await swapTx.wait();
       const offerIds = getAllEventArgs(swapReceipt, 'PoolNotExistOfferMade', 'offerId');
 
