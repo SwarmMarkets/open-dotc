@@ -13,6 +13,14 @@ abstract contract BuyerBurnerWhitelistedTokens {
     TokenInfo[] internal _tokens;
     mapping(address token => uint256 index) internal _indexOfToken;
 
+    function getWhitelistedTokens() external view returns (TokenInfo[] memory) {
+        return _tokens;
+    }
+
+    function isTokenWhitelisted(address token) external view returns (bool) {
+        return _indexOfToken[token] != 0;
+    }
+
     /// @notice Add a single token + its Chainlink feed
     function _addToken(TokenInfo calldata tokenInfo) internal virtual {
         if (_indexOfToken[tokenInfo.token] != 0) {
