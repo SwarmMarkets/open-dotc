@@ -1,0 +1,5 @@
+@openzeppelin-v5/contracts/=node_modules/@openzeppelin-v5/contracts/
+@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/
+@openzeppelin-v5/contracts-upgradeable/=node_modules/@openzeppelin-v5/contracts-upgradeable/
+solady/src/=node_modules/solady/src/
+@chainlink/contracts/=node_modules/@chainlink/contracts/

@@ -86,6 +86,40 @@
     "infuraSubdomain": "scroll-mainnet",
     "explorer": "https://scrollscan.com/"
   },
+  "hedera": {
+    "chainId": 295,
+    "rpc": "https://hedera.linkpool.pro",
+    "explorer": "https://hashscan.io/mainnet"
+  },
+  "hyperevm": {
+    "chainId": 999,
+    "rpc": "https://rpc.hyperliquid.xyz/evm",
+    "explorer": "https://hyperevmscan.io/"
+  },
+  "mode": {
+    "chainId": 34443,
+    "rpc": "https://1rpc.io/mode",
+    "explorer": "https://modescan.io",
+    "api": "https://api.routescan.io/v2/network/mainnet/evm/34443/etherscan"
+  },
+  "plume": {
+    "chainId": 98866,
+    "rpc": "https://rpc.plume.org",
+    "explorer": "https://explorer.plume.org/",
+    "api": "https://explorer.plume.org/api"
+  },
+  "mezo": {
+    "chainId": 31612,
+    "rpc": "https://jsonrpc-mezo.boar.network",
+    "explorer": "https://explorer.mezo.org/",
+    "api": "https://explorer.mezo.org/api"
+  },
+  "plasma": {
+    "chainId": 9745,
+    "rpc": "https://rpc.plasma.to",
+    "explorer": "https://plasmascan.to/",
+    "api": "https://api.routescan.io/v2/network/mainnet/evm/9745/etherscan"
+  },
   "amoy": {
     "chainId": 80002,
     "alchemySubdomain": "polygon-amoy",
@@ -116,33 +150,9 @@
     "infuraSubdomain": "blast-sepolia",
     "explorer": "https://sepolia.blastscan.io/"
   },
-  "hedera": {
-    "chainId": 295,
-    "rpc": "https://295.rpc.thirdweb.com",
-    "explorer": "https://hashscan.io/mainnet",
-    "api": "https://mainnet.hashio.io/api"
-  },
   "hedera_testnet": {
     "chainId": 296,
     "rpc": "https://testnet.hashio.io/api",
-    "explorer": "https://hashscan.io/testnet",
-    "api": "https://testnet.hashio.io/api"
-  },
-  "hyperevm": {
-    "chainId": 999,
-    "rpc": "https://rpc.hyperliquid.xyz/evm",
-    "explorer": "https://hyperevmscan.io/"
-  },
-  "mode": {
-    "chainId": 34443,
-    "rpc": "https://1rpc.io/mode",
-    "explorer": "https://modescan.io",
-    "api": "https://api.routescan.io/v2/network/mainnet/evm/34443/etherscan"
-  },
-  "plume": {
-    "chainId": 98866,
-    "rpc": "https://rpc.plume.org",
-    "explorer": "https://explorer.plume.org/",
-    "api": "https://explorer.plume.org/api"
+    "explorer": "https://hashscan.io/testnet"
   }
 }
