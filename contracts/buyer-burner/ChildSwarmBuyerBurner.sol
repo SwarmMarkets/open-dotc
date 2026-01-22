@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.25;
 
-import { SwarmBuyerBurnerBase } from "./SwarmBuyerBurnerBase.sol";
+import { SwarmBuyerBurnerBase, SafeTransferLib } from "./SwarmBuyerBurnerBase.sol";
 import { BuyerBurnerCCIPCaller } from "./extensions/BuyerBurnerCCIPCaller.sol";
 import { TokenInfo } from "./structures/BuyerBurnerStructures.sol";
 
@@ -23,10 +23,16 @@ contract ChildSwarmBuyerBurner is SwarmBuyerBurnerBase, BuyerBurnerCCIPCaller {
         _setOwner(msg.sender);
     }
 
-    function _finishSwap(address token, uint256 amount) internal override {
+    function _finishSwap(address token, uint256) internal override {
+        uint256 amount = SafeTransferLib.balanceOf(token, address(this));
+
         if (amount == 0) {
+            if (msg.value != 0) {
+                SafeTransferLib.safeTransferETH(msg.sender, msg.value);
+            }
             return;
         }
+
         _ccipTransfer(token, amount);
     }
 }

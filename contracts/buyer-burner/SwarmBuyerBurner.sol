@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.25;
 
-import { SwarmBuyerBurnerBase } from "./SwarmBuyerBurnerBase.sol";
+import { SwarmBuyerBurnerBase, SafeTransferLib } from "./SwarmBuyerBurnerBase.sol";
 
 import { IERC20Burnable } from "./interfaces/IERC20Burnable.sol";
 import { TokenInfo } from "./structures/BuyerBurnerStructures.sol";
@@ -27,7 +27,8 @@ contract SwarmBuyerBurner is SwarmBuyerBurnerBase {
         IERC20Burnable(_dexConfigs[DEXType.UniswapV3].finalToken.token).burn(amount);
     }
 
-    function _finishSwap(address token, uint256 amount) internal override {
+    function _finishSwap(address token, uint256) internal override {
+        uint256 amount = SafeTransferLib.balanceOf(token, address(this));
         IERC20Burnable(token).burn(amount);
     }
 }
