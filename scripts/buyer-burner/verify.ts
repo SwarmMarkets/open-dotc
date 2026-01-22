@@ -1,7 +1,7 @@
 import { verifyContract } from '../helpers/verify-contract';
 
 async function main(): Promise<void> {
-  await verifyContract('0x89EC29884a074108a130C4cee3dC3B8d2745Abed');
+  await verifyContract('0x6EeF13b30Db3e2d423Ba79F53e90533a3C3F56c6');
 }
 
 // We recommend this pattern to be able to use async/await everywhere
