@@ -1,5 +1,5 @@
 import { ethers, upgrades } from 'hardhat';
-import { BuyerBurnerCCIPCaller, BuyerBurnerSwapper, SwarmBuyerBurner } from '../../typechain';
+import { BuyerBurnerSwapper, SwarmBuyerBurner } from '../../typechain';
 import { ContractFactory } from 'ethers';
 
 enum DEXType {
@@ -16,11 +16,6 @@ const WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
 const ETH_PRICE_FEED = '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419';
 const WBTC_ADDRESS = '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599';
 const BTC_PRICE_FEED = '0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c';
-
-const USDC_WHALE_ADDRESS = '0x37305B1cD40574E4C5Ce33f8e8306Be057fD7341';
-const WETH_WHALE_ADDRESS = '0x8EB8a3b98659Cce290402893d0123abb75E3ab28';
-const SMT_WHALE_ADDRESS = '0x3CC936b795A188F0e246cBB2D74C5Bd190aeCF18';
-const WBTC_WHALE_ADDRESS = '0xed805ac246F441Ea0D057B81d910EF1e39EB5995';
 
 const DOTC = '0x0a103eE32F4209926D8ba7e528AFf8a831Ed3daE';
 const UNISWAP_FACTORY_ADDRESS = '0x1F98431c8aD98523631AE4a59f267346ea31F984';
@@ -42,7 +37,6 @@ const uniswapConfig: BuyerBurnerSwapper.DexConfigStruct = {
   intermediateToken: WETH_ADDRESS,
   finalToken: { token: SMT_ADDRESS, priceFeed: SMT_PRICE_FEED },
   swapV3Router: UNISWAP_ROUTER_ADDRESS,
-  swapV3Quoter: UNISWAP_QUOTER_ADDRESS,
   swapV3Factory: UNISWAP_FACTORY_ADDRESS,
 };
 
@@ -57,7 +51,6 @@ const pancakeswapConfig: BuyerBurnerSwapper.DexConfigStruct = {
   intermediateToken: '0x0000000000000000000000000000000000000000',
   finalToken: { token: SMT_ADDRESS, priceFeed: SMT_PRICE_FEED },
   swapV3Router: PANCAKESWAP_ROUTER_ADDRESS,
-  swapV3Quoter: PANCAKESWAP_QUOTER_ADDRESS,
   swapV3Factory: PANCAKESWAP_FACTORY_ADDRESS,
 };
 

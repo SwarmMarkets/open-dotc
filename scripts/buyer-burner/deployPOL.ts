@@ -37,7 +37,6 @@ const uniswapConfig: BuyerBurnerSwapper.DexConfigStruct = {
   intermediateToken: USDCe_ADDRESS,
   finalToken: { token: USDC_ADDRESS, priceFeed: USDC_PRICE_FEED },
   swapV3Router: UNISWAP_ROUTER_ADDRESS,
-  swapV3Quoter: UNISWAP_QUOTER_ADDRESS,
   swapV3Factory: UNISWAP_FACTORY_ADDRESS,
 };
 
@@ -52,7 +51,6 @@ const pancakeswapConfig: BuyerBurnerSwapper.DexConfigStruct = {
   intermediateToken: USDCe_ADDRESS,
   finalToken: { token: USDC_ADDRESS, priceFeed: USDC_PRICE_FEED },
   swapV3Router: PANCAKESWAP_ROUTER_ADDRESS,
-  swapV3Quoter: PANCAKESWAP_QUOTER_ADDRESS,
   swapV3Factory: PANCAKESWAP_FACTORY_ADDRESS,
 };
 
