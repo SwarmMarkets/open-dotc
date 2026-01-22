@@ -29,6 +29,11 @@
       "address": "0x54111D52864558A3CF7ec70C6b8da358d3Fda258",
       "txHash": "0x9720a85dbd47a5d6c10e24c9ed454288858f8796c350fcb9b4dc39d9b973749d",
       "kind": "transparent"
+    },
+    {
+      "address": "0xCa229967CD6aa6F15936C18ADe845cf90a23CC67",
+      "txHash": "0xca853d164a19103ddbd4b7c8005d9a0e44cbc3faaae7990f03b7563db77b109c",
+      "kind": "transparent"
     }
   ],
   "impls": {
@@ -1713,6 +1718,356 @@
             "numberOfBytes": "32"
           },
           "t_struct(TokenInfo)7132_storage": {
+            "label": "struct TokenInfo",
+            "members": [
+              {
+                "label": "token",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "priceFeed",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_uint24": {
+            "label": "uint24",
+            "numberOfBytes": "3"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        },
+        "namespaces": {}
+      }
+    },
+    "d1242e918689816e181e4a95e274b93d13fd014930db1c9689add6290e6dddb9": {
+      "address": "0xc940EDe0EeefbeA70d36Ed3ee368eF2604103214",
+      "txHash": "0x1a512aebada1951f7d67d7199e0ab71b289d8be008faf38cb9c7271811bfc556",
+      "layout": {
+        "solcVersion": "0.8.25",
+        "storage": [
+          {
+            "label": "_tokens",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_array(t_struct(TokenInfo)7415_storage)dyn_storage",
+            "contract": "BuyerBurnerWhitelistedTokens",
+            "src": "contracts/buyer-burner/extensions/BuyerBurnerWhitelistedTokens.sol:13"
+          },
+          {
+            "label": "_indexOfToken",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "BuyerBurnerWhitelistedTokens",
+            "src": "contracts/buyer-burner/extensions/BuyerBurnerWhitelistedTokens.sol:14"
+          },
+          {
+            "label": "_dotc",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_contract(DotcV2)3614",
+            "contract": "BuyerBurnerOfferMaker",
+            "src": "contracts/buyer-burner/extensions/BuyerBurnerOfferMaker.sol:20"
+          },
+          {
+            "label": "_dexConfigs",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_mapping(t_enum(DEXType)5793,t_struct(DexConfig)5819_storage)",
+            "contract": "BuyerBurnerSwapper",
+            "src": "contracts/buyer-burner/extensions/BuyerBurnerSwapper.sol:58"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_struct(TokenInfo)7415_storage)dyn_storage": {
+            "label": "struct TokenInfo[]",
+            "numberOfBytes": "32"
+          },
+          "t_contract(DotcV2)3614": {
+            "label": "contract DotcV2",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IV3SwapFactory)7340": {
+            "label": "contract IV3SwapFactory",
+            "numberOfBytes": "20"
+          },
+          "t_enum(DEXType)5793": {
+            "label": "enum BuyerBurnerSwapper.DEXType",
+            "members": [
+              "NoType",
+              "UniswapV3",
+              "PancakeswapV3"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_enum(DEXType)5793,t_struct(DexConfig)5819_storage)": {
+            "label": "mapping(enum BuyerBurnerSwapper.DEXType => struct BuyerBurnerSwapper.DexConfig)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(DexConfig)5819_storage": {
+            "label": "struct BuyerBurnerSwapper.DexConfig",
+            "members": [
+              {
+                "label": "dexType",
+                "type": "t_enum(DEXType)5793",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "poolFees",
+                "type": "t_struct(PoolFees)5802_storage",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "intermediateToken",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "finalToken",
+                "type": "t_struct(TokenInfo)7415_storage",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "swapV3Router",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "swapV3Factory",
+                "type": "t_contract(IV3SwapFactory)7340",
+                "offset": 0,
+                "slot": "6"
+              }
+            ],
+            "numberOfBytes": "224"
+          },
+          "t_struct(PoolFees)5802_storage": {
+            "label": "struct BuyerBurnerSwapper.PoolFees",
+            "members": [
+              {
+                "label": "tier1",
+                "type": "t_uint24",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "tier2",
+                "type": "t_uint24",
+                "offset": 3,
+                "slot": "0"
+              },
+              {
+                "label": "tier3",
+                "type": "t_uint24",
+                "offset": 6,
+                "slot": "0"
+              },
+              {
+                "label": "tier4",
+                "type": "t_uint24",
+                "offset": 9,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(TokenInfo)7415_storage": {
+            "label": "struct TokenInfo",
+            "members": [
+              {
+                "label": "token",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "priceFeed",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_uint24": {
+            "label": "uint24",
+            "numberOfBytes": "3"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        },
+        "namespaces": {}
+      }
+    },
+    "59d9b1ee31b54f8f536d8e3184997fa27aebb09905a2b34b85c150eacd3abd97": {
+      "address": "0x2801C435bd92CF6D8879403aDeE0A27dB5B7Ba6b",
+      "txHash": "0x89fd19f06c4ca3ad0a07d7bf2da09ac715f2e1760712befe913ade604b0c1521",
+      "layout": {
+        "solcVersion": "0.8.25",
+        "storage": [
+          {
+            "label": "_tokens",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_array(t_struct(TokenInfo)7682_storage)dyn_storage",
+            "contract": "BuyerBurnerWhitelistedTokens",
+            "src": "contracts/buyer-burner/extensions/BuyerBurnerWhitelistedTokens.sol:13"
+          },
+          {
+            "label": "_indexOfToken",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "BuyerBurnerWhitelistedTokens",
+            "src": "contracts/buyer-burner/extensions/BuyerBurnerWhitelistedTokens.sol:14"
+          },
+          {
+            "label": "_dotc",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_contract(DotcV2)3614",
+            "contract": "BuyerBurnerOfferMaker",
+            "src": "contracts/buyer-burner/extensions/BuyerBurnerOfferMaker.sol:20"
+          },
+          {
+            "label": "_dexConfigs",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_mapping(t_enum(DEXType)6030,t_struct(DexConfig)6056_storage)",
+            "contract": "BuyerBurnerSwapper",
+            "src": "contracts/buyer-burner/extensions/BuyerBurnerSwapper.sol:58"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_struct(TokenInfo)7682_storage)dyn_storage": {
+            "label": "struct TokenInfo[]",
+            "numberOfBytes": "32"
+          },
+          "t_contract(DotcV2)3614": {
+            "label": "contract DotcV2",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IV3SwapFactory)7607": {
+            "label": "contract IV3SwapFactory",
+            "numberOfBytes": "20"
+          },
+          "t_enum(DEXType)6030": {
+            "label": "enum BuyerBurnerSwapper.DEXType",
+            "members": [
+              "NoType",
+              "UniswapV3",
+              "PancakeswapV3"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_enum(DEXType)6030,t_struct(DexConfig)6056_storage)": {
+            "label": "mapping(enum BuyerBurnerSwapper.DEXType => struct BuyerBurnerSwapper.DexConfig)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(DexConfig)6056_storage": {
+            "label": "struct BuyerBurnerSwapper.DexConfig",
+            "members": [
+              {
+                "label": "dexType",
+                "type": "t_enum(DEXType)6030",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "poolFees",
+                "type": "t_struct(PoolFees)6039_storage",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "intermediateToken",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "finalToken",
+                "type": "t_struct(TokenInfo)7682_storage",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "swapV3Router",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "swapV3Factory",
+                "type": "t_contract(IV3SwapFactory)7607",
+                "offset": 0,
+                "slot": "6"
+              }
+            ],
+            "numberOfBytes": "224"
+          },
+          "t_struct(PoolFees)6039_storage": {
+            "label": "struct BuyerBurnerSwapper.PoolFees",
+            "members": [
+              {
+                "label": "tier1",
+                "type": "t_uint24",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "tier2",
+                "type": "t_uint24",
+                "offset": 3,
+                "slot": "0"
+              },
+              {
+                "label": "tier3",
+                "type": "t_uint24",
+                "offset": 6,
+                "slot": "0"
+              },
+              {
+                "label": "tier4",
+                "type": "t_uint24",
+                "offset": 9,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(TokenInfo)7682_storage": {
             "label": "struct TokenInfo",
             "members": [
               {
